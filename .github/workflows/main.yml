@@ -34,11 +34,11 @@ jobs:
 
     
           
-    - name: Fetch and merge openpilot
+    - name: Fetch and merge sunnypilot
       run: |
-        git fetch openpilot
-        git checkout -B master-ci openpilot/master-ci
-        git push origin master-ci --force
+        git fetch sunnypilot
+        git checkout -B master sunnypilot/master
+        git push origin master --force
         
     - name: Fetch and merge FrogPilot
       run: |
