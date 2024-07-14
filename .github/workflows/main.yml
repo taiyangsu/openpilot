@@ -32,15 +32,10 @@ jobs:
         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
         git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
 
-    
-          
-    - name: Fetch and merge sunnypilot
-      run: |
-        git fetch sunnypilot
-        git checkout -B master sunnypilot/master
-        git push origin master --force
+  
+
         
-    - name: Fetch and merge FrogPilot
+    - name: Fetch and merge frogpilot
       run: |
         git fetch frogpilot
         git checkout -B FrogPilot frogpilot/FrogPilot
