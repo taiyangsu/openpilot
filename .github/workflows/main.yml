@@ -49,16 +49,10 @@ jobs:
     - name: Fetch and merge openpilot
       run: |
         git fetch openpilot
-        git checkout -B release3 openpilot/release3
-        git push origin release3 --force
+        git checkout -B secretgoodopenpilot20hz2 openpilot/secretgoodopenpilot20hz2
+        git push origin secretgoodopenpilot20hz2 --force
+       
         
-        
-    - name: Fetch and merge FrogPilot
-      run: |
-        git fetch frogpilot
-        git checkout -B FrogPilot-Previous frogpilot/FrogPilot-Previous
-        git push origin FrogPilot-Previous --force
-
     - name: Fetch and merge FrogPilot
       run: |
         git fetch frogpilot
