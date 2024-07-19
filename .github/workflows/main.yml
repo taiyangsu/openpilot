@@ -1,15 +1,12 @@
 
     
 name: Sync Forks
-
-
 on:
   schedule:
     - cron: '0 0 * * *'  # 每天同步一次
   push:
     branches:
       - main
-
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -24,20 +21,14 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email '29983802+github-actions[bot]@users.noreply.github.com'
     - name: Add remote repositories
-      run: |
-        
-       
-        
-              
+      run: |                    
         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git        
         git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
         git remote add openpilot https://github.com/commaai/openpilot
         git remote add frogpilot https://github.com/FrogAi/FrogPilot 
-
     
     - name: Fetch and merge sunnypilot        
-      run: |
-       
+      run: |       
         git fetch sunnypilot
         git checkout -B dev-c3 sunnypilot/dev-c3
         git push origin dev-c3 --force
