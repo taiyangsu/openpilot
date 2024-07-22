@@ -22,16 +22,13 @@ jobs:
         git config --global user.email '29983802+github-actions[bot]@users.noreply.github.com'
     - name: Add remote repositories
       run: |                    
-        git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git
+        
         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git        
         git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
         git remote add openpilot https://github.com/commaai/openpilot
+        git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git
          
-    - name: Fetch and merge FrogPilot
-      run: |
-        git fetch FrogPilot
-        git checkout -B FrogPilot FrogPilot/FrogPilot
-        git push origin FrogPilot --force
+   
     - name: Fetch and merge sunnypilot        
       run: |       
         git fetch sunnypilot
@@ -43,6 +40,12 @@ jobs:
         git fetch dragonpilot
         git checkout -B beta3 dragonpilot/beta3
         git push origin beta3 --force
+        
+    - name: Fetch and merge FrogPilot
+      run: |
+        git fetch FrogPilot
+        git checkout -B FrogPilot FrogPilot/FrogPilot
+        git push origin FrogPilot --force
         
 
        
