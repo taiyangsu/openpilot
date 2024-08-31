@@ -23,10 +23,10 @@ jobs:
     - name: Add remote repositories
       run: |                    
         
-        git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git        
-        git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
-        git remote add openpilot https://github.com/commaai/openpilot
+        git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
         git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git
+        git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
+        git remote add openpilot https://github.com/commaai/openpilot        
          
    
     - name: Fetch and merge sunnypilot        
@@ -35,17 +35,19 @@ jobs:
         git checkout -B dev-c3 sunnypilot/dev-c3
         git push origin dev-c3 --force
 
+    - name: Fetch and merge FrogPilot
+      run: |
+        git fetch FrogPilot
+        git checkout -B FrogPilot FrogPilot/FrogPilot
+        git push origin FrogPilot --force
+
     - name: Fetch and merge dragonpilot
       run: |
         git fetch dragonpilot
         git checkout -B beta3 dragonpilot/beta3
         git push origin beta3 --force
         
-    - name: Fetch and merge FrogPilot
-      run: |
-        git fetch FrogPilot
-        git checkout -B FrogPilot FrogPilot/FrogPilot
-        git push origin FrogPilot --force
+
         
 
        
