@@ -35,9 +35,10 @@ void ExperimentalButton::changeMode() {
 void ExperimentalButton::updateState(const UIState &s) {
   const auto cs = (*s.sm)["selfdriveState"].getSelfdriveState();
   bool eng = cs.getEngageable() || cs.getEnabled();
-  if ((cs.getExperimentalMode() != experimental_mode) || (eng != engageable)) {
+  if ((s.scene.carrot_experimental_mode != experimental_mode) || (eng != engageable)) {
     engageable = eng;
-    experimental_mode = cs.getExperimentalMode();
+    //experimental_mode = cs.getExperimentalMode();
+    experimental_mode = s.scene.carrot_experimental_mode;
     update();
   }
 }
@@ -45,5 +46,5 @@ void ExperimentalButton::updateState(const UIState &s) {
 void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   QPixmap img = experimental_mode ? experimental_img : engage_img;
-  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
+  drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 1), (isDown() || !engageable) ? 0.6 : 1.0);
 }

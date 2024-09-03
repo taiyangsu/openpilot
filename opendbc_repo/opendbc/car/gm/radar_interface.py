@@ -88,6 +88,7 @@ class RadarInterface(RadarInterfaceBase):
         # From driver's pov, left is positive
         self.pts[targetId].yRel = math.sin(cpt['TrkAzimuth'] * CV.DEG_TO_RAD) * distance
         self.pts[targetId].vRel = cpt['TrkRangeRate']
+        self.pts[targetId].vLead = self.pts[targetId].vRel + self.v_ego
         self.pts[targetId].aRel = float('nan')
         self.pts[targetId].yvRel = float('nan')
 

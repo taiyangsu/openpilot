@@ -8,6 +8,16 @@ Ecu = CarParams.Ecu
 
 
 FW_VERSIONS = {
+  CAR.HYUNDAI_AZERA_7TH_GEN: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00GN7_ RDR -----      1.00 1.03 99110-N1000         ',
+      b'\xf1\x8b #\x11\x15',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00GN7 MFC  AT KOR LHD 1.00 1.03 99211-N1000 230322',
+      b'\xf1\x8b #\x11\x16',
+    ],
+  },
   CAR.HYUNDAI_AZERA_6TH_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IG__ SCC F-CU-      1.00 1.00 99110-G8100         ',
@@ -997,6 +1007,14 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
+  CAR.KIA_EV6_PE: {  # (CV1)
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00CV__ RDR -----      1.00 1.01 99110-CV500         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00CV  MFC  AT KOR LHD 1.00 1.01 99210-CV500 240405',
+    ],
+  },
   CAR.HYUNDAI_IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
@@ -1024,6 +1042,23 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.03 99211-GI010 220401',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.05 99211-GI010 220614',
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.06 99211-GI010 230110',
+    ],
+  },
+  CAR.HYUNDAI_IONIQ_5_PE: {  # (NE1)
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NE__ RDR -----      1.00 1.00 99110-GI500         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NE  MFC  AT KOR LHD 1.00 1.02 99211-GI500 240221',
+    ],
+  },
+  CAR.HYUNDAI_IONIQ_5_N: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00NE1N RDR -----      1.00 1.00 99110-NI000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NE1NMFC  AT KOR LHD 1.00 1.04 99211-NI000 231219',
+      b'\xf1\x00NE1NMFC  AT USA LHD 1.00 1.04 99211-NI000 231219',
     ],
   },
   CAR.HYUNDAI_IONIQ_6: {
@@ -1204,33 +1239,27 @@ FW_VERSIONS = {
       b'\xf1\x00US4_ RDR -----      1.00 1.00 99110-CG000         ',
     ],
   },
-  CAR.HYUNDAI_NEXO_1ST_GEN: {
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00FE IEB \x01 312 \x11\x13 58520-M5000',
+  CAR.KIA_EV9: {  # (MV)
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00MV__ RDR -----      1.00 1.02 99110-DO700         ',
+      b'\xf1\x00MV__ RDR -----      1.00 1.02 99110-DO000         '
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00FE  MFC  AT KOR LHD 1.00 1.00 99211-M5100 201218',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00FE  MDPS C 1.00 1.05 56340-M5000 9903',
-    ],
-    (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00FE__ SCC FHCUP      1.00 1.05 99110-M5000         ',
+      b'\xf1\x00MV  MFC  AT KOR LHD 1.00 1.01 99211-DO000 230419',
+      b'\xf1\x00MV  MFC  AT USA LHD 1.00 1.02 99211-DO000 230616',
+      b'\xf1\x00MV  MFC  AT EUR LHD 1.00 1.02 99211-DO000 230616',
     ],
   },
-  CAR.HYUNDAI_KONA_2022: {
-    (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\x00OSP LKA  AT USA LHD 1.00 1.04 99211-J9200 904',
-    ],
-    (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x00OSP MDPS C 1.00 1.04 56310/J9291 4OPCC104',
-    ],
+  CAR.HYUNDAI_SANTAFE_MX5: {  # (MX5)
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x00YB__ FCA -----      1.00 1.01 99110-J9000      \x00\x00\x00',
     ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00T01G00BL  T01I00A1  DOS2T16X2XI00NS0\x8c`\xff\xe7',
-      b'\xf1\x00T01G00BL  T01I00A1  DOS2T16X4XI00NS0\x99L\xeeq',
+    (Ecu.fwdCamera, 0x7c4, None): [
+    ],
+  },
+  CAR.HYUNDAI_SANTAFE_MX5_HEV: {  # (MX5)
+    (Ecu.fwdRadar, 0x7d0, None): [
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
     ],
   },
 }

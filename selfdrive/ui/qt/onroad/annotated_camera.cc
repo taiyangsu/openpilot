@@ -4,9 +4,13 @@
 #include <QPainter>
 #include <algorithm>
 #include <cmath>
+#include <exception>
+#include <iostream>
+#include <execinfo.h>
 
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/carrot.h"
 
 // Window that shows camera view and variety of info drawn on top
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
@@ -19,12 +23,47 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
 
   experimental_btn = new ExperimentalButton(this);
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+  
+  record_timer = std::make_shared<QTimer>();
+	QObject::connect(record_timer.get(), &QTimer::timeout, [=]() {
+    if(recorder) {
+      recorder->update_screen();
+    }
+  });
+	record_timer->start(1000/UI_FREQ);
+
+	recorder = new ScreenRecoder(this);
+	main_layout->addWidget(recorder, 0, Qt::AlignBottom | Qt::AlignRight);
+  
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
   dmon.updateState(s);
+
+  static int carrot_cmd_index_last = 0;
+  SubMaster& sm = *(s.sm);
+  if (sm.alive("carrotMan")) {
+    const auto& carrot = sm["carrotMan"].getCarrotMan();
+    int carrot_cmd_index = carrot.getCarrotCmdIndex();
+    if (carrot_cmd_index != carrot_cmd_index_last) {
+      carrot_cmd_index_last = carrot_cmd_index;
+      QString carrot_cmd = QString::fromStdString(carrot.getCarrotCmd());
+      QString carrot_arg = QString::fromStdString(carrot.getCarrotArg());
+      if (carrot_cmd == "RECORD") {
+        if (carrot_arg == "START") {
+          recorder->start();
+        }
+        else if (carrot_arg == "STOP") {
+          recorder->stop();
+        }
+        else if (carrot_arg == "TOGGLE") {
+          recorder->toggle();
+        }
+      }
+    }
+  }
 }
 
 void AnnotatedCameraWidget::initializeGL() {
@@ -34,6 +73,7 @@ void AnnotatedCameraWidget::initializeGL() {
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
   qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
+  ui_nvg_init(uiState());
   prev_draw_t = millis_since_boot();
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
@@ -88,9 +128,26 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 }
 
 void AnnotatedCameraWidget::paintGL() {
+}
+
+void print_stack_trace() {
+    void* buffer[100];
+    int nptrs = backtrace(buffer, 100);
+    char** symbols = backtrace_symbols(buffer, nptrs);
+    if (symbols != nullptr) {
+        for (int i = 0; i < nptrs; i++) {
+            std::cerr << symbols[i] << std::endl;
+        }
+        free(symbols);
+    }
+}
+
+void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
+
+  QPainter painter(this);
 
   // draw camera frame
   {
@@ -118,27 +175,39 @@ void AnnotatedCameraWidget::paintGL() {
       } else if (v_ego > 15) {
         wide_cam_requested = false;
       }
-      wide_cam_requested = wide_cam_requested && sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
+      //wide_cam_requested = wide_cam_requested && sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
+      wide_cam_requested = wide_cam_requested && s->scene.carrot_experimental_mode;
     }
+    painter.beginNativePainting();
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
     CameraWidget::setFrameId(sm["modelV2"].getModelV2().getFrameId());
     CameraWidget::paintGL();
+    painter.endNativePainting();
   }
 
-  QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
   model.draw(painter, rect());
-  dmon.draw(painter, rect());
-  hud.updateState(*s);
-  hud.draw(painter, rect());
+  painter.beginNativePainting();
+  try {
+      ui_draw(s, &model, width(), height());      
+  } catch (const std::exception &e) {
+	LOGE("ui_nvg_draw failed: %s", e.what());
+    print_stack_trace();
+    Params params;
+    params.putBool("CarrotException", true);
+  }
+  painter.endNativePainting();
+  //dmon.draw(painter, rect());
+  //hud.updateState(*s);
+  //hud.draw(painter, rect());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
   double fps = fps_filter.update(1. / dt * 1000);
   if (fps < 15) {
-    LOGW("slow frame rate: %.2f fps", fps);
+    //LOGW("slow frame rate: %.2f fps", fps);
   }
   prev_draw_t = cur_draw_t;
 

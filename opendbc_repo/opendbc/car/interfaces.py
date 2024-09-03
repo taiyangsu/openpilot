@@ -1,9 +1,12 @@
+from collections import deque
 import json
 import os
 import numpy as np
 import time
 import tomllib
+import math
 from abc import abstractmethod, ABC
+from difflib import SequenceMatcher
 from enum import StrEnum
 from typing import Any, NamedTuple
 from collections.abc import Callable
@@ -18,14 +21,19 @@ from opendbc.car.common.simple_kalman import KF1D, get_kalman_gain
 from opendbc.car.values import PLATFORMS
 from opendbc.can.parser import CANParser
 
+from openpilot.common.params import Params
+
 GearShifter = structs.CarState.GearShifter
 ButtonType = structs.CarState.ButtonEvent.Type
 
 V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
-ACCEL_MAX = 2.0
-ACCEL_MIN = -3.5
+ACCEL_MAX = 2.5
+ACCEL_MIN = -4.0 #3.5
 FRICTION_THRESHOLD = 0.3
+
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/neural_ff_weights.json')
+TORQUE_NN_MODEL_PATH = os.path.join(BASEDIR, 'torque_data/lat_models')
 
 TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/params.toml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'torque_data/override.toml')
@@ -43,6 +51,8 @@ GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
+def similarity(s1: str, s2: str) -> float:
+  return SequenceMatcher(None, s1, s2).ratio()
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -83,6 +93,114 @@ def get_torque_params():
 
   return torque_params
 
+# Twilsonco's Lateral Neural Network Feedforward
+class FluxModel:
+  # dict used to rename activation functions whose names aren't valid python identifiers
+  activation_function_names = {'σ': 'sigmoid'}
+  def __init__(self, params_file, zero_bias=False):
+    with open(params_file, "r") as f:
+      params = json.load(f)
+
+    self.input_size = params["input_size"]
+    self.output_size = params["output_size"]
+    self.input_mean = np.array(params["input_mean"], dtype=np.float32).T
+    self.input_std = np.array(params["input_std"], dtype=np.float32).T
+    self.layers = []
+    self.friction_override = False
+
+    for layer_params in params["layers"]:
+      W = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_W'))], dtype=np.float32).T
+      b = np.array(layer_params[next(key for key in layer_params.keys() if key.endswith('_b'))], dtype=np.float32).T
+      if zero_bias:
+        b = np.zeros_like(b)
+      activation = layer_params["activation"]
+      for k, v in self.activation_function_names.items():
+        activation = activation.replace(k, v)
+      self.layers.append((W, b, activation))
+
+    self.validate_layers()
+    self.check_for_friction_override()
+
+  # Begin activation functions.
+  # These are called by name using the keys in the model json file
+  @staticmethod
+  def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+  @staticmethod
+  def identity(x):
+    return x
+  # End activation functions
+
+  def forward(self, x):
+    for W, b, activation in self.layers:
+      x = getattr(self, activation)(x.dot(W) + b)
+    return x
+
+  def evaluate(self, input_array):
+    in_len = len(input_array)
+    if in_len != self.input_size:
+      # If the input is length 2-4, then it's a simplified evaluation.
+      # In that case, need to add on zeros to fill out the input array to match the correct length.
+      if 2 <= in_len:
+        input_array = input_array + [0] * (self.input_size - in_len)
+      else:
+        raise ValueError(f"Input array length {len(input_array)} must be length 2 or greater")
+
+    input_array = np.array(input_array, dtype=np.float32)
+
+    # Rescale the input array using the input_mean and input_std
+    input_array = (input_array - self.input_mean) / self.input_std
+
+    output_array = self.forward(input_array)
+
+    return float(output_array[0, 0])
+
+  def validate_layers(self):
+    for W, b, activation in self.layers:
+      if not hasattr(self, activation):
+        raise ValueError(f"Unknown activation: {activation}")
+
+  def check_for_friction_override(self):
+    y = self.evaluate([10.0, 0.0, 0.2])
+    self.friction_override = (y < 0.1)
+
+def get_nn_model_path(car, eps_firmware) -> tuple[str | None, float]:
+  def check_nn_path(check_model):
+    model_path = None
+    max_similarity = -1.0
+    for f in os.listdir(TORQUE_NN_MODEL_PATH):
+      if f.endswith(".json"):
+        model = f.replace(".json", "").replace(f"{TORQUE_NN_MODEL_PATH}/", "")
+        similarity_score = similarity(model, check_model)
+        if similarity_score > max_similarity:
+          max_similarity = similarity_score
+          model_path = os.path.join(TORQUE_NN_MODEL_PATH, f)
+    return model_path, max_similarity
+
+  #car1 = car.replace('_', ' ')
+  #car1 = car1.replace(' HEV', ' HYBRID')
+  #car = car1.replace('EV ', 'ELECTRIC ')
+  print("########get_nn_model_path :", car, eps_firmware)
+  if len(eps_firmware) > 3:
+    eps_firmware = eps_firmware.replace("\\", "")
+    check_model = f"{car} {eps_firmware}"
+  else:
+    check_model = car
+  model_path, max_similarity = check_nn_path(check_model)
+  if car not in model_path or 0.0 <= max_similarity < 0.9:
+    check_model = car
+    model_path, max_similarity = check_nn_path(check_model)
+    if car not in model_path or 0.0 <= max_similarity < 0.9:
+      model_path = None
+  return model_path
+
+def get_nn_model(car, eps_firmware) -> tuple[FluxModel | None, float]:
+  model = get_nn_model_path(car, eps_firmware)
+  if model is not None:
+    model = FluxModel(model)
+  return model
+
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
@@ -97,6 +215,28 @@ class CarInterfaceBase(ABC):
 
     dbc_names = {bus: cp.dbc_name for bus, cp in self.can_parsers.items()}
     self.CC: CarControllerBase = CarController(dbc_names, CP)
+
+    Params().put('LongitudinalPersonalityMax', "3")
+    eps_firmware = str(next((fw.fwVersion for fw in CP.carFw if fw.ecu == "eps"), ""))
+
+    comma_nnff_supported = self.check_comma_nn_ff_support(CP.carFingerprint)
+    nnff_supported = self.initialize_lat_torque_nn(CP.carFingerprint, eps_firmware)
+
+    self.use_nnff = not comma_nnff_supported and nnff_supported and Params().get_bool("NNFF")
+    self.use_nnff_lite = not self.use_nnff and Params().get_bool("NNFFLite")
+    
+  def get_ff_nn(self, x):
+    return self.lat_torque_nn_model.evaluate(x)
+
+  def check_comma_nn_ff_support(self, car):
+    with open(NEURAL_PARAMS_PATH, 'r') as file:
+      data = json.load(file)
+    return car in data
+
+  def initialize_lat_torque_nn(self, car, eps_firmware) -> bool:
+    self.lat_torque_nn_model = get_nn_model(car, eps_firmware)
+    return self.lat_torque_nn_model is not None
+    
 
   def apply(self, c: structs.CarControl, now_nanos: int | None = None) -> tuple[structs.CarControl.Actuators, list[CanData]]:
     if now_nanos is None:
@@ -130,6 +270,19 @@ class CarInterfaceBase(ABC):
     ret.flags |= int(platform.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
+    
+    # Enable torque controller for all cars that do not use angle based steering
+    if ret.steerControlType != structs.CarParams.SteerControlType.angle and Params().get_bool("NNFF"):
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      eps_firmware = str(next((fw.fwVersion for fw in car_fw if fw.ecu == "eps"), ""))
+      model = get_nn_model_path(candidate, eps_firmware)
+      if model is not None:
+        Params().put_nonblocking("NNFFModelName", candidate.replace("_", " "))
+        print(f"NNFF loaded... {model}")
+    
+
+    if Params().get_bool("DisableMinSteerSpeed"):
+      ret.minSteerSpeed = 0.
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -251,13 +404,109 @@ class CarInterfaceBase(ABC):
 
     return ret
 
+class RadarConfig:
+  ALPHA = 0.15
+  MAX_VLEAD_DIFF = 20.0
+  MAX_DREL_DIFF = 5.0
+
+class MyTrack:
+  def __init__(self, track_id: int, radar_point):
+    self.track_id = track_id
+    self.dRel = radar_point.dRel
+    self.vRel = radar_point.vRel
+    self.yRel = radar_point.yRel
+    self.vLead = radar_point.vLead
+    self.aLead = 0.0
+    self.jLead = 0.0
+    self.filtered_vLead = self.vLead
+    self.filtered_aLead = 0.0
+    self.filtered_jLead = 0.0
+    self.cnt = 0  # 초기값 0
+    
+  def update(self, radar_point, dt: float):
+    self.yRel = radar_point.yRel
+    #new_vLead = v_ego + new_vRel    
+    dRel_diff = abs(radar_point.dRel - self.dRel)
+    vLead_diff = abs(radar_point.vLead - self.vLead) * dt
+
+    if dRel_diff > RadarConfig.MAX_DREL_DIFF:
+      self.filtered_vLead = radar_point.vLead
+      self.filtered_aLead = 0.0
+      self.filtered_jLead = 0.0
+      self.cnt = 0  # 거리 변화가 크면 초기화
+    else:
+      if vLead_diff > RadarConfig.MAX_VLEAD_DIFF:
+        self.filtered_vLead = radar_point.vLead
+        self.cnt = 0
+      else:
+        self.filtered_vLead = RadarConfig.ALPHA * radar_point.vLead + (1 - RadarConfig.ALPHA) * self.filtered_vLead
+
+      self.cnt += 1  # cnt 증가
+
+      if self.cnt > 2:  # 2 이상일 때 가속도 계산 (원래 1이상인데.. 이해못할 vLead초기 에러값이 있음, 아래 전반적으로 1씩 안정cnt를 증가함.)
+        aLead_new = (self.filtered_vLead - self.vLead) / dt
+        if self.cnt > 3:  # 2
+          self.filtered_aLead = RadarConfig.ALPHA * aLead_new + (1 - RadarConfig.ALPHA) * self.filtered_aLead
+        else:
+          self.filtered_aLead = aLead_new
+        
+        if self.cnt > 4:  # 3
+          jLead_new = (self.filtered_aLead - self.aLead) / dt
+          self.filtered_jLead = RadarConfig.ALPHA * jLead_new + (1 - RadarConfig.ALPHA) * self.filtered_jLead
+        else:
+          jLead_new = 0.0
+      else:
+        self.filtered_aLead = 0.0
+        self.filtered_jLead = 0.0
+
+        
+    self.vLead = self.filtered_vLead
+    self.aLead = self.filtered_aLead
+    self.jLead = self.filtered_jLead
+    self.dRel = radar_point.dRel
+    self.vRel = radar_point.vRel
+
+    
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.rcp = None
+    self.tracks: dict[int, MyTrack] = {}
     self.pts: dict[int, structs.RadarData.RadarPoint] = {}
     self.frame = 0
+    delay = CP.radarDelay
+    self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_CTRL)) + 1)
+    self.v_ego = 0.0
+    self.last_timestamp = time.time()
+    self.dt = 0.05
+     
+  def update_carrot(self, v_ego, rcv_time, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
+    self.v_ego_hist.append(v_ego)
+    self.v_ego = self.v_ego_hist[0]
+    ret = self.update(can_packets)
+
+    if ret is not None:
+      current_time = rcv_time #time.time()
+      dt = max(current_time - self.last_timestamp, 1e-3)
+      self.dt = self.dt * 0.98 + dt * 0.02
+      self.last_timestamp = current_time
+      #print(f"{rcv_time:.6f}, dt: {self.dt:.5f}")
+      new_tracks = {}
+
+      for addr, radar_point in self.pts.items():
+        track_id = radar_point.trackId
+        if track_id not in self.tracks:
+          new_tracks[track_id] = MyTrack(track_id, radar_point)
+        else:
+          new_tracks[track_id] = self.tracks[track_id]
+          new_tracks[track_id].update(radar_point, self.dt)
+
+        radar_point.aLead = new_tracks[track_id].aLead
+        radar_point.jLead = new_tracks[track_id].jLead
+                
+      self.tracks = new_tracks
+    return ret
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
     self.frame += 1
@@ -289,6 +538,11 @@ class CarStateBase(ABC):
     x0=[[0.0], [0.0]]
     K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
+    self.v_ego_clu_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
+
+    self.softHoldActive = 0
+    self.is_metric = True
+    self.lkas_enabled = False
 
   @abstractmethod
   def update(self, can_parsers) -> structs.CarState:
@@ -299,6 +553,13 @@ class CarStateBase(ABC):
       self.v_ego_kf.set_x([[v_ego_raw], [0.0]])
 
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
+    return float(v_ego_x[0]), float(v_ego_x[1])
+  
+  def update_clu_speed_kf(self, v_ego_raw):
+    if abs(v_ego_raw - self.v_ego_clu_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+      self.v_ego_clu_kf.set_x([[v_ego_raw], [0.0]])
+
+    v_ego_x = self.v_ego_clu_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
 
   def get_wheel_speeds(self, fl, fr, rl, rr, unit=CV.KPH_TO_MS):
