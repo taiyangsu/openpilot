@@ -22,22 +22,17 @@ jobs:
         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
         git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git
         git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
-        git remote add openpilot https://github.com/commaai/openpilot        
-      
-    - name: Fetch and merge sunnypilot
-      run: |
-        git fetch sunnypilot
-        git checkout -B toyota sunnypilot/toyota
-        git push origin toyota --force
-    
+        git remote add openpilot https://github.com/commaai/openpilot
     - name: Fetch and merge sunnypilot
       run: |
         git fetch sunnypilot
         git checkout -B dev-c3 sunnypilot/dev-c3
         git push origin dev-c3 --force
-   
-
-
+    - name: Fetch and merge sunnypilot
+      run: |
+        git fetch sunnypilot
+        git checkout -B toyota sunnypilot/toyota
+        git push origin toyota --force
     - name: Fetch and merge dragonpilot
       run: |
         git fetch dragonpilot
