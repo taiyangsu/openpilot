@@ -33,11 +33,6 @@ jobs:
         git fetch sunnypilot
         git checkout -B toyota sunnypilot/toyota
         git push origin toyota --force
-    - name: Fetch and merge dragonpilot
-      run: |
-        git fetch dragonpilot
-        git checkout -B beta3 dragonpilot/beta3
-        git push origin beta3 --force
         
     - name: Fetch and merge FrogPilot
       run: |
