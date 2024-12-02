@@ -2,8 +2,9 @@ name: Sync Branches
 
 on:
   schedule:
-    # 每天3点UTC（你可以根据需要调整时区）
+    # 每天10点UTC（你可以根据需要调整时区）
     - cron: '0 10 * * *'
+  workflow_dispatch:  # 允许手动启动工作流
 
 jobs:
   sync:
