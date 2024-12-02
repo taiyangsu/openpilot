@@ -2,7 +2,7 @@ name: Sync Branches
 
 on:
   schedule:
-    # 每天10点UTC（你可以根据需要调整时区）
+    # 每天3点UTC（你可以根据需要调整时区）
     - cron: '0 10 * * *'
 
 jobs:
@@ -30,17 +30,12 @@ jobs:
           git remote add frogai https://github.com/FrogAi/FrogPilot.git
           git fetch frogai
 
-      - name: Merge `mazda-frogpilot-dev` into current branch
+      - name: Create and push mazda-frogpilot-dev branch
         run: |
-          git checkout main  # 你可以修改为目标分支
-          git merge moretore/mazda-frogpilot-dev --no-ff --commit -m "Sync with mazda-frogpilot-dev"
+          git checkout -b mazda-frogpilot-dev moretore/mazda-frogpilot-dev
+          git push origin mazda-frogpilot-dev
 
-      - name: Merge `FrogPilot` into current branch
+      - name: Create and push FrogPilot branch
         run: |
-          git merge frogai/FrogPilot --no-ff --commit -m "Sync with FrogPilot"
-
-      - name: Push changes back to the main repository
-        run: |
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          git checkout -b FrogPilot frogai/FrogPilot
+          git push origin FrogPilot
