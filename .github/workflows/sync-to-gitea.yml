@@ -20,7 +20,7 @@ jobs:
 
     - name: Push all branches to Gitea
       env:
-        GITEA_URL: 'http://124.220.61.41:5000'  # 你的Gitea地址
+        GITEA_URL: '124.220.61.41:5000'  # 你的Gitea地址，不带 http://
         GITEA_REPO: 'zhudongjer/openpilot'  # Gitea上的仓库名
         GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}  # GitHub Secrets中配置的Gitea访问令牌
       run: |
@@ -30,5 +30,6 @@ jobs:
         # 遍历每一个分支并推送到Gitea
         for branch in $(git branch -r | grep -v '\->'); do
           git checkout --track $branch
-          git push https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/api/v1/repos/${GITEA_REPO}/push HEAD:$branch
+          # 修复URL中的错误，移除多余的 http://
+          git push https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/${GITEA_REPO}.git HEAD:$branch
         done
