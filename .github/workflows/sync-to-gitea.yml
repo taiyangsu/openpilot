@@ -31,5 +31,5 @@ jobs:
         for branch in $(git branch -r | grep -v '\->'); do
           git checkout --track $branch
           # 修复URL中的错误，移除多余的 http://
-          git push https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/${GITEA_REPO}.git HEAD:$branch
+          git push http://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/${GITEA_REPO}.git HEAD:$branch
         done
