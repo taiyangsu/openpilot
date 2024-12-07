@@ -31,12 +31,29 @@ jobs:
           git remote add frogai https://github.com/FrogAi/FrogPilot.git
           git fetch frogai
 
+      - name: Delete conflicting branch mazda-frogpilot-dev if it exists
+        run: |
+          git branch -r | grep "origin/mazda-frogpilot-dev" && git push origin --delete mazda-frogpilot-dev || echo "No conflict with mazda-frogpilot-dev"
+
       - name: Create and push mazda-frogpilot-dev branch
         run: |
           git checkout -b mazda-frogpilot-dev moretore/mazda-frogpilot-dev
           git push origin mazda-frogpilot-dev
 
+      - name: Delete conflicting branch FrogPilot if it exists
+        run: |
+          git branch -r | grep "origin/FrogPilot" && git push origin --delete FrogPilot || echo "No conflict with FrogPilot"
+
       - name: Create and push FrogPilot branch
         run: |
           git checkout -b FrogPilot frogai/FrogPilot
           git push origin FrogPilot
+
+      - name: Delete conflicting branch FrogPilot-Development if it exists
+        run: |
+          git branch -r | grep "origin/FrogPilot-Development" && git push origin --delete FrogPilot-Development || echo "No conflict with FrogPilot-Development"
+
+      - name: Create and push FrogPilot-Development branch
+        run: |
+          git checkout -b FrogPilot-Development frogai/FrogPilot-Development
+          git push origin FrogPilot-Development
