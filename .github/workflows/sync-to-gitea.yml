@@ -29,7 +29,9 @@ jobs:
 
         # 遍历每一个分支并推送到Gitea
         for branch in $(git branch -r | grep -v '\->'); do
+          # 获取每个分支的名称
+          branch_name=$(echo $branch | sed 's/origin\///')  # 去掉 origin/
           git checkout --track $branch
-          # 修复URL中的错误，移除多余的 http://
-          git push http://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/${GITEA_REPO}.git HEAD:$branch
+          # 推送每个分支到 Gitea
+          git push http://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/${GITEA_REPO}.git $branch_name:$branch_name
         done
