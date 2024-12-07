@@ -1,0 +1,28 @@
+name: Sync to Gitea
+
+on:
+  push:
+    branches:
+      - main  # 你可以指定特定的分支，比如master或者其他分支
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout GitHub repository
+      uses: actions/checkout@v3
+
+    - name: Set up Git
+      uses: actions/setup-git@v2
+      with:
+        git_user_name: 'Your Name'
+        git_user_email: 'your-email@example.com'
+
+    - name: Push to Gitea
+      env:
+        GITEA_URL: 'http://124.220.61.41:5000'  # 你的Gitea地址
+        GITEA_REPO: 'zhudongjer/openpilot'  # Gitea上的仓库名
+        GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}  # GitHub Secrets中配置的Gitea访问令牌
+      run: |
+        git remote add gitea https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/api/v1/repos/${GITEA_REPO}/push
+        git push gitea main  # 如果你推送的是其他分支，请修改为相应分支名
