@@ -1,13 +1,14 @@
-name: Sync to Gitea
+name: Sync all branches to Gitea
 
 on:
   push:
     branches:
-      - main  # 你可以指定特定的分支，比如master或者其他分支
+      - '*'  # 监听所有分支的变化
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout GitHub repository
       uses: actions/checkout@v3
@@ -18,11 +19,17 @@ jobs:
         git_user_name: 'Your Name'
         git_user_email: 'your-email@example.com'
 
-    - name: Push to Gitea
+    - name: Push all branches to Gitea
       env:
         GITEA_URL: 'http://124.220.61.41:5000'  # 你的Gitea地址
         GITEA_REPO: 'zhudongjer/openpilot'  # Gitea上的仓库名
         GITEA_TOKEN: ${{ secrets.GITEA_TOKEN }}  # GitHub Secrets中配置的Gitea访问令牌
       run: |
-        git remote add gitea https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/api/v1/repos/${GITEA_REPO}/push
-        git push gitea main  # 如果你推送的是其他分支，请修改为相应分支名
+        # 获取所有的远程分支
+        git fetch --all
+
+        # 遍历每一个分支并推送到Gitea
+        for branch in $(git branch -r | grep -v '\->'); do
+          git checkout --track $branch
+          git push https://your_gitea_user:${{ secrets.GITEA_TOKEN }}@${GITEA_URL}/api/v1/repos/${GITEA_REPO}/push HEAD:$branch
+        done
