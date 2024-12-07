@@ -47,6 +47,7 @@ jobs:
       - name: Create and push FrogPilot branch
         run: |
           git checkout -b FrogPilot frogai/FrogPilot
+          git pull --rebase origin FrogPilot || echo "No changes to pull"
           git push origin FrogPilot
 
       - name: Delete conflicting branch FrogPilot-Development if it exists
@@ -56,4 +57,5 @@ jobs:
       - name: Create and push FrogPilot-Development branch
         run: |
           git checkout -b FrogPilot-Development frogai/FrogPilot-Development
+          git pull --rebase origin FrogPilot-Development || echo "No changes to pull"
           git push origin FrogPilot-Development
