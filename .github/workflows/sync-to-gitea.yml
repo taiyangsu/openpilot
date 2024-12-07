@@ -13,11 +13,10 @@ jobs:
     - name: Checkout GitHub repository
       uses: actions/checkout@v3
 
-    - name: Set up Git
-      uses: actions/setup-git@v2
-      with:
-        git_user_name: 'Your Name'
-        git_user_email: 'your-email@example.com'
+    - name: Configure Git
+      run: |
+        git config --global user.name "Your Name"
+        git config --global user.email "your-email@example.com"
 
     - name: Push all branches to Gitea
       env:
