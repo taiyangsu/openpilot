@@ -44,18 +44,20 @@ jobs:
         run: |
           git branch -r | grep "origin/FrogPilot" && git push origin --delete FrogPilot || echo "No conflict with FrogPilot"
 
-      - name: Create and push FrogPilot branch
+      - name: Force fetch and reset FrogPilot branch from remote
         run: |
-          git checkout -b FrogPilot frogai/FrogPilot
-          git pull --rebase origin FrogPilot || echo "No changes to pull"
-          git push origin FrogPilot
+          git fetch --all
+          git checkout --orphan FrogPilot
+          git reset --hard frogai/FrogPilot
+          git push origin FrogPilot --force
 
       - name: Delete conflicting branch FrogPilot-Development if it exists
         run: |
           git branch -r | grep "origin/FrogPilot-Development" && git push origin --delete FrogPilot-Development || echo "No conflict with FrogPilot-Development"
 
-      - name: Create and push FrogPilot-Development branch
+      - name: Force fetch and reset FrogPilot-Development branch from remote
         run: |
-          git checkout -b FrogPilot-Development frogai/FrogPilot-Development
-          git pull --rebase origin FrogPilot-Development || echo "No changes to pull"
-          git push origin FrogPilot-Development
+          git fetch --all
+          git checkout --orphan FrogPilot-Development
+          git reset --hard frogai/FrogPilot-Development
+          git push origin FrogPilot-Development --force
