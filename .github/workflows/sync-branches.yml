@@ -75,16 +75,6 @@ jobs:
           git checkout -b staging opgm/staging
           git push origin staging
 
-      - name: Add remote for AlexandreSato/openpilot
-        run: |
-          git remote add alexandresato https://github.com/AlexandreSato/openpilot.git
-          git fetch alexandresato personal3
-
-      - name: Sync personal3 branch from AlexandreSato/openpilot
-        run: |
-          git branch -r | grep "origin/personal3" && git push origin --delete personal3 || echo "No conflict with personal3"
-          git checkout -b personal3 alexandresato/personal3
-          git push origin personal3
 
       - name: Add remote for ajouatom/openpilot
         run: |
