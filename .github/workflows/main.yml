@@ -34,11 +34,7 @@ jobs:
         git checkout -B toyota sunnypilot/toyota
         git push origin toyota --force
         
-    - name: Fetch and merge FrogPilot
-      run: |
-        git fetch FrogPilot
-        git checkout -B FrogPilot FrogPilot/FrogPilot
-        git push origin FrogPilot --force
+
         
 
         
