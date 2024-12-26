@@ -25,21 +25,31 @@ jobs:
       - name: Add remote for MoreTore/openpilot
         run: |
           git remote add moretore https://github.com/MoreTore/openpilot.git
-          git fetch moretore mazda-frogpilot-dev
+          git fetch moretore mazda-frogpilot
+          git fetch moretore mazda-frogpilot-0.9.6  # 同步 mazda-frogpilot-0.9.6 分支
 
       - name: Add remote for FrogAi/FrogPilot
         run: |
           git remote add frogai https://github.com/FrogAi/FrogPilot.git
           git fetch frogai
 
-      - name: Delete conflicting branch mazda-frogpilot-dev if it exists
+      - name: Delete conflicting branch mazda-frogpilot if it exists
         run: |
-          git branch -r | grep "origin/mazda-frogpilot-dev" && git push origin --delete mazda-frogpilot-dev || echo "No conflict with mazda-frogpilot-dev"
+          git branch -r | grep "origin/mazda-frogpilot" && git push origin --delete mazda-frogpilot || echo "No conflict with mazda-frogpilot"
 
-      - name: Create and push mazda-frogpilot-dev branch
+      - name: Create and push mazda-frogpilot branch
         run: |
-          git checkout -b mazda-frogpilot-dev moretore/mazda-frogpilot-dev
-          git push origin mazda-frogpilot-dev
+          git checkout -b mazda-frogpilot moretore/mazda-frogpilot
+          git push origin mazda-frogpilot
+
+      - name: Delete conflicting branch mazda-frogpilot-0.9.6 if it exists
+        run: |
+          git branch -r | grep "origin/mazda-frogpilot-0.9.6" && git push origin --delete mazda-frogpilot-0.9.6 || echo "No conflict with mazda-frogpilot-0.9.6"
+
+      - name: Create and push mazda-frogpilot-0.9.6 branch
+        run: |
+          git checkout -b mazda-frogpilot-0.9.6 moretore/mazda-frogpilot-0.9.6
+          git push origin mazda-frogpilot-0.9.6
 
       - name: Delete conflicting branch FrogPilot if it exists
         run: |
@@ -74,7 +84,6 @@ jobs:
           git branch -r | grep "origin/staging" && git push origin --delete staging || echo "No conflict with staging"
           git checkout -b staging opgm/staging
           git push origin staging
-
 
       - name: Add remote for ajouatom/openpilot
         run: |
