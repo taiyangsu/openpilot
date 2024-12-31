@@ -85,14 +85,9 @@ jobs:
       - name: Add remote for commaai/openpilot
         run: |
           git remote add commaai https://github.com/commaai/openpilot.git
-          git fetch commaai master
+      
           git fetch commaai release3
-      # Sync master branch from commaai/openpilot to opmaster
-      - name: Sync master branch to opmaster
-        run: |
-          git branch -r | grep "origin/opmaster" && git push origin --delete opmaster || echo "No conflict with opmaster"
-          git checkout -b opmaster commaai/master
-          git push origin opmaster
+      
       # Sync release3 branch from commaai/openpilot to release3
       - name: Sync release3 branch
         run: |
