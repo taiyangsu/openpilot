@@ -75,22 +75,9 @@ jobs:
       - name: Add remote for ajouatom/openpilot
         run: |
           git remote add ajouatom https://github.com/ajouatom/openpilot.git
-          git fetch ajouatom v7-wip6-ndv2
-      - name: Sync v7-wip6-ndv2 carrot2-v6 branch from ajouatom/openpilot
+          git fetch ajouatom v7-wip6
+      - name: Sync v7-wip6 carrot2-v6 branch from ajouatom/openpilot
         run: |
-          git branch -r | grep "origin/v7-wip6-ndv2" && git push origin --delete v7-wip6-ndv2 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
-          git checkout -b v7-wip6-ndv2 ajouatom/v7-wip6-ndv2
-          git push origin v7-wip6-ndv2
-      # Add remote for commaai/openpilot
-      - name: Add remote for commaai/openpilot
-        run: |
-          git remote add commaai https://github.com/commaai/openpilot.git
-      
-          git fetch commaai release3
-      
-      # Sync release3 branch from commaai/openpilot to release3
-      - name: Sync release3 branch
-        run: |
-          git branch -r | grep "origin/release3" && git push origin --delete release3 || echo "No conflict with release3"
-          git checkout -b release3 commaai/release3
-          git push origin release3
+          git branch -r | grep "origin/v7-wip6" && git push origin --delete v7-wip6 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
+          git checkout -b v7-wip6 ajouatom/v7-wip6
+          git push origin v7-wip6
