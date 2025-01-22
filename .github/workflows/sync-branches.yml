@@ -75,9 +75,9 @@ jobs:
       - name: Add remote for ajouatom/openpilot
         run: |
           git remote add ajouatom https://github.com/ajouatom/openpilot.git
-          git fetch ajouatom v7-wip7
+          git fetch ajouatom v7-wip8
       - name: Sync v7-wip6 carrot2-v7 branch from ajouatom/openpilot
         run: |
-          git branch -r | grep "origin/v7-wip7" && git push origin --delete v7-wip7 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
-          git checkout -b v7-wip7 ajouatom/v7-wip7
-          git push origin v7-wip7
+          git branch -r | grep "origin/v7-wip8" && git push origin --delete v7-wip8 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
+          git checkout -b v7-wip8 ajouatom/v7-wip8
+          git push origin v7-wip8
