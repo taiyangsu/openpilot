@@ -15,10 +15,20 @@ jobs:
     - name: Setup Git
       run: |
         git config --global user.name 'github-actions'
-        git config --global user.email '29983802+github-actions[bot]@users.noreply.github.com'
-    - name: Add remote repositories
+        git config --global user.email "github-actions@github.com"
+    - name: Add remote for MoreTore/openpilot
       run: |
-        git remote add openpilot https://github.com/ajouatom/openpilot.git
+        git remote add moretore https://github.com/MoreTore/openpilot.git
+        git fetch moretore mazda-frogpilot
+        git fetch moretore mazda-frogpilot-0.9.6 # 同步 mazda-frogpilot-0.9.6 分支
+    - name: Add remote for FrogAi/FrogPilot
+        git remote add frogai https://github.com/FrogAi/FrogPilot.git
+        git fetch frogai
+    - name: Delete conflicting branch mazda-frogpilot if it exists
+        git branch -r | grep "origin/mazda-frogpilot" && git push origin --delete mazda-frogpilot || echo "No conflict with mazda-frogpilot"
+        - name: Create and push mazda-frogpilot branch
+        run:|        
+        
         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
         git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git
         git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot
