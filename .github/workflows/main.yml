@@ -26,11 +26,11 @@ jobs:
          git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git 
          git remote add openpilot https://github.com/ajouatom/openpilot.git 
          git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
-      - name: Fetch and merge frogpilot 
+      - name: Fetch and merge FrogPilot 
         run: | 
-         git fetch frogpilot 
-         git checkout -B frogpilot frogpilot/frogpilot
-         git push origin frogpilot --force  
+         git fetch FrogPilot 
+         git checkout -B FrogPilot FrogAi/FrogPilot
+         git push origin FrogPilot --force  
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
