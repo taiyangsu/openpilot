@@ -12,9 +12,9 @@ jobs:
 
     steps:
       - name: Checkout the main repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}  # 显式传递GH_TOKEN
+          token: ${{ secrets.ACTIONS_PAT }}  # 显式传递GH_TOKEN
 
       - name: Setup Git
         run: |
