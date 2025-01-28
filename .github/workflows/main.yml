@@ -23,7 +23,7 @@ jobs:
       # Existing remotes and branches
       - name: Add remote repositories 
         run: | 
-         git remote add person3   https://github.com/AlexandreSato/openpilot.git    
+         git remote add openpilot   https://github.com/AlexandreSato/openpilot.git    
          git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git         
 
       - name: Fetch and merge openpilot 
