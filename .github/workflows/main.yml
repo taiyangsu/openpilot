@@ -34,13 +34,7 @@ jobs:
         run: | 
          git fetch sunnypilot 
          git checkout -B dev-c3 sunnypilot/dev-c3 
-         git push origin dev-c3 --force 
-
-      - name: Fetch and merge sunnypilot 
-        run: | 
-         git fetch sunnypilot 
-         git checkout -B toyota sunnypilot/toyota 
-         git push origin toyota --force
+         git push origin dev-c3 --force     
 
       - name: Fetch and merge sunnypilot 
         run: | 
