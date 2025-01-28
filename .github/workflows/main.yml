@@ -25,6 +25,13 @@ jobs:
         run: | 
          git remote add openpilot https://github.com/ajouatom/openpilot.git 
          git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
+         git remote add person3   https://github.com/AlexandreSato/openpilot.git
+
+      - name: Fetch and merge openpilot 
+        run: | 
+         git fetch openpilot 
+         git checkout -B personal3 AlexandreSato/openpilot 
+         git push origin personal3 --force 
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
