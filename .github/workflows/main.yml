@@ -23,9 +23,8 @@ jobs:
       # Existing remotes and branches
       - name: Add remote repositories 
         run: | 
-         git remote add openpilot https://github.com/ajouatom/openpilot.git 
-         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
-         git remote add person3   https://github.com/AlexandreSato/openpilot.git
+         git remote add person3   https://github.com/AlexandreSato/openpilot.git    
+         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git         
 
       - name: Fetch and merge openpilot 
         run: | 
@@ -37,9 +36,5 @@ jobs:
          git fetch sunnypilot 
          git checkout -B dev-c3 sunnypilot/dev-c3 
          git push origin dev-c3 --force 
-      - name: Fetch and merge openpilot  
-        run: | 
-         git fetch openpilot 
-         git checkout -B carrot2-v6 openpilot/carrot2-v6 
-         git push origin carrot2-v6 --force 
+      
 
