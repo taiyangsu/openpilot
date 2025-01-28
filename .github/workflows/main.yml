@@ -39,7 +39,7 @@ jobs:
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
-         git checkout -B toyota-new sunnypilot/toyota 
+         git checkout -B toyota-new sunnypilot/toyota-new 
          git push origin toyota-new --force 
       
 
