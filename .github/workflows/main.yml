@@ -28,6 +28,16 @@ jobs:
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
+         git checkout -B toyota-new sunnypilot/toyota-new
+         git push origin toyota-new --force 
+      - name: Fetch and merge sunnypilot 
+        run: | 
+         git fetch sunnypilot 
+         git checkout -B toyota sunnypilot/toyota
+         git push origin toyota --force 
+      - name: Fetch and merge sunnypilot 
+        run: | 
+         git fetch sunnypilot 
          git checkout -B dev-c3-new sunnypilot/dev-c3-new 
          git push origin dev-c3-new --force 
       - name: Fetch and merge sunnypilot 
