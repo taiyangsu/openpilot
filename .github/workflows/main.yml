@@ -23,14 +23,8 @@ jobs:
       # Existing remotes and branches
       - name: Add remote repositories 
         run: | 
-         git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git 
          git remote add openpilot https://github.com/ajouatom/openpilot.git 
          git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git
-      - name: Fetch and merge FrogPilot 
-        run: | 
-         git fetch FrogPilot 
-         git checkout -B FrogPilot FrogPilot/FrogPilot
-         git push origin FrogPilot --force  
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
