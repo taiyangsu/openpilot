@@ -69,7 +69,7 @@ class CarController(CarControllerBase):
     else:
       # pedaloffset = 0.24
       pedaloffset = np.interp(car_velocity, [0., 3, 6, 30], [0.10, 0.175, 0.240, 0.240])
-      pedal_gas = clip((pedaloffset + accel * 0.6), 0.0, 1.0)
+      pedal_gas = np.clip((pedaloffset + accel * 0.6), 0.0, 1.0)
 
     return pedal_gas, press_regen_paddle
 
