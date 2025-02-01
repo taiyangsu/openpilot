@@ -38,8 +38,8 @@ jobs:
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
-         git checkout -B tn-prebuild sunnypilot/tn-prebuild
-         git push origin tn-prebuild --force    
+         git checkout -B tn-prebuilt sunnypilot/tn-prebuilt
+         git push origin tn-prebuilt --force    
 
 
       
