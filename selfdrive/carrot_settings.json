@@ -42,6 +42,32 @@
     },
     {
       "group": "조향튜닝",
+      "name": "LateralTorqueKp",
+      "title": "_LateralTorqueKp*0.01(1000)",
+      "descr": "",
+      "egroup": "LAT",
+      "etitle": "_LateralTorqueKp*0.01(1000)",
+      "edescr": "",
+      "min": 0,
+      "max": 10000,
+      "default": 1100,
+      "unit": 10
+    },
+    {
+      "group": "조향튜닝",
+      "name": "LateralTorqueKi",
+      "title": "_LateralTorqueKi*0.01(100)",
+      "descr": "",
+      "egroup": "LAT",
+      "etitle": "_LateralTorqueKi*0.01(100)",
+      "edescr": "",
+      "min": 0,
+      "max": 10000,
+      "default": 100,
+      "unit": 10
+    },
+    {
+      "group": "조향튜닝",
       "name": "LateralTorqueKd",
       "title": "_LateralTorqueKd*0.01(800)",
       "descr": "",
