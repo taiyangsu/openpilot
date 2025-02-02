@@ -62,22 +62,13 @@ jobs:
           git checkout --orphan FrogPilot-Development
           git reset --hard frogai/FrogPilot-Development
           git push origin FrogPilot-Development --force
-      # New remotes and branches
-      - name: Add remote for opgm/openpilot
-        run: |
-          git remote add opgm https://github.com/opgm/openpilot.git
-          git fetch opgm staging
-      - name: Sync staging branch from opgm/openpilot
-        run: |
-          git branch -r | grep "origin/staging" && git push origin --delete staging || echo "No conflict with staging"
-          git checkout -b staging opgm/staging
-          git push origin staging
+      
       - name: Add remote for ajouatom/openpilot
         run: |
           git remote add ajouatom https://github.com/ajouatom/openpilot.git
-          git fetch ajouatom v7-wip8
-      - name: Sync v7-wip6 carrot2-v7 branch from ajouatom/openpilot
+          git fetch ajouatom v7-wip10-x-da
+      - name: Sync v7-wip10-x-da ajouatom/openpilot
         run: |
-          git branch -r | grep "origin/v7-wip8" && git push origin --delete v7-wip8 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
-          git checkout -b v7-wip8 ajouatom/v7-wip8
-          git push origin v7-wip8
+          git branch -r | grep "origin/v7-wip10-x-da" && git push origin --delete v7-wip10-x-da || echo "No conflict withv7-wip10-x-da "
+          git checkout -b v7-wip10-x-da ajouatom/v7-wip10-x-da
+          git push origin v7-wip10-x-da
