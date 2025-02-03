@@ -1,8 +1,8 @@
-name: Sync Branches
+name: Sync v7-wip10 Branch
 
 on:
   schedule:
-    - cron: '0 10 * * *'  # 每天10点UTC
+    - cron: '0 10 * * *'  # 每天 UTC 10 点运行
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -13,8 +13,8 @@ jobs:
       - name: Checkout the main repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # 保证完整克隆仓库，包括历史记录
-          token: ${{ secrets.GH_TOKEN }}  # 显式传递 GH_TOKEN
+          fetch-depth: 0  # 完整克隆仓库，确保所有历史记录
+          token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
 
       - name: Setup Git
         run: |
@@ -23,15 +23,19 @@ jobs:
 
       - name: Add remote for yysnet/carrotpilot
         run: |
-          git remote add carrotpilot https://github.com/yysnet/carrotpilot.git || echo "Remote already exists"
-          git fetch carrotpilot v7-wip10 --depth=1  # 只获取该分支的最新提交
+          git remote add carrotpilot https://github.com/yysnet/carrotpilot.git
+          git fetch carrotpilot +refs/heads/v7-wip10:refs/remotes/carrotpilot/v7-wip10
 
-      - name: Sync v7-wip10 from carrotpilot
+      - name: Ensure local branch matches remote
         run: |
-          # 检查远程是否有 v7-wip10 分支
-          if git ls-remote --heads carrotpilot v7-wip10 | grep -q "refs/heads/v7-wip10"; then
-            git checkout -B v7-wip10 carrotpilot/v7-wip10  # 强制切换到远程分支
-            git push origin v7-wip10 --force  # 强制推送到自己的仓库
-          else
-            echo "Branch v7-wip10 does not exist on carrotpilot, skipping..."
+          # 检查本地是否已有 v7-wip10 分支，如果有则删除
+          if git show-ref --verify --quiet refs/heads/v7-wip10; then
+            git branch -D v7-wip10
           fi
+
+          # 创建本地 v7-wip10 分支并跟踪远程分支
+          git checkout -B v7-wip10 carrotpilot/v7-wip10
+
+      - name: Push to origin repository
+        run: |
+          git push origin v7-wip10 --force
