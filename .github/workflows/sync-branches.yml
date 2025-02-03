@@ -62,6 +62,16 @@ jobs:
           git checkout --orphan FrogPilot-Development
           git reset --hard frogai/FrogPilot-Development
           git push origin FrogPilot-Development --force
+
+      - name: Add remote for yysnet/carrotpilot
+        run: |
+          git remote add ajouatom https://github.com/yysnet/carrotpilot.git
+          git fetch ajouatom v7-wip10
+      - name: Sync v7-wip10 yysnet/carrotpilot
+        run: |
+          git branch -r | grep "origin/v7-wip10" && git push origin --delete v7-wip10 || echo "No conflict withv7-wip10 "
+          git checkout -b v7-wip10 yysnet/v7-wip10
+          git push origin v7-wip10
       
       - name: Add remote for ajouatom/openpilot
         run: |
