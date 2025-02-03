@@ -2,9 +2,8 @@ name: Sync Branches
 
 on:
   schedule:
-    # 每天10点UTC（你可以根据需要调整时区）
-    - cron: '0 10 * * *'
-  workflow_dispatch:  # 允许手动启动工作流
+    - cron: '0 10 * * *'  # 每天10点UTC
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   sync:
@@ -14,71 +13,25 @@ jobs:
       - name: Checkout the main repository
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GH_TOKEN }}  # 显式传递GH_TOKEN
+          fetch-depth: 0  # 保证完整克隆仓库，包括历史记录
+          token: ${{ secrets.GH_TOKEN }}  # 显式传递 GH_TOKEN
 
       - name: Setup Git
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
-      # Existing remotes and branches
-      - name: Add remote for MoreTore/openpilot
-        run: |
-          git remote add moretore https://github.com/MoreTore/openpilot.git
-          git fetch moretore mazda-frogpilot
-          git fetch moretore mazda-frogpilot-0.9.6  # 同步 mazda-frogpilot-0.9.6 分支
-      - name: Add remote for FrogAi/FrogPilot
-        run: |
-          git remote add frogai https://github.com/FrogAi/FrogPilot.git
-          git fetch frogai
-      - name: Delete conflicting branch mazda-frogpilot if it exists
-        run: |
-          git branch -r | grep "origin/mazda-frogpilot" && git push origin --delete mazda-frogpilot || echo "No conflict with mazda-frogpilot"
-      - name: Create and push mazda-frogpilot branch
-        run: |
-          git checkout -b mazda-frogpilot moretore/mazda-frogpilot
-          git push origin mazda-frogpilot
-      - name: Delete conflicting branch mazda-frogpilot-0.9.6 if it exists
-        run: |
-          git branch -r | grep "origin/mazda-frogpilot-0.9.6" && git push origin --delete mazda-frogpilot-0.9.6 || echo "No conflict with mazda-frogpilot-0.9.6"
-      - name: Create and push mazda-frogpilot-0.9.6 branch
-        run: |
-          git checkout -b mazda-frogpilot-0.9.6 moretore/mazda-frogpilot-0.9.6
-          git push origin mazda-frogpilot-0.9.6
-      - name: Delete conflicting branch FrogPilot if it exists
-        run: |
-          git branch -r | grep "origin/FrogPilot" && git push origin --delete FrogPilot || echo "No conflict with FrogPilot"
-      - name: Force fetch and reset FrogPilot branch from remote
-        run: |
-          git fetch --all
-          git checkout --orphan FrogPilot
-          git reset --hard frogai/FrogPilot
-          git push origin FrogPilot --force
-      - name: Delete conflicting branch FrogPilot-Development if it exists
-        run: |
-          git branch -r | grep "origin/FrogPilot-Development" && git push origin --delete FrogPilot-Development || echo "No conflict with FrogPilot-Development"
-      - name: Force fetch and reset FrogPilot-Development branch from remote
-        run: |
-          git fetch --all
-          git checkout --orphan FrogPilot-Development
-          git reset --hard frogai/FrogPilot-Development
-          git push origin FrogPilot-Development --force
 
       - name: Add remote for yysnet/carrotpilot
         run: |
-          git remote add ajouatom https://github.com/yysnet/carrotpilot.git
-          git fetch ajouatom v7-wip10
-      - name: Sync v7-wip10 yysnet/carrotpilot
+          git remote add carrotpilot https://github.com/yysnet/carrotpilot.git || echo "Remote already exists"
+          git fetch carrotpilot v7-wip10 --depth=1  # 只获取该分支的最新提交
+
+      - name: Sync v7-wip10 from carrotpilot
         run: |
-          git branch -r | grep "origin/v7-wip10" && git push origin --delete v7-wip10 || echo "No conflict withv7-wip10 "
-          git checkout -b v7-wip10 yysnet/v7-wip10
-          git push origin v7-wip10
-      
-      - name: Add remote for ajouatom/openpilot
-        run: |
-          git remote add ajouatom https://github.com/ajouatom/openpilot.git
-          git fetch ajouatom v7-wip10-x-da
-      - name: Sync v7-wip10-x-da ajouatom/openpilot
-        run: |
-          git branch -r | grep "origin/v7-wip10-x-da" && git push origin --delete v7-wip10-x-da || echo "No conflict withv7-wip10-x-da "
-          git checkout -b v7-wip10-x-da ajouatom/v7-wip10-x-da
-          git push origin v7-wip10-x-da
+          # 检查远程是否有 v7-wip10 分支
+          if git ls-remote --heads carrotpilot v7-wip10 | grep -q "refs/heads/v7-wip10"; then
+            git checkout -B v7-wip10 carrotpilot/v7-wip10  # 强制切换到远程分支
+            git push origin v7-wip10 --force  # 强制推送到自己的仓库
+          else
+            echo "Branch v7-wip10 does not exist on carrotpilot, skipping..."
+          fi
