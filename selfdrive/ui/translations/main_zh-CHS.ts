@@ -91,31 +91,31 @@
     <name>CarrotPanel</name>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>开始</translation>
     </message>
     <message>
         <source>Cruise</source>
-        <translation type="unfinished"></translation>
+        <translation>巡航</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>速度</translation>
     </message>
     <message>
         <source>Tuning</source>
-        <translation type="unfinished"></translation>
+        <translation>调节</translation>
     </message>
     <message>
         <source>Disp</source>
-        <translation type="unfinished"></translation>
+        <translation>显示</translation>
     </message>
     <message>
         <source>Path</source>
-        <translation type="unfinished"></translation>
+        <translation>路径</translation>
     </message>
     <message>
         <source>SELECT YOUR CAR</source>
-        <translation type="unfinished"></translation>
+        <translation>选择您的汽车</translation>
     </message>
 </context>
 <context>
@@ -148,58 +148,58 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation>家</translation>
     </message>
     <message>
         <source>Work</source>
-        <translation type="unfinished"></translation>
+        <translation>工作</translation>
     </message>
     <message>
         <source>No destination set</source>
-        <translation type="unfinished"></translation>
+        <translation>未设置目的地</translation>
     </message>
     <message>
         <source>home</source>
-        <translation type="unfinished"></translation>
+        <translation>家</translation>
     </message>
     <message>
         <source>work</source>
-        <translation type="unfinished"></translation>
+        <translation>工作</translation>
     </message>
     <message>
         <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
+        <translation>未设置 %1 位置</translation>
     </message>
 </context>
 <context>
     <name>DeveloperPanel</name>
     <message>
         <source>Joystick Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>操纵杆调试模式</translation>
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向操作模式</translation>
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>启用 ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB（Android 调试桥）允许通过 USB 或网络连接到您的设备。有关更多信息，请参见 https://docs.comma.ai/how-to/connect-to-comma。</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">openpilot纵向控制（Alpha 版）</translation>
+        <translation>openpilot 纵向控制（Alpha 版）</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">警告：此车辆的 openpilot 纵向控制功能目前处于Alpha版本，使用此功能将会停用自动紧急制动（AEB）功能。</translation>
+        <translation>警告：此车辆的 openpilot 纵向控制功能目前处于 Alpha 版本，使用此功能将会停用自动紧急制动（AEB）功能。</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">在这辆车上，openpilot 默认使用车辆内建的主动巡航控制（ACC），而非 openpilot 的纵向控制。启用此项功能可切换至 openpilot 的纵向控制。当启用 openpilot 纵向控制 Alpha 版本时，建议同时启用实验性模式（Experimental mode）。</translation>
+        <translation>在这辆车上，openpilot 默认使用车辆内建的主动巡航控制（ACC），而非 openpilot 的纵向控制。启用此项功能可切换至 openpilot 的纵向控制。当启用 openpilot 纵向控制 Alpha 版本时，建议同时启用实验性模式。</translation>
     </message>
 </context>
 <context>
@@ -346,106 +346,106 @@
     </message>
     <message>
         <source>Force Offroad</source>
-        <translation type="unfinished"></translation>
+        <translation>强制越野</translation>
     </message>
     <message>
         <source>Git Pull &amp; Reboot</source>
-        <translation type="unfinished"></translation>
+        <translation>Git 拉取并重启</translation>
     </message>
     <message>
         <source>Git pull &amp; Reboot?</source>
-        <translation type="unfinished"></translation>
+        <translation>要进行 Git 拉取并重启吗？</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>是</translation>
     </message>
     <message>
         <source>Failed to fetch updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>获取更新失败。</translation>
     </message>
     <message>
         <source>Already up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>已经是最新版本。</translation>
     </message>
     <message>
         <source>Git pull failed. Please check the logs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Git 拉取失败。请检查日志。</translation>
     </message>
     <message>
         <source>Git pull successful. Rebooting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Git 拉取成功。正在重启...</translation>
     </message>
     <message>
         <source>Set default</source>
-        <translation type="unfinished"></translation>
+        <translation>设置为默认</translation>
     </message>
     <message>
         <source>Set to default?</source>
-        <translation type="unfinished"></translation>
+        <translation>要设置为默认吗？</translation>
     </message>
     <message>
         <source>Are you sure you want to go ONroad?</source>
-        <translation type="unfinished"></translation>
+        <translation>您确定要上路吗？</translation>
     </message>
     <message>
         <source>Unforce</source>
-        <translation type="unfinished"></translation>
+        <translation>取消强制</translation>
     </message>
     <message>
         <source>Are you sure you want to go OFFroad?</source>
-        <translation type="unfinished"></translation>
+        <translation>您确定要越野吗？</translation>
     </message>
     <message>
         <source>Force</source>
-        <translation type="unfinished"></translation>
+        <translation>强制</translation>
     </message>
     <message>
         <source>Disengage to Force Offroad</source>
-        <translation type="unfinished"></translation>
+        <translation>取消以强制越野</translation>
     </message>
     <message>
         <source>Go ONroad</source>
-        <translation type="unfinished"></translation>
+        <translation>上路</translation>
     </message>
     <message>
         <source>Go OFFroad</source>
-        <translation type="unfinished"></translation>
+        <translation>越野</translation>
     </message>
     <message>
         <source>Git fetch process timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Git 拉取过程超时。</translation>
     </message>
     <message>
         <source>Git fetch process crashed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Git 拉取过程崩溃。</translation>
     </message>
     <message>
         <source>Failed to read Git status.</source>
-        <translation type="unfinished"></translation>
+        <translation>读取 Git 状态失败。</translation>
     </message>
 </context>
 <context>
     <name>DrawCarrot</name>
     <message>
         <source>ECO</source>
-        <translation type="unfinished"></translation>
+        <translation>经济模式</translation>
     </message>
     <message>
         <source>SAFE</source>
-        <translation type="unfinished"></translation>
+        <translation>安全模式</translation>
     </message>
     <message>
         <source>NORM</source>
-        <translation type="unfinished"></translation>
+        <translation>标准模式</translation>
     </message>
     <message>
         <source>FAST</source>
-        <translation type="unfinished"></translation>
+        <translation>快速模式</translation>
     </message>
     <message>
         <source>ERRM</source>
-        <translation type="unfinished"></translation>
+        <translation>错误模式</translation>
     </message>
 </context>
 <context>
@@ -505,45 +505,45 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation type="unfinished"></translation>
+        <translation>预计到达时间</translation>
     </message>
     <message>
         <source>min</source>
-        <translation type="unfinished"></translation>
+        <translation>分钟</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation type="unfinished"></translation>
+        <translation>小时</translation>
     </message>
 </context>
 <context>
     <name>MapSettings</name>
     <message>
         <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
+        <translation>导航</translation>
     </message>
     <message>
         <source>Manage at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>在 %1 管理</translation>
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
+        <translation>在 connect.comma.ai 管理</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation type="unfinished"></translation>
+        <translation>地图加载中</translation>
     </message>
     <message>
         <source>Waiting for APN</source>
-        <translation type="unfinished"></translation>
+        <translation>等待APN</translation>
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
+        <translation>等待路线</translation>
     </message>
 </context>
 <context>
@@ -683,7 +683,7 @@
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>请连接到Wi-Fi以完成初始配对</translation>
     </message>
 </context>
 <context>
@@ -777,23 +777,23 @@
     </message>
     <message>
         <source>km</source>
-        <translation type="unfinished"></translation>
+        <translation>公里</translation>
     </message>
     <message>
         <source>m</source>
-        <translation type="unfinished"></translation>
+        <translation>米</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation type="unfinished"></translation>
+        <translation>英里</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation type="unfinished"></translation>
+        <translation>英尺</translation>
     </message>
     <message>
         <source>carrotpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>carrotpilot</translation>
     </message>
 </context>
 <context>
@@ -861,11 +861,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Developer</source>
-        <translation type="unfinished"></translation>
+        <translation>开发者</translation>
     </message>
     <message>
         <source>Carrot</source>
-        <translation type="unfinished"></translation>
+        <translation>Carrot</translation>
     </message>
 </context>
 <context>
@@ -982,11 +982,11 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation type="vanished">CONNECT</translation>
+        <translation>连接</translation>
     </message>
     <message>
         <source>OFFLINE</source>
-        <translation type="vanished">离线</translation>
+        <translation>离线</translation>
     </message>
     <message>
         <source>ONLINE</source>
@@ -994,7 +994,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>ERROR</source>
-        <translation type="vanished">连接出错</translation>
+        <translation>连接出错</translation>
     </message>
     <message>
         <source>TEMP</source>
@@ -1002,15 +1002,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>HIGH</source>
-        <translation type="vanished">过热</translation>
+        <translation>过热</translation>
     </message>
     <message>
         <source>GOOD</source>
-        <translation type="vanished">良好</translation>
+        <translation>良好</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="vanished">一般</translation>
+        <translation>正常</translation>
     </message>
     <message>
         <source>VEHICLE</source>
@@ -1054,7 +1054,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>MEM</source>
-        <translation type="unfinished"></translation>
+        <translation>内存</translation>
     </message>
 </context>
 <context>
@@ -1133,7 +1133,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Disable Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>禁用更新</translation>
     </message>
 </context>
 <context>
@@ -1325,15 +1325,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable Modified Stock Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>启用修改版原厂纵向控制</translation>
     </message>
     <message>
         <source>On this car it works by multiplying a percentage smooth rate based on the distance of front cars detected by mrr.</source>
-        <translation type="unfinished"></translation>
+        <translation>在这辆车上，它通过根据mrr检测到的前方车辆距离乘以一个百分比平滑率来工作。</translation>
     </message>
     <message>
         <source>MoreRelaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>更放松</translation>
     </message>
 </context>
 <context>
