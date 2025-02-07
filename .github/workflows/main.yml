@@ -23,12 +23,7 @@ jobs:
       # Existing remotes and branches
       - name: Add remote repositories 
         run: |         
-         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git     
-      - name: Fetch and merge sunnypilot 
-        run: | 
-         git fetch sunnypilot 
-         git checkout -B master-new sunnypilot/master-new 
-         git push origin master-new --force 
+         git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git 
       - name: Fetch and merge sunnypilot 
         run: | 
          git fetch sunnypilot 
