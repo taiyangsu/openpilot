@@ -20,39 +20,3 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
-
-      - name: Add remote for yysnet/carrotpilot
-        run: |
-          git remote add carrotpilot https://github.com/yysnet/carrotpilot.git
-          git fetch carrotpilot +refs/heads/v7-wip10:refs/remotes/carrotpilot/v7-wip10
-
-      - name: Ensure local branch matches remote (carrotpilot)
-        run: |
-          # 检查本地是否已有 v7-wip10 分支，如果有则删除
-          if git show-ref --verify --quiet refs/heads/v7-wip10; then
-            git branch -D v7-wip10
-          fi
-          # 创建本地 v7-wip10 分支并跟踪远程分支
-          git checkout -B v7-wip10 carrotpilot/v7-wip10
-
-      - name: Push to origin repository (carrotpilot)
-        run: |
-          git push origin v7-wip10 --force
-
-      - name: Add remote for ajouatom/openpilot
-        run: |
-          git remote add openpilot https://github.com/ajouatom/openpilot.git
-          git fetch openpilot +refs/heads/v7-wip10-x-da:refs/remotes/openpilot/v7-wip10-x-da
-
-      - name: Ensure local branch matches remote (openpilot)
-        run: |
-          # 检查本地是否已有 v7-wip10-x-da 分支，如果有则删除
-          if git show-ref --verify --quiet refs/heads/v7-wip10-x-da; then
-            git branch -D v7-wip10-x-da
-          fi
-          # 创建本地 v7-wip10-x-da 分支并跟踪远程分支
-          git checkout -B v7-wip10-x-da openpilot/v7-wip10-x-da
-
-      - name: Push to origin repository (openpilot)
-        run: |
-          git push origin v7-wip10-x-da --force
