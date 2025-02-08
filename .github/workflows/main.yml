@@ -33,7 +33,12 @@ jobs:
         run: | 
          git fetch sunnypilot 
          git checkout -B tn-prebuilt sunnypilot/tn-prebuilt
-         git push origin tn-prebuilt --force    
+         git push origin tn-prebuilt --force  
+      - name: Fetch and merge sunnypilot 
+        run: | 
+         git fetch sunnypilot 
+         git checkout -B master-new sunnypilot/master-new 
+         git push origin master-new  --force    
 
 
       
