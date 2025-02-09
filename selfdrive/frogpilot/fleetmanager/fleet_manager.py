@@ -32,6 +32,9 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 import traceback
 from ftplib import FTP
+from openpilot.common.params import Params
+from cereal import log, messaging
+import time
 
 app = Flask(__name__)
 
@@ -443,6 +446,49 @@ def store_toggle_values_route():
     return jsonify({"message": "Values updated successfully"}), 200
   except Exception as e:
     return jsonify({"error": "Failed to update values", "details": str(e)}), 400
+
+@app.route("/carinfo")
+def carinfo():
+    """车辆信息监控页面"""
+    try:
+        params = Params()
+
+        # 更新消息
+        sm.update()
+
+        # 获取车辆基本信息
+        car_info = {
+            "车辆状态": {
+                "运行状态": "行驶中" if sm['carState'].vEgo > 0.1 else "停车中",
+                "巡航系统": "已启用" if sm['carState'].cruiseState.enabled else "未启用",
+                "当前速度": f"{sm['carState'].vEgo * 3.6:.1f} km/h",
+                "刹车状态": "踩下" if sm['carState'].brake > 0 else "松开",
+                "油门状态": "踩下" if sm['carState'].gas > 0 else "松开",
+                "方向盘角度": f"{sm['carState'].steeringAngleDeg:.1f}°",
+                "档位信息": str(sm['carState'].gearShifter),
+                "车门状态": "已开启" if sm['carState'].doorOpen else "已关闭",
+                "安全带": "已系好" if not sm['carState'].seatbeltUnlatched else "未系好"
+            },
+            "系统信息": {
+                "车型": params.get("CarModel", encoding='utf8'),
+                "指纹识别": params.get("CarFingerprint", encoding='utf8'),
+                "设备温度": f"{sm['deviceState'].cpuTempC:.1f}°C",
+                "电池电量": f"{sm['deviceState'].batteryPercent}%",
+                "充电状态": "充电中" if sm['deviceState'].started else "未充电",
+                "网络状态": "已连接" if sm['deviceState'].networkType != 0 else "未连接",
+                "GPS状态": "已定位" if sm['deviceState'].gpsOK else "未定位"
+            }
+        }
+
+        # 添加可选信息
+        if hasattr(sm['carState'], 'fuelGauge'):
+            car_info["系统信息"]["续航里程"] = f"{sm['carState'].fuelGauge:.1f}km"
+
+        return render_template("carinfo.html", car_info=car_info)
+
+    except Exception as e:
+        print(f"carinfo 页面渲染出错: {str(e)}")
+        return render_template("carinfo.html", car_info={"错误": f"获取车辆信息时出错: {str(e)}"})
 
 def main():
   try:

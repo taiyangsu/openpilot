@@ -462,3 +462,42 @@ def store_toggle_values(updated_values):
   #params_memory.put_bool("FrogPilotTogglesUpdated", True)
   #time.sleep(1)
   #params_memory.put_bool("FrogPilotTogglesUpdated", False)
+
+def get_car_info():
+  """获取车辆实时信息"""
+  try:
+    from cereal import messaging
+
+    # 初始化消息订阅
+    sm = messaging.SubMaster(['carState', 'carControl', 'carParams', 'deviceState', 'pandaStates'])
+    sm.update()
+
+    # 获取基本信息
+    car_info = {
+      "车辆状态": {
+        "运行状态": "行驶中" if sm['carState'].vEgo > 0.1 else "停车中",
+        "巡航系统": "已启用" if sm['carState'].cruiseState.enabled else "未启用",
+        "当前速度": f"{sm['carState'].vEgo * 3.6:.1f} km/h",
+        "刹车状态": "踩下" if sm['carState'].brake > 0 else "松开",
+        "油门状态": "踩下" if sm['carState'].gas > 0 else "松开",
+        "方向盘角度": f"{sm['carState'].steeringAngleDeg:.1f}°",
+        "档位信息": sm['carState'].gearShifter.raw,
+        "车门状态": "已开启" if sm['carState'].doorOpen else "已关闭",
+        "安全带": "已系好" if not sm['carState'].seatbeltUnlatched else "未系好"
+      },
+      "系统信息": {
+        "车型": params.get("CarModel", encoding='utf8'),
+        "指纹识别": params.get("CarFingerprint", encoding='utf8'),
+        "设备温度": f"{sm['deviceState'].cpuTempC:.1f}°C",
+        "电池电量": f"{sm['deviceState'].batteryPercent}%",
+        "充电状态": "充电中" if sm['deviceState'].started else "未充电",
+        "网络状态": "已连接" if sm['deviceState'].networkType != 0 else "未连接",
+        "GPS状态": "已定位" if sm['deviceState'].gpsOK else "未定位",
+        "续航里程": f"{sm['carState'].fuelGauge:.1f}km" if hasattr(sm['carState'], 'fuelGauge') else "未知"
+      }
+    }
+
+    return car_info
+  except Exception as e:
+    print(f"获取车辆信息失败: {str(e)}")
+    return {"错误": f"获取车辆信息时出错: {str(e)}"}

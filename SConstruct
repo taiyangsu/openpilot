@@ -395,3 +395,5 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
   SConscript([external_sconscript])
+
+SConscript('tools/replay/SConscript')

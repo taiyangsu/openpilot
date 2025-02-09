@@ -1,0 +1,65 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    车辆信息
+{% endblock %}
+
+{% block main %}
+    <br>
+    <h1>车辆实时信息</h1>
+    <br>
+    <div class="container">
+        {% if car_info %}
+            {% if car_info.get("错误") %}
+                <div class="alert alert-warning">
+                    {{ car_info.get("错误") }}
+                </div>
+            {% else %}
+                {% for section, data in car_info.items() %}
+                <div class="card mb-3 {% if section == '车辆状态' %}bg-info{% else %}bg-dark{% endif %} text-white">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ section }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% if data is mapping %}
+                                {% for key, value in data.items() %}
+                                <div class="col-sm-6 mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ key }}:</span>
+                                        <span>
+                                            {% if value is string and "km/h" in value %}
+                                                <strong>{{ value }}</strong>
+                                            {% else %}
+                                                {{ value }}
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        {{ data }}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% else %}
+            <div class="alert alert-danger">
+                无法获取车辆信息
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // 每1秒刷新一次页面以更新数据
+        setTimeout(function(){
+            window.location.reload(1);
+        }, 1000);
+    </script>
+{% endblock %}
