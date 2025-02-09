@@ -10,13 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the main repository
+      - name: Checkout the target repository (your repo)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # 完整克隆仓库，确保所有历史记录
           token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
 
-      - name: Setup Git
+      - name: Add the source repository as a remote
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
+          git remote add upstream https://github.com/ajouatom/openpilot.git
+          git fetch upstream v8-wip2
+
+      - name: Push the branch to your repository
+        run: |
+          git checkout -B v8-wip2 upstream/v8-wip2
+          git push origin v8-wip2 --force
