@@ -21,54 +21,53 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
-      tr("Enable openpilot"),
-      tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
+      tr("启用 openpilot"),
+      tr("使用 openpilot 系统进行自适应巡航控制和车道保持辅助。使用此功能时需要您时刻保持注意力。更改此设置将在车辆关闭后生效。"),
       "../assets/img_chffr_wheel.png",
     },
     {
       "ExperimentalMode",
-      tr("Experimental Mode"),
+      tr("实验模式"),
       "",
       "../assets/img_experimental_white.svg",
     },
     {
       "DisengageOnAccelerator",
-      tr("Disengage on Accelerator Pedal"),
-      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
+      tr("踩油门时取消控制"),
+      tr("启用后，踩下油门踏板将取消 openpilot 控制。"),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
     },
     {
       "IsLdwEnabled",
-      tr("Enable Lane Departure Warnings"),
-      tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
+      tr("启用车道偏离警告"),
+      tr("当车速超过 50 公里/小时且未打转向灯的情况下，如果车辆偏离检测到的车道线，系统将发出警告提醒您返回车道。"),
       "../assets/offroad/icon_warning.png",
     },
     {
       "AlwaysOnDM",
-      tr("Always-On Driver Monitoring"),
-      tr("Enable driver monitoring even when openpilot is not engaged."),
+      tr("始终开启驾驶员监控"),
+      tr("即使在 openpilot 未启用时也启用驾驶员监控。"),
       "../assets/offroad/icon_monitoring.png",
     },
     {
       "RecordFront",
-      tr("Record and Upload Driver Camera"),
-      tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
+      tr("记录并上传驾驶员摄像头"),
+      tr("上传驾驶员摄像头的数据以帮助改进驾驶员监控算法。"),
       "../assets/offroad/icon_monitoring.png",
     },
     {
       "IsMetric",
-      tr("Use Metric System"),
-      tr("Display speed in km/h instead of mph."),
+      tr("使用公制单位"),
+      tr("使用公里/小时代替英里/小时显示速度。"),
       "../assets/offroad/icon_metric.png",
     },
   };
 
 
-  std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed") , tr("MoreRelaxed") };
-  long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
-                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
-                                             "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
-                                             "your steering wheel distance button."),
+  std::vector<QString> longi_button_texts{tr("激进"), tr("标准"), tr("舒适"), tr("更舒适")};
+  long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("驾驶风格"),
+                                          tr("推荐使用标准模式。在激进模式下，openpilot 将更紧密地跟随前车，对油门和刹车的控制也更激进。"
+                                             "在舒适模式下，openpilot 将与前车保持更远的距离。在支持的车型上，您可以通过方向盘上的距离按钮切换这些驾驶风格。"),
                                           "../assets/offroad/icon_speed_limit.png",
                                           longi_button_texts);
 
@@ -122,13 +121,13 @@ void TogglesPanel::updateToggles() {
                                           "%3<br>"
                                           "<h4>%4</h4><br>"
                                           "%5<br>")
-                                  .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
-                                  .arg(tr("End-to-End Longitudinal Control"))
-                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-                                          "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
-                                          "mistakes should be expected."))
-                                  .arg(tr("New Driving Visualization"))
-                                  .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
+                                  .arg(tr("openpilot 默认使用<b>舒适模式</b>驾驶。实验模式启用尚未准备好在舒适模式中使用的<b>alpha 级功能</b>。实验功能如下："))
+                                  .arg(tr("端到端纵向控制"))
+                                  .arg(tr("让驾驶模型控制油门和刹车。openpilot 将像人类一样驾驶，包括在红灯和停车标志处停车。"
+                                          "由于驾驶模型决定行驶速度，设定的速度将仅作为上限。这是一个 alpha 质量的功能；"
+                                          "可能会出现错误。"))
+                                  .arg(tr("新的驾驶可视化"))
+                                  .arg(tr("在低速时，驾驶可视化将切换到前向广角摄像头以更好地显示某些转弯。实验模式标志也将显示在右上角。"));
 
   const bool is_release = params.getBool("IsReleaseBranch");
   auto cp_bytes = params.get("CarParamsPersistent");
@@ -148,15 +147,15 @@ void TogglesPanel::updateToggles() {
       long_personality_setting->setEnabled(false);
       params.remove("ExperimentalMode");
 
-      const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
+      const QString unavailable = tr("由于使用车辆原厂 ACC 进行纵向控制，实验模式目前在此车型上不可用。");
 
       QString long_desc = unavailable + " " + \
-                          tr("openpilot longitudinal control may come in a future update.");
+                          tr("openpilot 纵向控制可能会在未来的更新中提供。");
       if (CP.getExperimentalLongitudinalAvailable()) {
         if (is_release) {
-          long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+          long_desc = unavailable + " " + tr("在非正式发布分支上可以测试 openpilot 纵向控制(alpha)和实验模式。");
         } else {
-          long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
+          long_desc = tr("启用 openpilot 纵向控制(alpha)开关以允许使用实验模式。");
         }
       }
       experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
@@ -170,19 +169,19 @@ void TogglesPanel::updateToggles() {
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
-  addItem(new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
-  addItem(new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
+  addItem(new LabelControl(tr("设备 ID"), getDongleId().value_or(tr("不可用"))));
+  addItem(new LabelControl(tr("序列号"), params.get("HardwareSerial").c_str()));
 
   // power buttons
   QHBoxLayout* power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
 
-  QPushButton* reboot_btn = new QPushButton(tr("Reboot"));
+  QPushButton* reboot_btn = new QPushButton(tr("重启"));
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
 
-  QPushButton* poweroff_btn = new QPushButton(tr("Power Off"));
+  QPushButton* poweroff_btn = new QPushButton(tr("关机"));
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
@@ -196,25 +195,25 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QHBoxLayout* init_layout = new QHBoxLayout();
   init_layout->setSpacing(30);
 
-  QPushButton* init_btn = new QPushButton(tr("Git Pull & Reboot"));
+  QPushButton* init_btn = new QPushButton(tr("Git 更新并重启"));
   init_btn->setObjectName("init_btn");
   init_layout->addWidget(init_btn);
   //QObject::connect(init_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
   QObject::connect(init_btn, &QPushButton::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Git pull & Reboot?"), tr("Yes"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要 Git 更新并重启吗？"), tr("是"), this)) {
 
       QProcess process;
       process.start("git", QStringList() << "fetch");
       if (!process.waitForFinished()) {
-        ConfirmationDialog::alert(tr("Git fetch process timed out."), this);
+        ConfirmationDialog::alert(tr("Git fetch 进程超时。"), this);
         return;
       }
       if (process.exitStatus() != QProcess::NormalExit) {
-        ConfirmationDialog::alert(tr("Git fetch process crashed."), this);
+        ConfirmationDialog::alert(tr("Git fetch 进程崩溃。"), this);
         return;
       }
       if (process.exitCode() != 0) {
-        ConfirmationDialog::alert(tr("Failed to fetch updates."), this);
+        ConfirmationDialog::alert(tr("获取更新失败。"), this);
         return;
       }
 
@@ -224,11 +223,11 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
       QString output = process.readAllStandardOutput();
       if (output.isEmpty()) {
-        ConfirmationDialog::alert(tr("Failed to read Git status."), this);
+        ConfirmationDialog::alert(tr("无法读取 Git 状态。"), this);
         return;
       }
       if (!output.contains("Your branch is behind")) {
-        ConfirmationDialog::alert(tr("Already up to date."), this);
+        ConfirmationDialog::alert(tr("已是最新版本。"), this);
         return;
       }
 
@@ -237,11 +236,11 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
       process.waitForFinished();
 
       if (process.exitCode() != 0) {
-        ConfirmationDialog::alert(tr("Git pull failed. Please check the logs."), this);
+        ConfirmationDialog::alert(tr("Git pull 失败。请检查日志。"), this);
         return;
       }
 
-      ConfirmationDialog::alert(tr("Git pull successful. Rebooting..."), this);
+      ConfirmationDialog::alert(tr("Git pull 成功。正在重启..."), this);
 
       //emit parent->closeSettings();
       //DevicePanel::reboot();
@@ -250,12 +249,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     }
     });
 
-  QPushButton* default_btn = new QPushButton(tr("Set default"));
+  QPushButton* default_btn = new QPushButton(tr("恢复默认"));
   default_btn->setObjectName("default_btn");
   init_layout->addWidget(default_btn);
   //QObject::connect(default_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
   QObject::connect(default_btn, &QPushButton::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Set to default?"), tr("Yes"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要恢复默认设置吗？"), tr("是"), this)) {
       //emit parent->closeSettings();
       QTimer::singleShot(1000, []() {
         printf("Set to default\n");
@@ -277,8 +276,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   )");
   addItem(init_layout);
 
-  pair_device = new ButtonControl(tr("Pair Device"), tr("PAIR"),
-                                  tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
+  pair_device = new ButtonControl(tr("配对设备"), tr("配对"),
+                                  tr("将您的设备与 comma connect (connect.comma.ai) 配对并领取您的 comma prime 优惠。"));
   connect(pair_device, &ButtonControl::clicked, [=]() {
     PairingPopup popup(this);
     popup.exec();
@@ -287,15 +286,15 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
   // offroad-only buttons
 
-  auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
-                                   tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"));
+  auto dcamBtn = new ButtonControl(tr("驾驶员摄像头"), tr("预览"),
+                                   tr("预览驾驶员摄像头以确保驾驶员监控有良好的可见度。(车辆必须熄火)"));
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  auto resetCalibBtn = new ButtonControl(tr("重置校准"), tr("重置"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要重置校准吗？"), tr("重置"), this)) {
       params.remove("CalibrationParams");
       params.remove("LiveTorqueParameters");
       emit parent->closeSettings();
@@ -306,16 +305,16 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(resetCalibBtn);
 
-  auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+  auto retrainingBtn = new ButtonControl(tr("查看培训指南"), tr("查看"), tr("查看 openpilot 的规则、功能和限制"));
   connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要查看培训指南吗？"), tr("查看"), this)) {
       emit reviewTrainingGuide();
     }
   });
   addItem(retrainingBtn);
 
   if (Hardware::TICI()) {
-    auto regulatoryBtn = new ButtonControl(tr("Regulatory"), tr("VIEW"), "");
+    auto regulatoryBtn = new ButtonControl(tr("监管"), tr("查看"), "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       ConfirmationDialog::rich(QString::fromStdString(txt), this);
@@ -323,10 +322,10 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(regulatoryBtn);
   }
 
-  auto translateBtn = new ButtonControl(tr("Change Language"), tr("CHANGE"), "");
+  auto translateBtn = new ButtonControl(tr("切换语言"), tr("切换"), "");
   connect(translateBtn, &ButtonControl::clicked, [=]() {
     QMap<QString, QString> langs = getSupportedLanguages();
-    QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
+    QString selection = MultiOptionDialog::getSelection(tr("选择语言"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
       // put language setting, exit Qt UI, and trigger fast restart
       params.put("LanguageSetting", langs[selection].toStdString());
@@ -353,8 +352,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
 void DevicePanel::updateCalibDescription() {
   QString desc =
-      tr("openpilot requires the device to be mounted within 4° left or right and "
-         "within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.");
+      tr("openpilot 需要将设备安装在左右偏差不超过 4° 且上偏差不超过 5° 下偏差不超过 9° 的范围内。"
+         "openpilot 会持续进行校准，很少需要重置校准。");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -364,9 +363,9 @@ void DevicePanel::updateCalibDescription() {
       if (calib.getCalStatus() != cereal::LiveCalibrationData::Status::UNCALIBRATED) {
         double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
         double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
-        desc += tr(" Your device is pointed %1° %2 and %3° %4.")
-                    .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? tr("down") : tr("up"),
-                         QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("left") : tr("right"));
+        desc += tr(" 您的设备向%1° %2 和 %3° %4。")
+                    .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? tr("下") : tr("上"),
+                         QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("左") : tr("右"));
       }
     } catch (kj::Exception) {
       qInfo() << "invalid CalibrationParams";
@@ -377,27 +376,27 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要重启吗？"), tr("重启"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         params.putBool("DoReboot", true);
       }
     }
   } else {
-    ConfirmationDialog::alert(tr("Disengage to Reboot"), this);
+    ConfirmationDialog::alert(tr("请先取消控制再重启"), this);
   }
 }
 
 void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
+    if (ConfirmationDialog::confirm(tr("确定要关机吗？"), tr("关机"), this)) {
       // Check engaged again in case it changed while the dialog was open
       if (!uiState()->engaged()) {
         params.putBool("DoShutdown", true);
       }
     }
   } else {
-    ConfirmationDialog::alert(tr("Disengage to Power Off"), this);
+    ConfirmationDialog::alert(tr("请先取消控制再关机"), this);
   }
 }
 
@@ -451,12 +450,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(uiState()->prime_state, &PrimeState::changed, networking, &Networking::setPrimeType);
 
   QList<QPair<QString, QWidget *>> panels = {
-    {tr("Device"), device},
-    {tr("Network"), networking},
-    {tr("Toggles"), toggles},
-    {tr("Software"), new SoftwarePanel(this)},
-    {tr("Carrot"), new CarrotPanel(this)},
-    {tr("Developer"), new DeveloperPanel(this)},
+    {tr("设备"), device},
+    {tr("网络"), networking},
+    {tr("开关"), toggles},
+    {tr("软件"), new SoftwarePanel(this)},
+    {tr("胡萝卜"), new CarrotPanel(this)},
+    {tr("开发者"), new DeveloperPanel(this)},
   };
 
   nav_btns = new QButtonGroup(this);
@@ -483,7 +482,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
+    const int lr_margin = name != tr("网络") ? 50 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
@@ -549,7 +548,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   select_layout->setSpacing(30);
 
 
-  QPushButton* start_btn = new QPushButton(tr("Start"));
+  QPushButton* start_btn = new QPushButton(tr("启动"));
   start_btn->setObjectName("start_btn");
   QObject::connect(start_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 0;
@@ -557,7 +556,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
     updateButtonStyles();
   });
 
-  QPushButton* cruise_btn = new QPushButton(tr("Cruise"));
+  QPushButton* cruise_btn = new QPushButton(tr("巡航"));
   cruise_btn->setObjectName("cruise_btn");
   QObject::connect(cruise_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 1;
@@ -565,7 +564,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
     updateButtonStyles();
   });
 
-  QPushButton* speed_btn = new QPushButton(tr("Speed"));
+  QPushButton* speed_btn = new QPushButton(tr("速度"));
   speed_btn->setObjectName("speed_btn");
   QObject::connect(speed_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 2;
@@ -573,7 +572,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
     updateButtonStyles();
   });
 
-  QPushButton* latLong_btn = new QPushButton(tr("Tuning"));
+  QPushButton* latLong_btn = new QPushButton(tr("调教"));
   latLong_btn->setObjectName("latLong_btn");
   QObject::connect(latLong_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 3;
@@ -581,7 +580,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
     updateButtonStyles();
   });
 
-  QPushButton* disp_btn = new QPushButton(tr("Disp"));
+  QPushButton* disp_btn = new QPushButton(tr("显示"));
   disp_btn->setObjectName("disp_btn");
   QObject::connect(disp_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 4;
@@ -589,7 +588,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
     updateButtonStyles();
   });
 
-  QPushButton* path_btn = new QPushButton(tr("Path"));
+  QPushButton* path_btn = new QPushButton(tr("路径"));
   path_btn->setObjectName("path_btn");
   QObject::connect(path_btn, &QPushButton::clicked, this, [this]() {
     this->currentCarrotIndex = 5;
@@ -612,101 +611,74 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout* toggles_layout = new QVBoxLayout(toggles);
 
   cruiseToggles = new ListWidget(this);
-  cruiseToggles->addItem(new CValueControl("CruiseButtonMode", "Button: Cruise Button Mode", "0:Normal,1:User1,2:User2", "../assets/offroad/icon_road.png", 0, 2, 1));
-  cruiseToggles->addItem(new CValueControl("CruiseSpeedUnit", "Button: Cruise Speed Unit", "", "../assets/offroad/icon_road.png", 1, 20, 1));
-  cruiseToggles->addItem(new CValueControl("CruiseEcoControl", "CRUISE: Eco control(4km/h)", "Temporarily increasing the set speed to improve fuel efficiency.", "../assets/offroad/icon_road.png", 0, 10, 1));
-  //cruiseToggles->addItem(new CValueControl("CruiseSpeedMin", "CRUISE: Speed Lower limit(10)", "Cruise control MIN speed", "../assets/offroad/icon_road.png", 5, 50, 1));
-  cruiseToggles->addItem(new CValueControl("AutoSpeedUptoRoadSpeedLimit", "CRUISE: Auto speed up (0%)", "Auto speed up based on the lead car up to RoadSpeedLimit.", "../assets/offroad/icon_road.png", 0, 200, 10));
-  //cruiseToggles->addItem(new CValueControl("AutoResumeFromGas", "GAS CRUISE ON: Use", "Auto Cruise on when GAS pedal released, 60% Gas Cruise On automatically", "../assets/offroad/icon_road.png", 0, 3, 1));
-  //cruiseToggles->addItem(new CValueControl("AutoResumeFromGasSpeed", "GAS CRUISE ON: Speed(30)", "Driving speed exceeds the set value, Cruise ON", "../assets/offroad/icon_road.png", 20, 140, 5));
-  //cruiseToggles->addItem(new CValueControl("TFollowSpeedAddM", "GAP: Additional TFs 40km/h(0)x0.01s", "Speed-dependent additional max(100km/h) TFs", "../assets/offroad/icon_road.png", -100, 200, 5));
-  //cruiseToggles->addItem(new CValueControl("TFollowSpeedAdd", "GAP: Additional TFs 100Km/h(0)x0.01s", "Speed-dependent additional max(100km/h) TFs", "../assets/offroad/icon_road.png", -100, 200, 5));
-  cruiseToggles->addItem(new CValueControl("TFollowGap1", "GAP1: Apply TFollow (110)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
-  cruiseToggles->addItem(new CValueControl("TFollowGap2", "GAP2: Apply TFollow (120)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
-  cruiseToggles->addItem(new CValueControl("TFollowGap3", "GAP3: Apply TFollow (160)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
-  cruiseToggles->addItem(new CValueControl("TFollowGap4", "GAP4: Apply TFollow (180)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
-  cruiseToggles->addItem(new CValueControl("DynamicTFollow", "Dynamic GAP control", "", "../assets/offroad/icon_road.png", 0, 100, 5));
-  cruiseToggles->addItem(new CValueControl("DynamicTFollowLC", "Dynamic GAP control (LaneChange)", "", "../assets/offroad/icon_road.png", 0, 100, 5));
-  cruiseToggles->addItem(new CValueControl("MyDrivingMode", "DRIVEMODE: Select", "1:ECO,2:SAFE,3:NORMAL,4:HIGH", "../assets/offroad/icon_road.png", 1, 4, 1));
-  cruiseToggles->addItem(new CValueControl("MyDrivingModeAuto", "DRIVEMODE: Auto", "NORMAL mode only", "../assets/offroad/icon_road.png", 0, 1, 1));
-  cruiseToggles->addItem(new CValueControl("TrafficLightDetectMode", "TrafficLight DetectMode", "0:None, 1:Stopping only, 2: Stop & Go", "../assets/offroad/icon_road.png", 0, 2, 1));
-  //cruiseToggles->addItem(new CValueControl("MyEcoModeFactor", "DRIVEMODE: ECO Accel ratio(80%)", "Acceleration ratio in ECO mode", "../assets/offroad/icon_road.png", 10, 95, 5));
-  //cruiseToggles->addItem(new CValueControl("MySafeModeFactor", "DRIVEMODE: SAFE ratio(60%)", "Accel/StopDistance/DecelRatio/Gap control ratio", "../assets/offroad/icon_road.png", 10, 90, 10));
-  //cruiseToggles->addItem(new CValueControl("MyHighModeFactor", "DRIVEMODE: HIGH ratio(100%)", "AccelRatio control ratio", "../assets/offroad/icon_road.png", 100, 300, 10));
+  cruiseToggles->addItem(new CValueControl("CruiseButtonMode", "按钮：巡航按钮模式", "0:普通,1:用户1,2:用户2", "../assets/offroad/icon_road.png", 0, 2, 1));
+  cruiseToggles->addItem(new CValueControl("CruiseSpeedUnit", "按钮：巡航速度单位", "", "../assets/offroad/icon_road.png", 1, 20, 1));
+  cruiseToggles->addItem(new CValueControl("CruiseEcoControl", "巡航：节能控制(4km/h)", "暂时提高设定速度以提高燃油效率", "../assets/offroad/icon_road.png", 0, 10, 1));
+  cruiseToggles->addItem(new CValueControl("AutoSpeedUptoRoadSpeedLimit", "巡航：自动加速 (0%)", "根据前车加速到道路限速", "../assets/offroad/icon_road.png", 0, 200, 10));
+  cruiseToggles->addItem(new CValueControl("TFollowGap1", "跟车距离1: 应用TFollow (110)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
+  cruiseToggles->addItem(new CValueControl("TFollowGap2", "跟车距离2: 应用TFollow (120)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
+  cruiseToggles->addItem(new CValueControl("TFollowGap3", "跟车距离3: 应用TFollow (160)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
+  cruiseToggles->addItem(new CValueControl("TFollowGap4", "跟车距离4: 应用TFollow (180)x0.01s", "", "../assets/offroad/icon_road.png", 70, 300, 5));
+  cruiseToggles->addItem(new CValueControl("DynamicTFollow", "动态跟车距离控制", "", "../assets/offroad/icon_road.png", 0, 100, 5));
+  cruiseToggles->addItem(new CValueControl("DynamicTFollowLC", "动态跟车距离控制 (变道)", "", "../assets/offroad/icon_road.png", 0, 100, 5));
+  cruiseToggles->addItem(new CValueControl("MyDrivingMode", "驾驶模式：选择", "1:节能,2:安全,3:普通,4:高性能", "../assets/offroad/icon_road.png", 1, 4, 1));
+  cruiseToggles->addItem(new CValueControl("MyDrivingModeAuto", "驾驶模式：自动", "仅普通模式", "../assets/offroad/icon_road.png", 0, 1, 1));
+  cruiseToggles->addItem(new CValueControl("TrafficLightDetectMode", "红绿灯检测模式", "0:无, 1:仅停车, 2:停车和启动", "../assets/offroad/icon_road.png", 0, 2, 1));
 
   latLongToggles = new ListWidget(this);
-  //latLongToggles->addItem(new CValueControl("AutoLaneChangeSpeed", "LaneChangeSpeed(20)", "", "../assets/offroad/icon_road.png", 1, 100, 5));
-  latLongToggles->addItem(new CValueControl("UseLaneLineSpeed", "Laneline mode speed(0)", "Laneline mode, lat_mpc control used", "../assets/offroad/icon_logic.png", 0, 200, 5));
-  latLongToggles->addItem(new CValueControl("UseLaneLineCurveSpeed", "Laneline mode curve speed(0)", "Laneline mode, high speed only", "../assets/offroad/icon_logic.png", 0, 200, 5));
-  latLongToggles->addItem(new CValueControl("AdjustLaneOffset", "AdjustLaneOffset(0)cm", "", "../assets/offroad/icon_logic.png", 0, 500, 5));
-  latLongToggles->addItem(new CValueControl("AdjustCurveOffset", "AdjustLaneCurveOffset(0)cm", "", "../assets/offroad/icon_logic.png", 0, 500, 5));
-  latLongToggles->addItem(new CValueControl("AdjustLaneTime", "AdjustLaneTimeOffset(5)x0.01s", "", "../assets/offroad/icon_logic.png", 0, 20, 1));
-  latLongToggles->addItem(new CValueControl("CustomSR", "LAT: SteerRatiox0.1(0)", "Custom SteerRatio", "../assets/offroad/icon_logic.png", 0, 300, 1));
-  latLongToggles->addItem(new CValueControl("SteerRatioRate", "LAT: SteerRatioRatex0.01(100)", "SteerRatio apply rate", "../assets/offroad/icon_logic.png", 30, 170, 1));
-  //latLongToggles->addItem(new CValueControl("PathOffset", "PathOffset", "(-)left, (+)right, when UseLaneLineSpeed > 0", "../assets/offroad/icon_road.png", -50, 50, 1));
-  //latLongToggles->addItem(horizontal_line());
-  //latLongToggles->addItem(new CValueControl("JerkStartLimit", "LONG: JERK START(10)x0.1", "Starting Jerk.", "../assets/offroad/icon_road.png", 1, 50, 1));
-  //latLongToggles->addItem(new CValueControl("LongitudinalTuningApi", "LONG: ControlType", "0:velocity pid, 1:accel pid, 2:accel pid(comma)", "../assets/offroad/icon_road.png", 0, 2, 1));
-  latLongToggles->addItem(new CValueControl("LongTuningKpV", "LONG: P Gain(100)", "", "../assets/offroad/icon_logic.png", 0, 150, 5));
-  latLongToggles->addItem(new CValueControl("LongTuningKiV", "LONG: I Gain(200)", "", "../assets/offroad/icon_logic.png", 0, 2000, 5));
-  latLongToggles->addItem(new CValueControl("LongTuningKf", "LONG: FF Gain(100)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
-  latLongToggles->addItem(new CValueControl("LongActuatorDelay", "LONG: ActuatorDelay(20)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
-  latLongToggles->addItem(new CValueControl("RadarReactionFactor", "LONG: Radar reaction factor(10)", "", "../assets/offroad/icon_logic.png", 0, 200, 10));
-  //latLongToggles->addItem(new CValueControl("StartAccelApply", "LONG: StartingAccel 2.0x(0)%", "정지->출발시 가속도의 가속율을 지정합니다 0: 사용안함.", "../assets/offroad/icon_road.png", 0, 100, 10));
-  //latLongToggles->addItem(new CValueControl("StopAccelApply", "LONG: StoppingAccel -2.0x(0)%", "정지유지시 브레이크압을 조정합니다. 0: 사용안함. ", "../assets/offroad/icon_road.png", 0, 100, 10));
-  latLongToggles->addItem(new CValueControl("LaneChangeNeedTorque", "LaneChange need torque", "", "../assets/offroad/icon_logic.png", 0, 1, 1));
-  latLongToggles->addItem(new CValueControl("StoppingAccel", "LONG: StoppingStartAccelx0.01(-40)", "", "../assets/offroad/icon_logic.png", -100, 0, 5));
-  latLongToggles->addItem(new CValueControl("StopDistanceCarrot", "LONG: StopDistance (600)cm", "", "../assets/offroad/icon_logic.png", 300, 1000, 10));
-  //latLongToggles->addItem(new CValueControl("TraffStopDistanceAdjust", "LONG: TrafficStopDistance adjust(150)cm", "", "../assets/offroad/icon_road.png", -1000, 1000, 10));
-  latLongToggles->addItem(new CValueControl("ComfortBrake", "LONG: Comfort Brake (240)", "x0.01", "../assets/offroad/icon_logic.png", 200, 300, 1));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals1", "ACCEL:0km/h(160)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals2", "ACCEL:40km/h(120)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals3", "ACCEL:60km/h(100)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals4", "ACCEL:80km/h(80)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals5", "ACCEL:110km/h(70)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  latLongToggles->addItem(new CValueControl("CruiseMaxVals6", "ACCEL:140km/h(60)", "속도별 가속도를 지정합니다.(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
-  //latLongToggles->addItem(new CValueControl("CruiseMinVals", "DECEL:(120)", "감속도를 설정합니다.(x0.01m/s^2)", "../assets/offroad/icon_road.png", 50, 250, 5));
-  latLongToggles->addItem(new CValueControl("MaxAngleFrames", "MaxAngleFrames(89)", "89:기본, 스티어계기판에러시 85~87", "../assets/offroad/icon_logic.png", 80, 100, 1));
-  latLongToggles->addItem(new CValueControl("SteerActuatorDelay", "LAT:SteerActuatorDelay(40)", "표준", "../assets/offroad/icon_logic.png", 1, 100, 1));
-  latLongToggles->addItem(new CValueControl("LateralTorqueCustom", "LAT: TorqueCustom(0)", "", "../assets/offroad/icon_logic.png", 0, 2, 1));
-  latLongToggles->addItem(new CValueControl("LateralTorqueAccelFactor", "LAT: TorqueAccelFactor(2500)", "", "../assets/offroad/icon_logic.png", 1000, 6000, 10));
-  latLongToggles->addItem(new CValueControl("LateralTorqueFriction", "LAT: TorqueFriction(100)", "", "../assets/offroad/icon_logic.png", 0, 1000, 10));
-  latLongToggles->addItem(new CValueControl("CustomSteerMax", "LAT: CustomSteerMax(0)", "", "../assets/offroad/icon_logic.png", 0, 30000, 5));
-  latLongToggles->addItem(new CValueControl("CustomSteerDeltaUp", "LAT: CustomSteerDeltaUp(0)", "", "../assets/offroad/icon_logic.png", 0, 50, 1));
-  latLongToggles->addItem(new CValueControl("CustomSteerDeltaDown", "LAT: CustomSteerDeltaDown(0)", "", "../assets/offroad/icon_logic.png", 0, 50, 1));
+  latLongToggles->addItem(new CValueControl("UseLaneLineSpeed", "车道线模式速度(0)", "使用车道线模式，使用lat_mpc控制", "../assets/offroad/icon_logic.png", 0, 200, 5));
+  latLongToggles->addItem(new CValueControl("UseLaneLineCurveSpeed", "车道线模式弯道速度(0)", "车道线模式，仅高速", "../assets/offroad/icon_logic.png", 0, 200, 5));
+  latLongToggles->addItem(new CValueControl("AdjustLaneOffset", "调整车道偏移(0)厘米", "", "../assets/offroad/icon_logic.png", 0, 500, 5));
+  latLongToggles->addItem(new CValueControl("AdjustCurveOffset", "调整车道弯道偏移(0)厘米", "", "../assets/offroad/icon_logic.png", 0, 500, 5));
+  latLongToggles->addItem(new CValueControl("AdjustLaneTime", "调整车道时间偏移(5)x0.01秒", "", "../assets/offroad/icon_logic.png", 0, 20, 1));
+  latLongToggles->addItem(new CValueControl("CustomSR", "横向：转向比x0.1(0)", "自定义转向比", "../assets/offroad/icon_logic.png", 0, 300, 1));
+  latLongToggles->addItem(new CValueControl("SteerRatioRate", "横向：转向比率x0.01(100)", "转向比应用率", "../assets/offroad/icon_logic.png", 30, 170, 1));
+  latLongToggles->addItem(new CValueControl("LongTuningKpV", "纵向：P增益(100)", "", "../assets/offroad/icon_logic.png", 0, 150, 5));
+  latLongToggles->addItem(new CValueControl("LongTuningKiV", "纵向：I增益(200)", "", "../assets/offroad/icon_logic.png", 0, 2000, 5));
+  latLongToggles->addItem(new CValueControl("LongTuningKf", "纵向：前馈增益(100)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
+  latLongToggles->addItem(new CValueControl("LongActuatorDelay", "纵向：执行器延迟(20)", "", "../assets/offroad/icon_logic.png", 0, 200, 5));
+  latLongToggles->addItem(new CValueControl("RadarReactionFactor", "纵向：雷达反应系数(10)", "", "../assets/offroad/icon_logic.png", 0, 200, 10));
+  latLongToggles->addItem(new CValueControl("LaneChangeNeedTorque", "变道需要转矩", "", "../assets/offroad/icon_logic.png", 0, 1, 1));
+  latLongToggles->addItem(new CValueControl("StoppingAccel", "纵向：停车起步加速度x0.01(-40)", "", "../assets/offroad/icon_logic.png", -100, 0, 5));
+  latLongToggles->addItem(new CValueControl("StopDistanceCarrot", "纵向：停车距离 (600)厘米", "", "../assets/offroad/icon_logic.png", 300, 1000, 10));
+  latLongToggles->addItem(new CValueControl("ComfortBrake", "纵向：舒适制动 (240)", "x0.01", "../assets/offroad/icon_logic.png", 200, 300, 1));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals1", "加速度:0km/h(160)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals2", "加速度:40km/h(120)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals3", "加速度:60km/h(100)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals4", "加速度:80km/h(80)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals5", "加速度:110km/h(70)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("CruiseMaxVals6", "加速度:140km/h(60)", "设置不同速度下的加速度(x0.01m/s^2)", "../assets/offroad/icon_logic.png", 1, 250, 5));
+  latLongToggles->addItem(new CValueControl("MaxAngleFrames", "最大角度帧数(89)", "89:默认, 转向仪表盘错误时85~87", "../assets/offroad/icon_logic.png", 80, 100, 1));
+  latLongToggles->addItem(new CValueControl("SteerActuatorDelay", "横向:转向执行器延迟(40)", "标准", "../assets/offroad/icon_logic.png", 1, 100, 1));
+  latLongToggles->addItem(new CValueControl("LateralTorqueCustom", "横向：转矩自定义(0)", "", "../assets/offroad/icon_logic.png", 0, 2, 1));
+  latLongToggles->addItem(new CValueControl("LateralTorqueAccelFactor", "横向：转矩加速因子(2500)", "", "../assets/offroad/icon_logic.png", 1000, 6000, 10));
+  latLongToggles->addItem(new CValueControl("LateralTorqueFriction", "横向：转矩摩擦(100)", "", "../assets/offroad/icon_logic.png", 0, 1000, 10));
+  latLongToggles->addItem(new CValueControl("CustomSteerMax", "横向：最大转向(0)", "", "../assets/offroad/icon_logic.png", 0, 30000, 5));
+  latLongToggles->addItem(new CValueControl("CustomSteerDeltaUp", "横向：转向增量上限(0)", "", "../assets/offroad/icon_logic.png", 0, 50, 1));
+  latLongToggles->addItem(new CValueControl("CustomSteerDeltaDown", "横向：转向增量下限(0)", "", "../assets/offroad/icon_logic.png", 0, 50, 1));
 
   dispToggles = new ListWidget(this);
-  //dispToggles->addItem(new CValueControl("ShowHudMode", "DISP:Display Mode", "0:Frog,1:APilot,2:Bottom,3:Top,4:Left,5:Left-Bottom", "../assets/offroad/icon_shell.png", 0, 5, 1));
-  dispToggles->addItem(new CValueControl("ShowDebugUI", "DISP:Debug Info", "", "../assets/offroad/icon_shell.png", 0, 2, 1));
-  dispToggles->addItem(new CValueControl("ShowDateTime", "DISP:Time Info", "0:None,1:Time/Date,2:Time,3:Date", "../assets/offroad/icon_calendar.png", 0, 3, 1));
-  //dispToggles->addItem(new CValueControl("ShowSteerRotate", "DISP:Handle rotate", "0:None,1:Rotate", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowPathEnd", "DISP:Path End", "0:None,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowAccelRpm", "DISP:Accel meter", "0:None,1:Display,1:Accel+RPM", "../assets/offroad/icon_shell.png", 0, 2, 1));
-  //dispToggles->addItem(new CValueControl("ShowTpms", "DISP:TPMS", "0:None,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowSteerMode", "DISP:Handle Display Mode", "0:Black,1:Color,2:None", "../assets/offroad/icon_shell.png", 0, 2, 1));
-  //dispToggles->addItem(new CValueControl("ShowDeviceState", "DISP:Device State", "0:None,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowConnInfo", "DISP:APM connection", "0:NOne,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowLaneInfo", "DISP:Lane Info", "-1:None, 0:Path, 1:Path+Lane, 2: Path+Lane+RoadEdge", "../assets/offroad/icon_shell.png", -1, 2, 1));
-  //dispToggles->addItem(new CValueControl("ShowBlindSpot", "DISP:BSD Info", "0:None,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowGapInfo", "DISP:GAP Info", "0:None,1:Display", "../assets/offroad/icon_shell.png", -1, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowDmInfo", "DISP:DM Info", "0:None,1:Display,-1:Disable(Reboot)", "../assets/offroad/icon_shell.png", -1, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowRadarInfo", "DISP:Radar Info", "0:None,1:Display,2:RelPos,3:Stopped Car", "../assets/offroad/icon_shell.png", 0, 3, 1));
-  dispToggles->addItem(new CValueControl("ShowRouteInfo", "DISP:Route Info", "0:None,1:Display", "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowPlotMode", "DISP:Debug plot", "", "../assets/offroad/icon_shell.png", 0, 10, 1));
-  dispToggles->addItem(new CValueControl("ShowCustomBrightness", "Brightness ratio", "", "../assets/offroad/icon_brightness.png", 0, 100, 10));
+  dispToggles->addItem(new CValueControl("ShowDebugUI", "显示：调试信息", "", "../assets/offroad/icon_shell.png", 0, 2, 1));
+  dispToggles->addItem(new CValueControl("ShowDateTime", "显示：时间信息", "0:无,1:时间/日期,2:时间,3:日期", "../assets/offroad/icon_calendar.png", 0, 3, 1));
+  dispToggles->addItem(new CValueControl("ShowPathEnd", "显示：路径终点", "0:无,1:显示", "../assets/offroad/icon_shell.png", 0, 1, 1));
+  dispToggles->addItem(new CValueControl("ShowLaneInfo", "显示：车道信息", "-1:无, 0:路径, 1:路径+车道, 2:路径+车道+路边", "../assets/offroad/icon_shell.png", -1, 2, 1));
+  dispToggles->addItem(new CValueControl("ShowRadarInfo", "显示：雷达信息", "0:无,1:显示,2:相对位置,3:停止的车", "../assets/offroad/icon_shell.png", 0, 3, 1));
+  dispToggles->addItem(new CValueControl("ShowRouteInfo", "显示：路线信息", "0:无,1:显示", "../assets/offroad/icon_shell.png", 0, 1, 1));
+  dispToggles->addItem(new CValueControl("ShowPlotMode", "显示：调试图表", "", "../assets/offroad/icon_shell.png", 0, 10, 1));
+  dispToggles->addItem(new CValueControl("ShowCustomBrightness", "亮度比例", "", "../assets/offroad/icon_brightness.png", 0, 100, 10));
 
   pathToggles = new ListWidget(this);
-  pathToggles->addItem(new CValueControl("ShowPathModeCruiseOff", "DISP: Path Mode: Cruise OFFF", "0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
-  pathToggles->addItem(new CValueControl("ShowPathColorCruiseOff", "DISP: Path Color: Cruise OFF", "(+10:Stroke)0:Red,1:Orange,2:Yellow,3:Green,4:Blue,5:Indigo,6:Violet,7:Brown,8:White,9:Black", "../assets/offroad/icon_shell.png", 0, 19, 1));
-  pathToggles->addItem(new CValueControl("ShowPathMode", "DISP:Path Mode: Laneless", "0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
-  pathToggles->addItem(new CValueControl("ShowPathColor", "DISP:Path Color: Laneless", "(+10:Stroke)0:Red,1:Orange,2:Yellow,3:Green,4:Blue,5:Indigo,6:Violet,7:Brown,8:White,9:Black", "../assets/offroad/icon_shell.png", 0, 19, 1));
-  pathToggles->addItem(new CValueControl("ShowPathModeLane", "DISP:Path Mode: LaneMode", "0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
-  pathToggles->addItem(new CValueControl("ShowPathColorLane", "DISP:Path Color: LaneMode", "(+10:Stroke)0:Red,1:Orange,2:Yellow,3:Green,4:Blue,5:Indigo,6:Violet,7:Brown,8:White,9:Black", "../assets/offroad/icon_shell.png", 0, 19, 1));
-  pathToggles->addItem(new CValueControl("ShowPathWidth", "DISP:Path Width ratio(100%)", "", "../assets/offroad/icon_shell.png", 10, 200, 10));
+  pathToggles->addItem(new CValueControl("ShowPathModeCruiseOff", "显示：路径模式：巡航关闭", "0:普通,1,2:记录,3,4:^^,5,6:记录,7,8:^^,9,10,11,12:平滑^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
+  pathToggles->addItem(new CValueControl("ShowPathColorCruiseOff", "显示：路径颜色：巡航关闭", "(+10:描边)0:红,1:橙,2:黄,3:绿,4:蓝,5:靛,6:紫,7:棕,8:白,9:黑", "../assets/offroad/icon_shell.png", 0, 19, 1));
+  pathToggles->addItem(new CValueControl("ShowPathMode", "显示：路径模式：无车道", "0:普通,1,2:记录,3,4:^^,5,6:记录,7,8:^^,9,10,11,12:平滑^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
+  pathToggles->addItem(new CValueControl("ShowPathColor", "显示：路径颜色：无车道", "(+10:描边)0:红,1:橙,2:黄,3:绿,4:蓝,5:靛,6:紫,7:棕,8:白,9:黑", "../assets/offroad/icon_shell.png", 0, 19, 1));
+  pathToggles->addItem(new CValueControl("ShowPathModeLane", "显示：路径模式：车道模式", "0:普通,1,2:记录,3,4:^^,5,6:记录,7,8:^^,9,10,11,12:平滑^^", "../assets/offroad/icon_shell.png", 0, 15, 1));
+  pathToggles->addItem(new CValueControl("ShowPathColorLane", "显示：路径颜色：车道模式", "(+10:描边)0:红,1:橙,2:黄,3:绿,4:蓝,5:靛,6:紫,7:棕,8:白,9:黑", "../assets/offroad/icon_shell.png", 0, 19, 1));
+  pathToggles->addItem(new CValueControl("ShowPathWidth", "显示：路径宽度比例(100%)", "", "../assets/offroad/icon_shell.png", 10, 200, 10));
 
   startToggles = new ListWidget(this);
   QString selected = QString::fromStdString(Params().get("CarSelected3"));
-  QPushButton* selectCarBtn = new QPushButton(selected.length() > 1 ? selected : tr("SELECT YOUR CAR"));
+  QPushButton* selectCarBtn = new QPushButton(selected.length() > 1 ? selected : tr("选择你的车型"));
   selectCarBtn->setObjectName("selectCarBtn");
   selectCarBtn->setStyleSheet(R"(
     QPushButton {
@@ -887,8 +859,8 @@ CValueControl::CValueControl(const QString& params, const QString& title, const 
     btnplus.setStyleSheet(btnStyle);
     btnminus.setFixedSize(150, 100);
     btnplus.setFixedSize(150, 100);
-    btnminus.setText("－");
-    btnplus.setText("＋");
+    btnminus.setText("－"); // 减号
+    btnplus.setText("＋");  // 加号
     hlayout->addWidget(&btnminus);
     hlayout->addWidget(&btnplus);
 
