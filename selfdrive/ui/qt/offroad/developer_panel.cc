@@ -7,22 +7,24 @@
 #include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
-  adbToggle = new ParamControl("AdbEnabled", tr("Enable ADB"),
-            tr("ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."), "");
+  adbToggle = new ParamControl("AdbEnabled",
+    tr("启用 ADB"),
+    tr("ADB (Android Debug Bridge) 允许通过 USB 或网络连接到您的设备。更多信息请访问 https://docs.comma.ai/how-to/connect-to-comma"),
+    "");
   addItem(adbToggle);
 
   // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
 
-  joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
+  joystickToggle = new ParamControl("JoystickDebugMode", tr("游戏手柄调试模式"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
     longManeuverToggle->refresh();
   });
   addItem(joystickToggle);
 
-  longManeuverToggle = new ParamControl("LongitudinalManeuverMode", tr("Longitudinal Maneuver Mode"), "", "");
+  longManeuverToggle = new ParamControl("LongitudinalManeuverMode", tr("纵向控制调试模式"), "", "");
   QObject::connect(longManeuverToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("JoystickDebugMode", false);
     joystickToggle->refresh();
@@ -31,11 +33,10 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   experimentalLongitudinalToggle = new ParamControl(
     "ExperimentalLongitudinalEnabled",
-    tr("openpilot Longitudinal Control (Alpha)"),
+    tr("openpilot 纵向控制 (Alpha)"),
     QString("<b>%1</b><br><br>%2")
-      .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
-              "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
+      .arg(tr("警告: 此车辆的 openpilot 纵向控制功能处于 alpha 阶段，将会禁用自动紧急制动(AEB)。"))
+      .arg(tr("在此车辆上，openpilot 默认使用车辆内置的 ACC 而不是 openpilot 的纵向控制。启用此选项将切换到 openpilot 纵向控制。启用 openpilot 纵向控制 alpha 版时建议同时启用实验模式。")),
     ""
   );
   experimentalLongitudinalToggle->setConfirmation(true, false);
