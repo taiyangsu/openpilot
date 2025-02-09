@@ -219,96 +219,249 @@ def ffplay_mp4_wrap_process_builder(file_name):
   )
 
 def get_nav_active():
-  if params.get("NavDestination", encoding='utf8') is not None:
-    return True
-  else:
+  try:
+    return params.get("NavDestination", encoding='utf8') is not None
+  except:
     return False
 
 def get_public_token():
-  token = params.get("MapboxPublicKey", encoding='utf8')
-  return token.strip() if token is not None else None
+  try:
+    token = params.get("MapboxPublicKey", encoding='utf8')
+    return token.strip() if token is not None else ""
+  except:
+    return ""
 
 def get_app_token():
-  token = params.get("MapboxSecretKey", encoding='utf8')
-  return token.strip() if token is not None else None
+  try:
+    token = params.get("MapboxSecretKey", encoding='utf8')
+    return token.strip() if token is not None else ""
+  except:
+    return ""
 
 def get_gmap_key():
-  token = params.get("GMapKey", encoding='utf8')
-  return token.strip() if token is not None else None
+  try:
+    # 直接获取参数值，不指定编码
+    token = params.get("AMapKey1")
+    token2 = params.get("AMapKey2")
+
+    print(f"获取到的原始参数 - AMapKey1: {token}, AMapKey2: {token2}")
+
+    # 处理字节串转换
+    if isinstance(token, bytes):
+      try:
+        token = token.decode('utf-8')
+      except UnicodeDecodeError:
+        print("AMapKey1 解码失败")
+        token = "faf2f8ab406a8da1231ef7e10d501b65"  # 使用默认值
+
+    if isinstance(token2, bytes):
+      try:
+        token2 = token2.decode('utf-8')
+      except UnicodeDecodeError:
+        print("AMapKey2 解码失败")
+        token2 = "fc2724b3c96a7f244b2211f05c5264be"  # 使用默认值
+
+    # 如果值为空，使用默认值
+    if not token:
+      token = "faf2f8ab406a8da1231ef7e10d501b65"
+    if not token2:
+      token2 = "fc2724b3c96a7f244b2211f05c5264be"
+
+    # 去除空白并返回
+    token = token.strip()
+    token2 = token2.strip()
+
+    print(f"处理后的参数 - AMapKey1: {token}, AMapKey2: {token2}")
+    return (token, token2)
+
+  except Exception as e:
+    print(f"获取高德地图 API Keys 时发生错误: {str(e)}")
+    # 发生错误时返回默认值
+    return ("faf2f8ab406a8da1231ef7e10d501b65", "fc2724b3c96a7f244b2211f05c5264be")
 
 def get_amap_key():
-  token = params.get("AMapKey1", encoding='utf8')
-  token2 = params.get("AMapKey2", encoding='utf8')
-  return (token.strip() if token is not None else None, token2.strip() if token2 is not None else None)
+  """获取高德地图 API Keys"""
+  try:
+    # 默认的 API Keys
+    default_web_key = "faf2f8ab406a8da1231ef7e10d501b65"
+    default_js_key = "fc2724b3c96a7f244b2211f05c5264be"
+
+    # 获取参数值
+    try:
+      # 直接获取字节串形式的参数
+      web_key = params.get("AMapKey1")
+      js_key = params.get("AMapKey2")
+
+      print(f"原始参数值 - AMapKey1: {web_key}, AMapKey2: {js_key}")
+
+      # 处理 web_key
+      if web_key is None or web_key == b"":
+        web_key = default_web_key.encode()
+      elif isinstance(web_key, bytes):
+        try:
+          web_key = web_key.decode('utf-8').strip()
+        except UnicodeDecodeError:
+          print("AMapKey1 解码失败，使用默认值")
+          web_key = default_web_key
+      else:
+        web_key = str(web_key).strip()
+
+      # 处理 js_key
+      if js_key is None or js_key == b"":
+        js_key = default_js_key.encode()
+      elif isinstance(js_key, bytes):
+        try:
+          js_key = js_key.decode('utf-8').strip()
+        except UnicodeDecodeError:
+          print("AMapKey2 解码失败，使用默认值")
+          js_key = default_js_key
+      else:
+        js_key = str(js_key).strip()
+
+      # 确保键值非空
+      web_key = web_key if web_key else default_web_key
+      js_key = js_key if js_key else default_js_key
+
+      print(f"处理后的参数 - AMapKey1: {web_key}, AMapKey2: {js_key}")
+      return (web_key, js_key)
+
+    except Exception as e:
+      print(f"参数处理失败: {str(e)}")
+      return (default_web_key, default_js_key)
+
+  except Exception as e:
+    print(f"获取高德地图 API Keys 时发生错误: {str(e)}")
+    return (default_web_key, default_js_key)
 
 def get_SearchInput():
-  SearchInput = params.get_int("SearchInput")
-  return SearchInput
+  try:
+    params.put("SearchInput", "1")  # 确保设置默认值
+    return 1  # 默认使用高德地图
+  except:
+    return 1
 
 def get_PrimeType():
-  PrimeType = params.get_int("PrimeType")
-  return PrimeType
+  try:
+    return params.get_int("PrimeType") or 0
+  except:
+    return 0
 
 def get_last_lon_lat():
-  last_pos = params.get("LastGPSPosition")
-  if last_pos:
-    l = json.loads(last_pos)
-  else:
+  try:
+    last_pos = params.get("LastGPSPosition")
+    if last_pos:
+      try:
+        l = json.loads(last_pos)
+        return float(l.get("longitude", 0.0)), float(l.get("latitude", 0.0))
+      except:
+        pass
     return 0.0, 0.0
-  return l["longitude"], l["latitude"]
+  except:
+    return 0.0, 0.0
 
 def get_locations():
-  data = params.get("ApiCache_NavDestinations", encoding='utf-8')
-  return data
+  try:
+    data = params.get("ApiCache_NavDestinations", encoding='utf-8')
+    if data is None:
+      return "[]"
+    return data.rstrip('\x00')
+  except:
+    return "[]"
 
 def preload_favs():
   try:
-    nav_destinations = json.loads(params.get("ApiCache_NavDestinations", encoding='utf8'))
-  except TypeError:
+    # 获取导航目的地数据
+    data = get_locations()
+    if data == "[]":
+      return (None, None, None, None, None)
+
+    # 尝试解析 JSON
+    try:
+      nav_destinations = json.loads(data)
+    except:
+      return (None, None, None, None, None)
+
+    # 初始化位置字典
+    locations = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None}
+
+    # 遍历并填充位置信息
+    if isinstance(nav_destinations, list):
+      for item in nav_destinations:
+        if isinstance(item, dict) and "save_type" in item:
+          if item["save_type"] == "favorite" and "label" in item:
+            label = item["label"]
+            if label in locations:
+              locations[label] = item.get("place_name", "未命名位置")
+
+    return tuple(locations.values())
+
+  except Exception as e:
+    print(f"Error in preload_favs: {str(e)}")
     return (None, None, None, None, None)
 
-  locations = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None}
-
-  for item in nav_destinations:
-    label = item.get("label")
-    if label in locations and locations[label] is None:
-      locations[label] = item.get("place_name")
-
-  return tuple(locations.values())
-
 def parse_addr(postvars, lon, lat, valid_addr, token):
-  addr = postvars.get("fav_val", [""])
-  real_addr = None
-  if addr != "favorites":
-    try:
-      dests = json.loads(params.get("ApiCache_NavDestinations", encoding='utf8'))
-    except TypeError:
-      dests = json.loads("[]")
+  try:
+    addr = postvars.get("fav_val")
+    if not addr or addr == "favorites":
+      return (None, lon, lat, False, token)
+
+    data = get_locations()
+    if data == "[]":
+      return (None, lon, lat, False, token)
+
+    dests = json.loads(data)
     for item in dests:
-      if "label" in item and item["label"] == addr:
-        lat, lon, real_addr = item["latitude"], item["longitude"], item["place_name"]
-        break
-  return (real_addr, lon, lat, real_addr is not None, token)
+      if isinstance(item, dict) and "label" in item and item["label"] == addr:
+        try:
+          lat = float(item["latitude"])
+          lon = float(item["longitude"])
+          real_addr = item.get("place_name", "未命名位置")
+          return (real_addr, lon, lat, True, token)
+        except:
+          continue
+
+    return (None, lon, lat, False, token)
+  except Exception as e:
+    print(f"Error in parse_addr: {str(e)}")
+    return (None, lon, lat, False, token)
 
 def search_addr(postvars, lon, lat, valid_addr, token):
-  if "addr_val" in postvars:
-    addr = postvars.get("addr_val")
-    if addr != "":
-      # Properly encode the address to handle spaces
-      addr_encoded = quote(addr)
-      query = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{addr_encoded}.json?access_token={token}&limit=1"
-      # focus on place around last gps position
-      lngi, lati = get_last_lon_lat()
-      query += f"&proximity={lngi},{lati}"
-      r = requests.get(query)
-      if r.status_code != 200:
-        return (addr, lon, lat, valid_addr, token)
-      j = json.loads(r.text)
-      if not j["features"]:
-        return (addr, lon, lat, valid_addr, token)
-      lon, lat = j["features"][0]["geometry"]["coordinates"]
-      valid_addr = True
-  return (addr, lon, lat, valid_addr, token)
+  """搜索地址并返回坐标"""
+  try:
+    addr = ""
+    if "addr_val" in postvars:
+      addr = postvars.get("addr_val", "")
+      if addr:
+        # 编码地址以处理空格
+        addr_encoded = quote(addr)
+        query = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{addr_encoded}.json?access_token={token}&limit=1"
+
+        # 使用最后的GPS位置作为搜索中心
+        lngi, lati = get_last_lon_lat()
+        query += f"&proximity={lngi},{lati}"
+
+        try:
+          r = requests.get(query)
+          if r.status_code == 200:
+            j = json.loads(r.text)
+            if j["features"]:
+              lon, lat = j["features"][0]["geometry"]["coordinates"]
+              valid_addr = True
+              print(f"地址搜索成功 - 地址: {addr}, 坐标: ({lon}, {lat})")
+            else:
+              print(f"未找到地址: {addr}")
+        except Exception as e:
+          print(f"地址搜索请求失败: {str(e)}")
+      else:
+        print("地址为空")
+    else:
+      print("未提供地址参数")
+
+    return (addr, lon, lat, valid_addr, token)
+
+  except Exception as e:
+    print(f"地址搜索出错: {str(e)}")
+    return (addr if 'addr' in locals() else "", lon, lat, False, token)
 
 def set_destination(postvars, valid_addr):
   if postvars.get("latitude") is not None and postvars.get("longitude") is not None:
@@ -329,46 +482,64 @@ def set_destination(postvars, valid_addr):
   return postvars, valid_addr
 
 def nav_confirmed(postvars):
-  if postvars is not None:
-    lat = float(postvars.get("lat"))
-    lng = float(postvars.get("lon"))
-    save_type = postvars.get("save_type")
-    name = postvars.get("name") if postvars.get("name") is not None else ""
+  if postvars is None:
+    return
+
+  try:
+    lat = float(postvars.get("lat", 0))
+    lng = float(postvars.get("lon", 0))
+    save_type = postvars.get("save_type", "recent")
+    name = postvars.get("name", "")
+
+    # 如果使用高德地图，进行坐标转换
     if params.get_int("SearchInput") == 1:
       lng, lat = gcj02towgs84(lng, lat)
-    params.put("NavDestination", f'{{"latitude": {lat:.6f}, "longitude": {lng:.6f}, "place_name": "{name}"}}')
-    if name == "":
-      name =  str(lat) + "," + str(lng)
-    new_dest = {"latitude": float(lat), "longitude": float(lng), "place_name": name}
-    if save_type == "recent":
-      new_dest["save_type"] = "recent"
-    else:
-      new_dest["save_type"] = "favorite"
+
+    # 保存导航目的地
+    nav_dest = {
+      "latitude": lat,
+      "longitude": lng,
+      "place_name": name if name else f"{lat:.6f},{lng:.6f}"
+    }
+    params.put("NavDestination", json.dumps(nav_dest))
+
+    # 构建新的目的地记录
+    new_dest = {
+      "latitude": lat,
+      "longitude": lng,
+      "place_name": name if name else f"{lat:.6f},{lng:.6f}",
+      "save_type": "favorite" if save_type != "recent" else "recent"
+    }
+    if save_type != "recent":
       new_dest["label"] = save_type
-    val = params.get("ApiCache_NavDestinations", encoding='utf8')
-    if val is not None:
-      val = val.rstrip('\x00')
-    dests = [] if val is None else json.loads(val)
-    # type idx
-    type_label_ids = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None, "recent": []}
-    idx = 0
-    for d in dests:
-      if d["save_type"] == "favorite":
-        type_label_ids[d["label"]] = idx
-      else:
-        type_label_ids["recent"].append(idx)
-      idx += 1
+
+    # 获取现有目的地列表
+    data = get_locations()
+    dests = json.loads(data) if data != "[]" else []
+
+    # 更新目的地列表
     if save_type == "recent":
-      dest_id = None
-      if len(type_label_ids["recent"]) > 10:
-        dests.pop(type_label_ids["recent"][-1])
-    else:
-      dest_id = type_label_ids[save_type]
-    if dest_id is None:
+      # 对于最近位置，添加到列表开头
       dests.insert(0, new_dest)
+      # 保持最近位置不超过10个
+      dests = [d for d in dests if d.get("save_type") == "favorite"] + \
+              [d for d in dests if d.get("save_type") == "recent"][:10]
     else:
-      dests[dest_id] = new_dest
+      # 对于收藏位置，更新或添加
+      found = False
+      for i, d in enumerate(dests):
+        if d.get("save_type") == "favorite" and d.get("label") == save_type:
+          dests[i] = new_dest
+          found = True
+          break
+      if not found:
+        dests.insert(0, new_dest)
+
+    # 保存更新后的目的地列表
     params.put("ApiCache_NavDestinations", json.dumps(dests).rstrip("\n\r"))
+
+  except Exception as e:
+    print(f"Error in nav_confirmed: {str(e)}")
 
 def public_token_input(postvars):
   if postvars is None or "pk_token_val" not in postvars or postvars.get("pk_token_val")[0] == "":
@@ -400,15 +571,99 @@ def gmap_key_input(postvars):
     params.put("GMapKey", token)
   return token
 
+def init_amap_params():
+  """初始化高德地图相关参数"""
+  try:
+    print("开始初始化高德地图参数...")
+
+    # 检查参数目录
+    params_dir = "/data/params/d"
+    if not os.path.exists(params_dir):
+      try:
+        os.makedirs(params_dir, mode=0o755, exist_ok=True)
+        print(f"创建参数目录: {params_dir}")
+      except Exception as e:
+        print(f"创建参数目录失败: {str(e)}")
+        return False
+
+    # 设置默认参数
+    try:
+      # 设置 SearchInput 参数
+      params.put_bool("SearchInput", True)
+      print("SearchInput 参数设置成功")
+
+      # 设置默认的 AMapKey 参数
+      default_web_key = "faf2f8ab406a8da1231ef7e10d501b65"
+      default_js_key = "fc2724b3c96a7f244b2211f05c5264be"
+
+      # 检查现有参数
+      existing_web_key = params.get("AMapKey1")
+      existing_js_key = params.get("AMapKey2")
+
+      # 只在参数不存在时设置默认值
+      if existing_web_key is None:
+        params.put("AMapKey1", default_web_key)
+        print(f"设置 AMapKey1 默认值: {default_web_key}")
+
+      if existing_js_key is None:
+        params.put("AMapKey2", default_js_key)
+        print(f"设置 AMapKey2 默认值: {default_js_key}")
+
+      print("默认参数设置成功")
+      return True
+
+    except Exception as e:
+      print(f"设置默认参数失败: {str(e)}")
+      return False
+
+  except Exception as e:
+    print(f"高德地图参数初始化失败: {str(e)}")
+    return False
+
 def amap_key_input(postvars):
-  if postvars is None or "amap_key_val" not in postvars or postvars.get("amap_key_val")[0] == "":
-    return postvars
-  else:
-    token = postvars.get("amap_key_val").strip()
-    token2 = postvars.get("amap_key_val_2").strip()
-    params.put("AMapKey1", token)
-    params.put("AMapKey2", token2)
-  return token
+  """处理高德地图 API Key 的输入和保存"""
+  try:
+    if not postvars:
+      print("错误: 未收到输入参数")
+      return None
+
+    # 获取并验证输入的 API Keys
+    web_key = postvars.get("amap_key_val", "").strip()
+    js_key = postvars.get("amap_key_val_2", "").strip()
+
+    print(f"接收到的 API Keys - Web: {web_key}, JS: {js_key}")
+
+    if not web_key or not js_key:
+      print("错误: API Keys 不能为空")
+      return None
+
+    try:
+      # 保存参数
+      params.put("AMapKey1", web_key)
+      print("AMapKey1 保存成功")
+      params.put("AMapKey2", js_key)
+      print("AMapKey2 保存成功")
+      params.put_bool("SearchInput", True)
+      print("SearchInput 保存成功")
+
+      # 验证保存的结果
+      saved_web_key, saved_js_key = get_amap_key()
+      print(f"验证保存的参数 - Web: {saved_web_key}, JS: {saved_js_key}")
+
+      if not saved_web_key or not saved_js_key:
+        print("错误: 参数保存验证失败")
+        return None
+
+      print("API Keys 设置成功")
+      return web_key
+
+    except Exception as e:
+      print(f"保存参数失败: {str(e)}")
+      return None
+
+  except Exception as e:
+    print(f"API Key 输入处理失败: {str(e)}")
+    return None
 
 def gcj02towgs84(lng, lat):
   dlat = transform_lat(lng - 105.0, lat - 35.0)
@@ -462,42 +717,3 @@ def store_toggle_values(updated_values):
   #params_memory.put_bool("FrogPilotTogglesUpdated", True)
   #time.sleep(1)
   #params_memory.put_bool("FrogPilotTogglesUpdated", False)
-
-def get_car_info():
-  """获取车辆实时信息"""
-  try:
-    from cereal import messaging
-
-    # 初始化消息订阅
-    sm = messaging.SubMaster(['carState', 'carControl', 'carParams', 'deviceState', 'pandaStates'])
-    sm.update()
-
-    # 获取基本信息
-    car_info = {
-      "车辆状态": {
-        "运行状态": "行驶中" if sm['carState'].vEgo > 0.1 else "停车中",
-        "巡航系统": "已启用" if sm['carState'].cruiseState.enabled else "未启用",
-        "当前速度": f"{sm['carState'].vEgo * 3.6:.1f} km/h",
-        "刹车状态": "踩下" if sm['carState'].brake > 0 else "松开",
-        "油门状态": "踩下" if sm['carState'].gas > 0 else "松开",
-        "方向盘角度": f"{sm['carState'].steeringAngleDeg:.1f}°",
-        "档位信息": sm['carState'].gearShifter.raw,
-        "车门状态": "已开启" if sm['carState'].doorOpen else "已关闭",
-        "安全带": "已系好" if not sm['carState'].seatbeltUnlatched else "未系好"
-      },
-      "系统信息": {
-        "车型": params.get("CarModel", encoding='utf8'),
-        "指纹识别": params.get("CarFingerprint", encoding='utf8'),
-        "设备温度": f"{sm['deviceState'].cpuTempC:.1f}°C",
-        "电池电量": f"{sm['deviceState'].batteryPercent}%",
-        "充电状态": "充电中" if sm['deviceState'].started else "未充电",
-        "网络状态": "已连接" if sm['deviceState'].networkType != 0 else "未连接",
-        "GPS状态": "已定位" if sm['deviceState'].gpsOK else "未定位",
-        "续航里程": f"{sm['carState'].fuelGauge:.1f}km" if hasattr(sm['carState'], 'fuelGauge') else "未知"
-      }
-    }
-
-    return car_info
-  except Exception as e:
-    print(f"获取车辆信息失败: {str(e)}")
-    return {"错误": f"获取车辆信息时出错: {str(e)}"}

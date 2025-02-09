@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 import os
 import secrets
-
+import json
 from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort
 from openpilot.common.realtime import set_core_affinity
 import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
@@ -36,7 +36,18 @@ from openpilot.common.params import Params
 from cereal import log, messaging
 import time
 
+# 修正导入路径
+from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
+from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
+
 app = Flask(__name__)
+
+# 初始化消息订阅
+def init_messaging():
+    services = ['carState', 'carControl', 'carParams', 'liveParameters']
+    return messaging.SubMaster(services)
+
+sm = init_messaging()
 
 @app.route("/")
 def home_page():
@@ -270,67 +281,111 @@ def open_error_log(file_name):
 
 @app.route("/addr_input", methods=['GET', 'POST'])
 def addr_input():
-  preload = fleet.preload_favs()
-  SearchInput = fleet.get_SearchInput()
-  token = fleet.get_public_token()
-  s_token = fleet.get_app_token()
-  gmap_key = fleet.get_gmap_key()
-  PrimeType = fleet.get_PrimeType()
-  lon = 0.0
-  lat = 0.0
-  print(f"Request method: {request.method}, SearchInput: {SearchInput}, token: {token}, s_token: {s_token}, gmap_key: {gmap_key}, PrimeType: {PrimeType}")
-  if request.method == 'POST':
-    valid_addr = False
-    postvars = request.form.to_dict()
-    addr, lon, lat, valid_addr, token = fleet.parse_addr(postvars, lon, lat, valid_addr, token)
-    if not valid_addr:
-      # If address is not found, try searching
-      postvars = request.form.to_dict()
-      addr = request.form.get('addr_val')
-      addr, lon, lat, valid_addr, token = fleet.search_addr(postvars, lon, lat, valid_addr, token)
-    if valid_addr:
-      # If a valid address is found, redirect to nav_confirmation
-      return redirect(url_for('nav_confirmation', addr=addr, lon=lon, lat=lat))
-    else:
-      return render_template("error.html")
-  #elif PrimeType != 0:
-  #  return render_template("prime.html")
-  # amap stuff
-  elif SearchInput == 1:
-    amap_key, amap_key_2 = fleet.get_amap_key()
-    if amap_key == "" or amap_key is None or amap_key_2 == "" or amap_key_2 is None:
-      return redirect(url_for('amap_key_input'))
-    elif token == "" or token is None:
-      return redirect(url_for('public_token_input'))
-    elif s_token == "" or s_token is None:
-      return redirect(url_for('app_token_input'))
-    else:
-      return redirect(url_for('amap_addr_input'))
-  elif False: #fleet.get_nav_active(): # carrot: 그냥지움... 이것때문에 토큰을 안물어보는듯...
-    if SearchInput == 2:
-      return render_template("nonprime.html",
+  """处理地址输入"""
+  try:
+    # 获取收藏的地址
+    try:
+      preload = fleet.preload_favs()
+      if not preload or len(preload) != 5:
+        print("Invalid preload data, using default values")
+        preload = (None, None, None, None, None)
+    except Exception as e:
+      print(f"Error loading favorites: {str(e)}")
+      preload = (None, None, None, None, None)
+
+    # 获取其他必要参数
+    try:
+      SearchInput = fleet.get_SearchInput()  # 默认返回1，使用高德地图
+      amap_key, amap_key_2 = fleet.get_amap_key()
+      gmap_key = fleet.get_gmap_key()
+      token = fleet.get_public_token()
+      s_token = fleet.get_app_token()
+
+      print(f"参数状态 - SearchInput: {SearchInput}")
+      print(f"API Keys - AMap: {bool(amap_key)}, GMap: {bool(gmap_key)}")
+
+    except Exception as e:
+      print(f"Error getting parameters: {str(e)}")
+      SearchInput = 1
+      amap_key, amap_key_2 = fleet.get_amap_key()  # 使用默认值
+      gmap_key = ""
+      token = ""
+      s_token = ""
+
+    # 获取当前位置
+    try:
+      lon, lat = fleet.get_last_lon_lat()
+    except Exception as e:
+      print(f"Error getting location: {str(e)}")
+      lon, lat = 0.0, 0.0
+
+    print(f"Request method: {request.method}, SearchInput: {SearchInput}, amap_key: {bool(amap_key)}, gmap_key: {bool(gmap_key)}")
+
+    if request.method == 'POST':
+      try:
+        valid_addr = False
+        postvars = request.form.to_dict()
+        print(f"收到的表单数据: {postvars}")
+
+        # 首先尝试解析地址
+        addr, lon, lat, valid_addr, token = fleet.parse_addr(postvars, lon, lat, valid_addr, token)
+
+        if not valid_addr and "addr_val" in postvars:
+          # 如果地址解析失败，尝试搜索
+          addr = postvars.get("addr_val")
+          print(f"尝试搜索地址: {addr}")
+          addr, lon, lat, valid_addr, token = fleet.search_addr(postvars, lon, lat, valid_addr, token)
+
+        if valid_addr:
+          print(f"找到有效地址: {addr}, 坐标: ({lon}, {lat})")
+          return redirect(url_for('nav_confirmation', addr=addr, lon=lon, lat=lat))
+        else:
+          print("未找到有效地址")
+          return render_template("error.html", error="无法找到有效地址")
+
+      except Exception as e:
+        print(f"处理POST请求时出错: {str(e)}")
+        return render_template("error.html", error="处理地址时出错，请重试")
+
+    # 默认使用高德地图导航
+    if SearchInput == 1 or SearchInput is None:
+      # 检查高德地图密钥
+      if not amap_key or not amap_key_2:
+        print("No AMap keys found, redirecting to key input")
+        return redirect(url_for('amap_key_input'))
+      else:
+        return render_template("amap_addr_input.html",
+                             lon=lon, lat=lat,
+                             amap_key=amap_key,
+                             amap_key_2=amap_key_2,
+                             home=preload[0], work=preload[1],
+                             fav1=preload[2], fav2=preload[3], fav3=preload[4])
+    # Google地图导航
+    elif SearchInput == 2:
+      if not gmap_key:
+        print("No Google Maps key found, redirecting to key input")
+        return redirect(url_for('gmap_key_input'))
+      else:
+        return render_template("addr.html",
                              gmap_key=gmap_key, lon=lon, lat=lat,
-                             home=preload[0],work=preload[1], fav1=preload[2], fav2=preload[3], fav3=preload[4])
+                             home=preload[0], work=preload[1],
+                             fav1=preload[2], fav2=preload[3], fav3=preload[4])
     else:
-      return render_template("nonprime.html",
-                             gmap_key=None, lon=None, lat=None,
-                             home=preload[0], work=preload[1], fav1=preload[2], fav2=preload[3], fav3=preload[4])
-  elif token == "" or token is None:
-    return redirect(url_for('public_token_input'))
-  elif s_token == "" or s_token is None:
-    return redirect(url_for('app_token_input'))
-  elif SearchInput == 2:
-    lon, lat = fleet.get_last_lon_lat()
-    if gmap_key == "" or gmap_key is None:
-      return redirect(url_for('gmap_key_input'))
-    else:
-      return render_template("addr.html",
-                             gmap_key=gmap_key, lon=lon, lat=lat,
-                             home=preload[0], work=preload[1], fav1=preload[2], fav2=preload[3], fav3=preload[4])
-  else:
-      return render_template("addr.html",
-                             gmap_key=None, lon=None, lat=None,
-                             home=preload[0], work=preload[1], fav1=preload[2], fav2=preload[3], fav3=preload[4])
+      # 默认使用高德地图模板
+      if not amap_key or not amap_key_2:
+        print("No AMap keys found, redirecting to key input")
+        return redirect(url_for('amap_key_input'))
+      return render_template("amap_addr_input.html",
+                           lon=lon, lat=lat,
+                           amap_key=amap_key,
+                           amap_key_2=amap_key_2,
+                           home=preload[0], work=preload[1],
+                           fav1=preload[2], fav2=preload[3], fav3=preload[4])
+
+  except Exception as e:
+    print(f"Error in addr_input: {str(e)}")
+    traceback.print_exc()  # 打印完整的错误堆栈
+    return render_template("error.html", error=f"导航页面加载错误，请检查系统参数设置")
 
 @app.route("/nav_confirmation", methods=['GET', 'POST'])
 def nav_confirmation():
@@ -374,23 +429,84 @@ def gmap_key_input():
 
 @app.route("/amap_key_input", methods=['GET', 'POST'])
 def amap_key_input():
-  if request.method == 'POST':
-    postvars = request.form.to_dict()
-    fleet.amap_key_input(postvars)
-    return redirect(url_for('amap_addr_input'))
-  else:
-    return render_template("amap_key_input.html")
+  """处理高德地图 API Key 的输入页面和提交"""
+  try:
+    if request.method == 'POST':
+      print("收到 POST 请求")
+      postvars = request.form.to_dict()
+      print(f"表单数据: {postvars}")
+
+      # 验证输入参数
+      if not postvars.get("amap_key_val"):
+        print("缺少 Web服务 API Key")
+        return render_template("error.html", error="请输入高德地图 Web服务 API Key")
+      if not postvars.get("amap_key_val_2"):
+        print("缺少 Web端 JS API Key")
+        return render_template("error.html", error="请输入高德地图 Web端 JS API Key")
+
+      # 确保参数已初始化
+      print("初始化参数...")
+      if not fleet.init_amap_params():
+        print("初始化高德地图参数失败")
+        return render_template("error.html", error="初始化高德地图参数失败，请检查系统权限")
+
+      # 尝试保存 API keys
+      try:
+        print("保存 API Keys...")
+        result = fleet.amap_key_input(postvars)
+        if result is None:
+          print("API Key 设置失败")
+          return render_template("error.html", error="高德地图 API Key 设置失败，请检查系统权限和输入格式")
+
+        # 验证保存的结果
+        web_key, js_key = fleet.get_amap_key()
+        print(f"验证保存结果 - Web: {web_key}, JS: {js_key}")
+
+        if not web_key or not js_key:
+          print("API Key 验证失败")
+          return render_template("error.html", error="API Key 保存失败，请重试")
+
+        print("API Keys 设置成功，重定向到地址输入页面")
+        return redirect(url_for('addr_input'))
+
+      except Exception as e:
+        print(f"保存 API Keys 时发生错误: {str(e)}")
+        return render_template("error.html", error=f"保存 API Keys 失败: {str(e)}")
+
+    else:
+      # GET 请求，显示输入页面
+      print("显示 API Key 输入页面")
+      return render_template("amap_key_input.html")
+
+  except Exception as e:
+    print(f"高德地图 API Key 设置页面出错: {str(e)}")
+    return render_template("error.html", error=f"设置出错: {str(e)}")
 
 @app.route("/amap_addr_input", methods=['GET', 'POST'])
 def amap_addr_input():
-  if request.method == 'POST':
-    postvars = request.form.to_dict()
-    fleet.nav_confirmed(postvars)
-    return redirect(url_for('amap_addr_input'))
-  else:
-    lon, lat = fleet.get_last_lon_lat()
-    amap_key, amap_key_2 = fleet.get_amap_key()
-    return render_template("amap_addr_input.html", lon=lon, lat=lat, amap_key=amap_key, amap_key_2=amap_key_2)
+  try:
+    if request.method == 'POST':
+      postvars = request.form.to_dict()
+      fleet.nav_confirmed(postvars)
+      return redirect(url_for('amap_addr_input'))
+    else:
+      # 获取收藏的地址
+      preload = fleet.preload_favs()
+      if not preload or len(preload) != 5:
+        preload = (None, None, None, None, None)
+
+      lon, lat = fleet.get_last_lon_lat()
+      amap_key, amap_key_2 = fleet.get_amap_key()
+
+      return render_template("amap_addr_input.html",
+                           lon=lon, lat=lat,
+                           amap_key=amap_key,
+                           amap_key_2=amap_key_2,
+                           home=preload[0], work=preload[1],
+                           fav1=preload[2], fav2=preload[3], fav3=preload[4])
+  except Exception as e:
+    print(f"Error in amap_addr_input: {str(e)}")
+    return render_template("error.html", error=f"高德地图导航页面加载错误: {str(e)}")
 
 @app.route("/CurrentStep.json", methods=['GET'])
 def find_CurrentStep():
@@ -449,7 +565,6 @@ def store_toggle_values_route():
 
 @app.route("/carinfo")
 def carinfo():
-    """车辆信息监控页面"""
     try:
         params = Params()
 
@@ -457,37 +572,129 @@ def carinfo():
         sm.update()
 
         # 获取车辆基本信息
-        car_info = {
-            "车辆状态": {
-                "运行状态": "行驶中" if sm['carState'].vEgo > 0.1 else "停车中",
-                "巡航系统": "已启用" if sm['carState'].cruiseState.enabled else "未启用",
-                "当前速度": f"{sm['carState'].vEgo * 3.6:.1f} km/h",
-                "刹车状态": "踩下" if sm['carState'].brake > 0 else "松开",
-                "油门状态": "踩下" if sm['carState'].gas > 0 else "松开",
-                "方向盘角度": f"{sm['carState'].steeringAngleDeg:.1f}°",
-                "档位信息": str(sm['carState'].gearShifter),
-                "车门状态": "已开启" if sm['carState'].doorOpen else "已关闭",
-                "安全带": "已系好" if not sm['carState'].seatbeltUnlatched else "未系好"
-            },
-            "系统信息": {
-                "车型": params.get("CarModel", encoding='utf8'),
-                "指纹识别": params.get("CarFingerprint", encoding='utf8'),
-                "设备温度": f"{sm['deviceState'].cpuTempC:.1f}°C",
-                "电池电量": f"{sm['deviceState'].batteryPercent}%",
-                "充电状态": "充电中" if sm['deviceState'].started else "未充电",
-                "网络状态": "已连接" if sm['deviceState'].networkType != 0 else "未连接",
-                "GPS状态": "已定位" if sm['deviceState'].gpsOK else "未定位"
-            }
-        }
+        try:
+            car_name = params.get("CarName", encoding='utf8')
+            if car_name in PLATFORMS:
+                platform = PLATFORMS[car_name]
+                car_fingerprint = platform.config.platform_str
+                car_specs = platform.config.specs
+            else:
+                car_fingerprint = "未知指纹"
+                car_specs = None
+        except Exception as e:
+            print(f"获取车辆基本信息失败: {e}")
+            car_name = "未知车型"
+            car_fingerprint = "未知指纹"
+            car_specs = None
 
-        # 添加可选信息
-        if hasattr(sm['carState'], 'fuelGauge'):
-            car_info["系统信息"]["续航里程"] = f"{sm['carState'].fuelGauge:.1f}km"
+        # 获取车辆状态信息
+        try:
+            CS = sm['carState']
+
+            # 基本状态判断
+            is_car_started = CS.vEgo > 0.1
+            is_car_engaged = CS.cruiseState.enabled
+
+            # 构建基础信息
+            car_info = {
+                "车辆状态": {
+                    "运行状态": "行驶中" if is_car_started else "停车中",
+                    "巡航系统": "已启用" if is_car_engaged else "未启用",
+                    "当前速度": f"{CS.vEgo * 3.6:.1f} km/h",
+                    "发动机转速": f"{CS.engineRPM:.0f} RPM" if hasattr(CS, 'engineRPM') and CS.engineRPM > 0 else "未知",
+                    "档位信息": str(CS.gearShifter) if hasattr(CS, 'gearShifter') else "未知"
+                },
+                "基本信息": {
+                    "车型": car_name,
+                    "指纹": str(car_fingerprint),
+                    "车重": f"{car_specs.mass:.0f} kg" if car_specs and hasattr(car_specs, 'mass') else "未知",
+                    "轴距": f"{car_specs.wheelbase:.3f} m" if car_specs and hasattr(car_specs, 'wheelbase') else "未知",
+                    "转向比": f"{car_specs.steerRatio:.1f}" if car_specs and hasattr(car_specs, 'steerRatio') else "未知"
+                }
+            }
+
+            # 详细信息
+            if is_car_started or is_car_engaged:
+                car_info.update({
+                    "巡航信息": {
+                        "巡航状态": "开启" if CS.cruiseState.enabled else "关闭",
+                        "自适应巡航": "开启" if CS.cruiseState.available else "关闭",
+                        "设定速度": f"{CS.cruiseState.speed * 3.6:.1f} km/h" if CS.cruiseState.speed > 0 else "未设置",
+                        "跟车距离": str(CS.cruiseState.followDistance) if hasattr(CS.cruiseState, 'followDistance') else "未知"
+                    },
+                    "车轮速度": {
+                        "左前轮": f"{CS.wheelSpeeds.fl * 3.6:.1f} km/h",
+                        "右前轮": f"{CS.wheelSpeeds.fr * 3.6:.1f} km/h",
+                        "左后轮": f"{CS.wheelSpeeds.rl * 3.6:.1f} km/h",
+                        "右后轮": f"{CS.wheelSpeeds.rr * 3.6:.1f} km/h"
+                    },
+                    "转向系统": {
+                        "转向角度": f"{CS.steeringAngleDeg:.1f}°",
+                        "转向扭矩": f"{CS.steeringTorque:.1f} Nm",
+                        "转向角速度": f"{CS.steeringRateDeg:.1f}°/s",
+                        "车道偏离": "是" if CS.leftBlinker or CS.rightBlinker else "否"
+                    },
+                    "踏板状态": {
+                        "油门位置": f"{CS.gas * 100:.1f}%",
+                        "刹车压力": f"{CS.brake * 100:.1f}%",
+                        "油门踏板": "踩下" if CS.gasPressed else "松开",
+                        "刹车踏板": "踩下" if CS.brakePressed else "松开"
+                    },
+                    "安全系统": {
+                        "ESP状态": "介入" if CS.espDisabled else "正常",
+                        "ABS状态": "介入" if hasattr(CS, 'absActive') and CS.absActive else "正常",
+                        "牵引力控制": "介入" if hasattr(CS, 'tcsActive') and CS.tcsActive else "正常",
+                        "碰撞预警": "警告" if hasattr(CS, 'collisionWarning') and CS.collisionWarning else "正常"
+                    },
+                    "车门状态": {
+                        "左前门": "开启" if CS.doorOpen else "关闭",
+                        "右前门": "开启" if hasattr(CS, 'passengerDoorOpen') and CS.passengerDoorOpen else "关闭",
+                        "后备箱": "开启" if hasattr(CS, 'trunkOpen') and CS.trunkOpen else "关闭",
+                        "引擎盖": "开启" if hasattr(CS, 'hoodOpen') and CS.hoodOpen else "关闭",
+                        "安全带": "未系" if CS.seatbeltUnlatched else "已系"
+                    },
+                    "灯光状态": {
+                        "左转向灯": "开启" if CS.leftBlinker else "关闭",
+                        "右转向灯": "开启" if CS.rightBlinker else "关闭",
+                        "远光灯": "开启" if CS.genericToggle else "关闭",
+                        "近光灯": "开启" if hasattr(CS, 'lowBeamOn') and CS.lowBeamOn else "关闭"
+                    },
+                    "盲点监测": {
+                        "左侧": "有车" if CS.leftBlindspot else "无车",
+                        "右侧": "有车" if CS.rightBlindspot else "无车"
+                    }
+                })
+
+                # 添加可选的其他信息
+                other_info = {}
+                if hasattr(CS, 'outsideTemp'):
+                    other_info["车外温度"] = f"{CS.outsideTemp:.1f}°C"
+                if hasattr(CS, 'fuelGauge'):
+                    other_info["续航里程"] = f"{CS.fuelGauge:.1f}km"
+                if hasattr(CS, 'odometer'):
+                    other_info["总里程"] = f"{CS.odometer:.1f}km"
+                if hasattr(CS, 'instantFuelConsumption'):
+                    other_info["瞬时油耗"] = f"{CS.instantFuelConsumption:.1f}L/100km"
+
+                if other_info:
+                    car_info["其他信息"] = other_info
+
+        except Exception as e:
+            print(f"获取车辆状态信息时出错: {str(e)}")
+            traceback.print_exc()
+            car_info = {
+                "基本信息": {
+                    "车型": car_name,
+                    "指纹": str(car_fingerprint)
+                },
+                "状态": "无法获取车辆状态信息，请检查车辆是否启动"
+            }
 
         return render_template("carinfo.html", car_info=car_info)
 
     except Exception as e:
         print(f"carinfo 页面渲染出错: {str(e)}")
+        traceback.print_exc()
         return render_template("carinfo.html", car_info={"错误": f"获取车辆信息时出错: {str(e)}"})
 
 def main():
