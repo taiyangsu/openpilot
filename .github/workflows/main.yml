@@ -38,7 +38,8 @@ jobs:
         run: | 
          git fetch sunnypilot 
          git checkout -B master-new sunnypilot/master-new 
-         git push origin master-new  --force    
+         git push origin master-new  --force  
+      - name: Fetch and merge sunnypilot 
 
 
       
