@@ -717,3 +717,23 @@ def store_toggle_values(updated_values):
   #params_memory.put_bool("FrogPilotTogglesUpdated", True)
   #time.sleep(1)
   #params_memory.put_bool("FrogPilotTogglesUpdated", False)
+
+def format_gear_shifter(gear_shifter):
+    """格式化档位显示"""
+    gear_map = {
+        'park': '停车档(P)',
+        'drive': '前进档(D)',
+        'reverse': '倒车档(R)',
+        'neutral': '空档(N)',
+        'sport': '运动档(S)',
+        'low': '低速档(L)',
+        'brake': '制动',
+        'unknown': '未知'
+    }
+    return gear_map.get(str(gear_shifter).lower(), '未知')
+
+def format_engine_rpm(rpm):
+    """格式化发动机转速显示"""
+    if rpm is None or rpm == 0:
+        return "未知"
+    return f"{int(rpm)} RPM"

@@ -571,22 +571,6 @@ def carinfo():
         # 更新消息
         sm.update()
 
-        # 获取车辆基本信息
-        try:
-            car_name = params.get("CarName", encoding='utf8')
-            if car_name in PLATFORMS:
-                platform = PLATFORMS[car_name]
-                car_fingerprint = platform.config.platform_str
-                car_specs = platform.config.specs
-            else:
-                car_fingerprint = "未知指纹"
-                car_specs = None
-        except Exception as e:
-            print(f"获取车辆基本信息失败: {e}")
-            car_name = "未知车型"
-            car_fingerprint = "未知指纹"
-            car_specs = None
-
         # 获取车辆状态信息
         try:
             CS = sm['carState']
@@ -595,21 +579,21 @@ def carinfo():
             is_car_started = CS.vEgo > 0.1
             is_car_engaged = CS.cruiseState.enabled
 
-            # 构建基础信息
+            # 构建车辆状态信息
             car_info = {
                 "车辆状态": {
                     "运行状态": "行驶中" if is_car_started else "停车中",
                     "巡航系统": "已启用" if is_car_engaged else "未启用",
                     "当前速度": f"{CS.vEgo * 3.6:.1f} km/h",
-                    "发动机转速": f"{CS.engineRPM:.0f} RPM" if hasattr(CS, 'engineRPM') and CS.engineRPM > 0 else "未知",
-                    "档位信息": str(CS.gearShifter) if hasattr(CS, 'gearShifter') else "未知"
+                    "档位信息": CS.gearShifter,  # 使用原始值，由模板进行格式化
+                    "发动机转速": CS.engineRPM if hasattr(CS, 'engineRPM') else 0  # 使用原始值，由模板进行格式化
                 },
                 "基本信息": {
-                    "车型": car_name,
-                    "指纹": str(car_fingerprint),
-                    "车重": f"{car_specs.mass:.0f} kg" if car_specs and hasattr(car_specs, 'mass') else "未知",
-                    "轴距": f"{car_specs.wheelbase:.3f} m" if car_specs and hasattr(car_specs, 'wheelbase') else "未知",
-                    "转向比": f"{car_specs.steerRatio:.1f}" if car_specs and hasattr(car_specs, 'steerRatio') else "未知"
+                    "车型": params.get("CarName", encoding='utf8'),
+                    "指纹": str(params.get("CarFingerprint", "未知指纹")),
+                    "车重": f"{params.get('CarMass', '未知').split(' ')[0]} kg" if params.get('CarMass') else "未知",
+                    "轴距": f"{params.get('Wheelbase', '未知').split(' ')[0]} m" if params.get('Wheelbase') else "未知",
+                    "转向比": f"{params.get('SteerRatio', '未知').split(' ')[0]}" if params.get('SteerRatio') else "未知"
                 }
             }
 
@@ -684,13 +668,16 @@ def carinfo():
             traceback.print_exc()
             car_info = {
                 "基本信息": {
-                    "车型": car_name,
-                    "指纹": str(car_fingerprint)
+                    "车型": params.get("CarName", encoding='utf8'),
+                    "指纹": str(params.get("CarFingerprint", "未知指纹"))
                 },
                 "状态": "无法获取车辆状态信息，请检查车辆是否启动"
             }
 
-        return render_template("carinfo.html", car_info=car_info)
+        return render_template("carinfo.html",
+                            car_info=car_info,
+                            format_gear_shifter=fleet.format_gear_shifter,
+                            format_engine_rpm=fleet.format_engine_rpm)
 
     except Exception as e:
         print(f"carinfo 页面渲染出错: {str(e)}")
