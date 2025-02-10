@@ -141,10 +141,8 @@ void TogglesPanel::updateToggles() {
       experimental_mode_toggle->setEnabled(true);
       experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
-    }
-//下面
-/**
-    } else {
+
+      } else {
       // no long for now
       experimental_mode_toggle->setEnabled(false);
       long_personality_setting->setEnabled(false);
@@ -163,8 +161,6 @@ void TogglesPanel::updateToggles() {
       }
       experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
-     */
-    // 上面
 
     experimental_mode_toggle->refresh();
   } else {
