@@ -5,83 +5,70 @@
 {% endblock %}
 
 {% block main %}
-    <div class="container-fluid mt-3">
-        <h3 class="text-center mb-3">车辆实时信息</h3>
-        {% if car_info %}
-            {% if car_info.get("错误") %}
-                <div class="alert alert-warning">
-                    {{ car_info.get("错误") }}
-                </div>
-            {% else %}
-                <div class="row">
-                    {% for section, data in car_info.items() %}
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card h-100 {% if section == '车辆状态' %}bg-info{% else %}bg-dark{% endif %} text-white">
-                            <div class="card-header py-2">
-                                <h5 class="mb-0">{{ section }}</h5>
-                            </div>
-                            <div class="card-body p-2">
-                                {% if data is mapping %}
-                                    <div class="row g-2">
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="text-center mb-4">车辆实时信息</h1>
+
+            {% if car_info %}
+                {% if car_info.get("错误") %}
+                    <div class="alert alert-warning shadow">
+                        {{ car_info.get("错误") }}
+                    </div>
+                {% else %}
+                    <div class="row">
+                        {% for section, data in car_info.items() %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 shadow {% if section == '车辆状态' %}bg-info{% else %}bg-dark{% endif %} text-white">
+                                <div class="card-header border-bottom border-light">
+                                    <h5 class="mb-0 text-center">{{ section }}</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if data is mapping %}
                                         {% for key, value in data.items() %}
-                                        <div class="col-12">
-                                            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary py-1">
-                                                <span class="small">{{ key }}:</span>
-                                                <span class="small fw-bold">
-                                                    {% if value is string and "km/h" in value %}
-                                                        <span class="text-warning">{{ value }}</span>
-                                                    {% elif key == "档位信息" %}
-                                                        {{ format_gear_shifter(value) }}
-                                                    {% elif key == "发动机转速" %}
-                                                        {{ format_engine_rpm(value) }}
-                                                    {% else %}
-                                                        {{ value }}
-                                                    {% endif %}
-                                                </span>
-                                            </div>
+                                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom border-secondary pb-2">
+                                            <span class="fw-light">{{ key }}</span>
+                                            <span class="fw-bold">
+                                                {% if value is string and "km/h" in value %}
+                                                    <span class="badge bg-primary">{{ value }}</span>
+                                                {% else %}
+                                                    {{ value }}
+                                                {% endif %}
+                                            </span>
                                         </div>
                                         {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <div class="alert alert-warning mb-0">
-                                        {{ data }}
-                                    </div>
-                                {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-warning mb-0">
+                                            {{ data }}
+                                        </div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                {% endif %}
+            {% else %}
+                <div class="alert alert-danger shadow">
+                    <i class="fas fa-exclamation-triangle me-2"></i>无法获取车辆信息
                 </div>
             {% endif %}
-        {% else %}
-            <div class="alert alert-danger">
-                无法获取车辆信息
-            </div>
-        {% endif %}
+        </div>
     </div>
+</div>
 
-    <script>
-        // 每2秒刷新一次页面
-        setTimeout(function(){
-            window.location.reload(1);
-        }, 2000);
-    </script>
-
-    <style>
-        .card {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .card-header {
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-        .border-bottom {
-            border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-        }
-        .small {
-            font-size: 0.875rem;
-        }
-        .text-warning {
-            color: #ffc107 !important;
-        }
-    </style>
+<script>
+    // 使用平滑过渡效果刷新页面
+    setInterval(function() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const newDoc = parser.parseFromString(html, 'text/html');
+                const newContent = newDoc.querySelector('.container');
+                const currentContent = document.querySelector('.container');
+                currentContent.innerHTML = newContent.innerHTML;
+            });
+    }, 1000);
+</script>
 {% endblock %}
