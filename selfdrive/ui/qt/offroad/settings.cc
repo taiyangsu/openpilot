@@ -136,11 +136,14 @@ void TogglesPanel::updateToggles() {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
-    if (hasLongitudinalControl(CP)) {
-      // normal description and toggle
+    if (!hasLongitudinalControl(CP)) {
+      // normal description and toggle  if (hasLongitudinalControl(CP)) {
       experimental_mode_toggle->setEnabled(true);
       experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
+    }
+//下面
+/**
     } else {
       // no long for now
       experimental_mode_toggle->setEnabled(false);
@@ -160,6 +163,8 @@ void TogglesPanel::updateToggles() {
       }
       experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
+     */
+    // 上面
 
     experimental_mode_toggle->refresh();
   } else {
