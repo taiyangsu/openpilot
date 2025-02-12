@@ -19,6 +19,8 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import StreamingMovingAverage
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.navd.helpers import Coordinate
+from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
+from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
 
 try:
   from shapely.geometry import LineString
@@ -183,6 +185,11 @@ class CarrotMan:
     self.params_memory = Params("/dev/shm/params")
     self.sm = messaging.SubMaster(['deviceState', 'carState', 'controlsState', 'longitudinalPlan', 'modelV2', 'selfdriveState', 'carControl'])
     self.pm = messaging.PubMaster(['carrotMan', "navRoute", "navInstruction"])
+
+    # 添加新的 ZMQ 发布者用于发送车辆数据到安卓APP
+    self.android_context = zmq.Context()
+    self.android_socket = self.android_context.socket(zmq.PUB)
+    self.android_socket.bind("tcp://*:7707")  # 使用7707端口发送车辆数据
 
     self.carrot_serv = CarrotServ()
 
@@ -1624,6 +1631,71 @@ class CarrotServ:
     instruction.allManeuvers = maneuvers
 
     pm.send('navInstruction', msg)
+
+    # 在update_navi方法末尾添加发送车辆数据到安卓APP的代码
+    try:
+      if sm.alive['carState'] and sm.alive['selfdriveState']:
+        CS = sm['carState']
+        SS = sm['selfdriveState']
+        
+        # 构建发送给安卓APP的数据
+        car_data = {
+          "v_ego_kph": CS.vEgoCluster * 3.6,  # 转换为km/h
+          "engineRPM": CS.engineRPM if hasattr(CS, 'engineRPM') else 0,
+          "gearShifter": str(CS.gearShifter) if hasattr(CS, 'gearShifter') else "未知",
+          "cruiseState": {
+            "enabled": CS.cruiseState.enabled,
+            "available": CS.cruiseState.available,
+            "speed": CS.cruiseState.speed * 3.6,  # 转换为km/h
+            "followDistance": CS.cruiseState.followDistance if hasattr(CS.cruiseState, 'followDistance') else 0
+          },
+          "wheelSpeeds": {
+            "fl": CS.wheelSpeeds.fl * 3.6,
+            "fr": CS.wheelSpeeds.fr * 3.6,
+            "rl": CS.wheelSpeeds.rl * 3.6,
+            "rr": CS.wheelSpeeds.rr * 3.6
+          },
+          "steeringSystem": {
+            "steeringAngleDeg": CS.steeringAngleDeg,
+            "steeringTorque": CS.steeringTorque,
+            "steeringRateDeg": CS.steeringRateDeg,
+            "laneDeparture": CS.leftBlinker or CS.rightBlinker
+          },
+          "pedalStatus": {
+            "gas": CS.gas * 100,  # 转换为百分比
+            "brake": CS.brake * 100,  # 转换为百分比
+            "gasPressed": CS.gasPressed,
+            "brakePressed": CS.brakePressed
+          },
+          "safetySystem": {
+            "espDisabled": CS.espDisabled,
+            "absActive": CS.absActive if hasattr(CS, 'absActive') else False,
+            "tcsActive": CS.tcsActive if hasattr(CS, 'tcsActive') else False,
+            "collisionWarning": CS.collisionWarning if hasattr(CS, 'collisionWarning') else False
+          },
+          "doorStatus": {
+            "doorOpen": CS.doorOpen,
+            "seatbeltUnlatched": CS.seatbeltUnlatched,
+            "leftBlinker": CS.leftBlinker,
+            "rightBlinker": CS.rightBlinker
+          },
+          "navigation": {
+            "active": self.active_carrot > 0,
+            "speedLimit": self.xSpdLimit,
+            "speedDist": self.xSpdDist,
+            "turnInfo": self.xTurnInfo,
+            "distToTurn": self.xDistToTurn,
+            "roadName": self.szPosRoadName,
+            "nextTurn": self.szTBTMainText
+          }
+        }
+        
+        # 发送数据到安卓APP
+        self.android_socket.send_string(json.dumps(car_data))
+        
+    except Exception as e:
+      print(f"发送车辆数据到安卓APP时出错: {str(e)}")
+      traceback.print_exc()
 
   def _update_system_time(self, epoch_time_remote, timezone_remote):
     epoch_time = int(time.time())
