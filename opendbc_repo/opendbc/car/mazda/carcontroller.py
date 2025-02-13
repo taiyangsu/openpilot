@@ -102,6 +102,6 @@ class CarController(CarControllerBase):
     elif CS.out.activateCruise:
       if (hud_control.leadVisible or v_ego_kph > 10.0) and self.activateCruise == 0 and not cant_activate:
         self.activateCruise = 1
-        return Buttons.RES_RESUME
+        return Buttons.RESUME
 
     return 0
