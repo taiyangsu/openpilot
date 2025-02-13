@@ -98,7 +98,7 @@ class CarController(CarControllerBase):
       elif target < current and current>= 31 and self.speed_from_pcm != 1:
         return Buttons.SET_MINUS
       elif target > current and current < 160 and self.speed_from_pcm != 1:
-        return Buttons.RES_PLUS
+        return Buttons.SET_PLUS
     elif CS.out.activateCruise:
       if (hud_control.leadVisible or v_ego_kph > 10.0) and self.activateCruise == 0 and not cant_activate:
         self.activateCruise = 1
