@@ -441,6 +441,7 @@ class CarStateBase(ABC):
 
     self.softHoldActive = 0
     self.is_metric = True
+    self.lkas_enabled = False
 
   @abstractmethod
   def update(self, can_parsers) -> structs.CarState:
