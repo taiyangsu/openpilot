@@ -31,7 +31,7 @@ class CarState(CarStateBase):
 
     ret = structs.CarState()
 
-    prev_distance_button = self.distance_button
+    self.prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRZ_BTNS"]["DISTANCE_LESS"]
     
     self.prev_cruise_buttons = self.cruise_buttons
