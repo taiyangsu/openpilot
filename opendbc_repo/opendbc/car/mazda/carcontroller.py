@@ -92,16 +92,20 @@ class CarController(CarControllerBase):
       if not CS.out.cruiseState.enabled:
         if (hud_control.leadVisible or v_ego_kph > 10.0) and self.activateCruise == 0 and not cant_activate:
           self.activateCruise = 1
+          print("RESUME")
           return Buttons.RESUME
       elif CC.cruiseControl.resume:
         return Buttons.RESUME
       elif target < current and current>= 31 and self.speed_from_pcm != 1:
+        print(f"SET_MINUS target={target}, current={current}")
         return Buttons.SET_MINUS
       elif target > current and current < 160 and self.speed_from_pcm != 1:
+        print(f"SET_PLUS target={target}, current={current}")
         return Buttons.SET_PLUS
     elif CS.out.activateCruise:
       if (hud_control.leadVisible or v_ego_kph > 10.0) and self.activateCruise == 0 and not cant_activate:
         self.activateCruise = 1
+        print("RESUME")
         return Buttons.RESUME
 
     return 0
