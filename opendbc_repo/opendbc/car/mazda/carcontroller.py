@@ -52,11 +52,10 @@ class CarController(CarControllerBase):
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame//10, Buttons.RESUME))
     else:
-      if self.frame % 10 == 0:
-        spam_button = self.make_spam_button(CC, CS)
-        if spam_button > 0:
-          self.brake_counter = 0
-          can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame//10, spam_button))
+      spam_button = self.make_spam_button(CC, CS)
+      if spam_button > 0:
+        self.brake_counter = 0
+        can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame//10, spam_button))
 
     self.apply_steer_last = apply_steer
 
