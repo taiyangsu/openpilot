@@ -52,11 +52,11 @@ class CarController(CarControllerBase):
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
     else:
-      if self.frame % 20 == 0:
+      if self.frame % 10 == 0:
         spam_button = self.make_spam_button(CC, CS)
         if spam_button > 0:
           self.brake_counter = 0
-          can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, spam_button))
+          can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame // 10, spam_button))
 
     self.apply_steer_last = apply_steer
 
@@ -83,7 +83,9 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
     target = int(set_speed_in_units+0.5)
+    target = int(round(target / 5.0) * 5.0))
     current = int(CS.out.cruiseState.speed*CV.MS_TO_KPH + 0.5)
+    current = int(round(current / 5.0) * 5.0))
     v_ego_kph = CS.out.vEgo * CV.MS_TO_KPH
 
     cant_activate = CS.out.brakePressed or CS.out.gasPressed
