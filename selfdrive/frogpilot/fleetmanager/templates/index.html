@@ -1,16 +1,51 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Home
+    首页
 {% endblock %}
 
 {% block main %}
     <br>
-    <h1>Fleet Manager</h1>
+    <h1>车队管理系统</h1>
     <br>
-    <a href='/footage'>View Dashcam Footage</a><br>
-    <br><a href='/preserved'>Access Preserved Footage</a><br>
-    <br><a href='/screenrecords'>View Screen Recordings</a><br>
-    <br><a href='/error_logs'>Access Error Logs</a><br>
-    <br><a href='/about'>About Fleet Manager</a><br>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-6 col-md-4 mb-3">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">行车记录</h5>
+                        <p class="card-text">查看和管理行车记录</p>
+                        <a href="/footage" class="btn btn-primary">进入</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 mb-3">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">导航功能</h5>
+                        <p class="card-text">设置导航目的地</p>
+                        <a href="/addr_input" class="btn btn-primary">进入</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 mb-3">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">系统工具</h5>
+                        <p class="card-text">系统参数设置</p>
+                        <a href="/tools" class="btn btn-primary">进入</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-md-4 mb-3">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">汽车工具</h5>
+                        <p class="card-text">查看车辆实时信息</p>
+                        <a href="/carinfo" class="btn btn-primary">进入</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

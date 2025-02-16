@@ -19,8 +19,7 @@ from openpilot.common.params import Params
 from openpilot.common.filter_simple import StreamingMovingAverage
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.navd.helpers import Coordinate
-from openpilot.opendbc_repo.opendbc.car.interfaces import CarInterfaceBase
-from openpilot.opendbc_repo.opendbc.car.values import PLATFORMS
+from openpilot.selfdrive.frogpilot.fleetmanager.helpers import get_all_toggle_values
 
 try:
   from shapely.geometry import LineString
@@ -183,13 +182,8 @@ class CarrotMan:
   def __init__(self):
     self.params = Params()
     self.params_memory = Params("/dev/shm/params")
-    self.sm = messaging.SubMaster(['deviceState', 'carState', 'controlsState', 'longitudinalPlan', 'modelV2', 'selfdriveState', 'carControl'])
+    self.sm = messaging.SubMaster(['deviceState', 'carState', 'controlsState', 'longitudinalPlan', 'modelV2', 'selfdriveState', 'carControl', 'carParams', 'liveParameters'])
     self.pm = messaging.PubMaster(['carrotMan', "navRoute", "navInstruction"])
-
-    # 添加新的 ZMQ 发布者用于发送车辆数据到安卓APP
-    self.android_context = zmq.Context()
-    self.android_socket = self.android_context.socket(zmq.PUB)
-    self.android_socket.bind("tcp://*:7707")  # 使用7707端口发送车辆数据
 
     self.carrot_serv = CarrotServ()
 
@@ -226,6 +220,15 @@ class CarrotMan:
     self.navi_points_active = False
 
     self.active_carrot_last = False
+
+    self.broadcast_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    self.broadcast_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    self.zmq_context = zmq.Context()
+    self.zmq_socket = self.zmq_context.socket(zmq.PUB)
+    # 修改绑定地址，允许所有网络接口
+    self.zmq_socket.bind("tcp://0.0.0.0:%d" % self.carrot_man_port)
+    # 设置高水位标记以避免消息堆积
+    self.zmq_socket.set_hwm(1)
 
   def get_broadcast_address(self):
     if PC:
@@ -463,60 +466,39 @@ class CarrotMan:
 
   def carrot_man_thread(self):
     while True:
-      try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-          sock.settimeout(10)  # 소켓 타임아웃 설정 (10초)
-          sock.bind(('0.0.0.0', self.carrot_man_port))  # UDP 포트 바인딩
-          print("#########carrot_man_thread: UDP thread started...")
+        try:
+            # 广播设备存在（降低频率到每秒一次）
+            if time.time() % 1 == 0:
+                self.broadcast_presence()
+            
+            # 获取并发送车辆信息
+            vehicle_info = self.get_vehicle_info()
+            if vehicle_info:
+                # 添加时间戳
+                vehicle_info["timestamp"] = int(time.time() * 1000)
+                self.zmq_socket.send_string(json.dumps(vehicle_info), zmq.NOBLOCK)
+            
+            # 原有的处理逻辑
+            self.carrot_serv.update()
+            if self.carrot_serv.json is not None:
+                self.update(self.carrot_serv.json)
+                self.carrot_serv.json = None
+            
+            time.sleep(0.05)  # 提高更新频率到20Hz
+            
+        except Exception as e:
+            print(f"carrot_man error: {e}")
+            traceback.print_exc()
+            time.sleep(1)  # 减少错误恢复时间
 
-          while True:
-            try:
-              #self.remote_addr = None
-              # 데이터 수신 (UDP는 recvfrom 사용)
-              try:
-                data, remote_addr = sock.recvfrom(4096)  # 최대 4096 바이트 수신
-                #print(f"Received data from {self.remote_addr}")
-
-                if not data:
-                  raise ConnectionError("No data received")
-
-                if self.remote_addr is None:
-                  print("Connected to: ", remote_addr)
-                self.remote_addr = remote_addr
-                try:
-                  json_obj = json.loads(data.decode())
-                  self.carrot_serv.update(json_obj)
-                except Exception as e:
-                  print(f"carrot_man_thread: json error...: {e}")
-                  print(data)
-
-                # 응답 메시지 생성 및 송신 (UDP는 sendto 사용)
-                #try:
-                #  msg = self.make_send_message()
-                #  sock.sendto(msg.encode('utf-8'), self.remote_addr)
-                #except Exception as e:
-                #  print(f"carrot_man_thread: send error...: {e}")
-
-              except TimeoutError:
-                print("Waiting for data (timeout)...")
-                self.remote_addr = None
-                time.sleep(1)
-
-              except Exception as e:
-                print(f"carrot_man_thread: error...: {e}")
-                self.remote_addr = None
-                break
-
-            except Exception as e:
-              print(f"carrot_man_thread: recv error...: {e}")
-              self.remote_addr = None
-              break
-
-          time.sleep(1)
-      except Exception as e:
-        self.remote_addr = None
-        print(f"Network error, retrying...: {e}")
-        time.sleep(2)
+  def __del__(self):
+    """清理资源"""
+    try:
+      self.broadcast_socket.close()
+      self.zmq_socket.close()
+      self.zmq_context.term()
+    except:
+      pass
 
   def make_tmux_data(self):
     try:
@@ -1578,8 +1560,8 @@ class CarrotServ:
       138: ("rotary", "sharp left", 5),
       139: ("rotary", "left", 5),
       142: ("rotary", "straight", 5),
-      14: ("turn", "uturn", 5),
-      201: ("arrive", "straight", 5),
+      14: ("turn", "uturn", 7),
+      201: ("arrive", "straight", 8),
       51: ("notification", "straight", None),
       52: ("notification", "straight", None),
       53: ("notification", "straight", None),
@@ -1631,71 +1613,6 @@ class CarrotServ:
     instruction.allManeuvers = maneuvers
 
     pm.send('navInstruction', msg)
-
-    # 在update_navi方法末尾添加发送车辆数据到安卓APP的代码
-    try:
-      if sm.alive['carState'] and sm.alive['selfdriveState']:
-        CS = sm['carState']
-        SS = sm['selfdriveState']
-        
-        # 构建发送给安卓APP的数据
-        car_data = {
-          "v_ego_kph": CS.vEgoCluster * 3.6,  # 转换为km/h
-          "engineRPM": CS.engineRPM if hasattr(CS, 'engineRPM') else 0,
-          "gearShifter": str(CS.gearShifter) if hasattr(CS, 'gearShifter') else "未知",
-          "cruiseState": {
-            "enabled": CS.cruiseState.enabled,
-            "available": CS.cruiseState.available,
-            "speed": CS.cruiseState.speed * 3.6,  # 转换为km/h
-            "followDistance": CS.cruiseState.followDistance if hasattr(CS.cruiseState, 'followDistance') else 0
-          },
-          "wheelSpeeds": {
-            "fl": CS.wheelSpeeds.fl * 3.6,
-            "fr": CS.wheelSpeeds.fr * 3.6,
-            "rl": CS.wheelSpeeds.rl * 3.6,
-            "rr": CS.wheelSpeeds.rr * 3.6
-          },
-          "steeringSystem": {
-            "steeringAngleDeg": CS.steeringAngleDeg,
-            "steeringTorque": CS.steeringTorque,
-            "steeringRateDeg": CS.steeringRateDeg,
-            "laneDeparture": CS.leftBlinker or CS.rightBlinker
-          },
-          "pedalStatus": {
-            "gas": CS.gas * 100,  # 转换为百分比
-            "brake": CS.brake * 100,  # 转换为百分比
-            "gasPressed": CS.gasPressed,
-            "brakePressed": CS.brakePressed
-          },
-          "safetySystem": {
-            "espDisabled": CS.espDisabled,
-            "absActive": CS.absActive if hasattr(CS, 'absActive') else False,
-            "tcsActive": CS.tcsActive if hasattr(CS, 'tcsActive') else False,
-            "collisionWarning": CS.collisionWarning if hasattr(CS, 'collisionWarning') else False
-          },
-          "doorStatus": {
-            "doorOpen": CS.doorOpen,
-            "seatbeltUnlatched": CS.seatbeltUnlatched,
-            "leftBlinker": CS.leftBlinker,
-            "rightBlinker": CS.rightBlinker
-          },
-          "navigation": {
-            "active": self.active_carrot > 0,
-            "speedLimit": self.xSpdLimit,
-            "speedDist": self.xSpdDist,
-            "turnInfo": self.xTurnInfo,
-            "distToTurn": self.xDistToTurn,
-            "roadName": self.szPosRoadName,
-            "nextTurn": self.szTBTMainText
-          }
-        }
-        
-        # 发送数据到安卓APP
-        self.android_socket.send_string(json.dumps(car_data))
-        
-    except Exception as e:
-      print(f"发送车辆数据到安卓APP时出错: {str(e)}")
-      traceback.print_exc()
 
   def _update_system_time(self, epoch_time_remote, timezone_remote):
     epoch_time = int(time.time())
@@ -1840,6 +1757,65 @@ class CarrotServ:
     else:
       #print(json)
       pass
+
+  def get_vehicle_info(self):
+    """获取车辆信息"""
+    try:
+      self.sm.update()
+      
+      if self.sm.valid.get('carState', False):
+        CS = self.sm['carState']
+        
+        # 基本状态判断
+        is_car_started = CS.vEgo > 0.1
+        is_car_engaged = CS.cruiseState.enabled
+        
+        # 构建车辆信息
+        vehicle_info = {
+          "车辆状态": {
+            "运行状态": "行驶中" if is_car_started else "停车中",
+            "巡航系统": "已启用" if is_car_engaged else "未启用",
+            "当前速度": f"{CS.vEgo * 3.6:.1f} km/h",
+            "发动机转速": f"{CS.engineRPM:.0f} RPM" if hasattr(CS, 'engineRPM') and CS.engineRPM > 0 else "未知",
+            "档位信息": str(CS.gearShifter) if hasattr(CS, 'gearShifter') else "未知"
+          }
+        }
+
+        # 如果车辆在运行，添加更多信息
+        if is_car_started or is_car_engaged:
+          vehicle_info.update({
+            "巡航信息": {
+              "巡航状态": "开启" if CS.cruiseState.enabled else "关闭",
+              "自适应巡航": "开启" if CS.cruiseState.available else "关闭",
+              "设定速度": f"{CS.cruiseState.speed * 3.6:.1f} km/h" if CS.cruiseState.speed > 0 else "未设置"
+            },
+            "车轮速度": {
+              "左前轮": f"{CS.wheelSpeeds.fl * 3.6:.1f} km/h",
+              "右前轮": f"{CS.wheelSpeeds.fr * 3.6:.1f} km/h",
+              "左后轮": f"{CS.wheelSpeeds.rl * 3.6:.1f} km/h",
+              "右后轮": f"{CS.wheelSpeeds.rr * 3.6:.1f} km/h"
+            },
+            "踏板状态": {
+              "油门位置": f"{CS.gas * 100:.1f}%",
+              "刹车压力": f"{CS.brake * 100:.1f}%",
+              "油门踏板": "踩下" if CS.gasPressed else "松开",
+              "刹车踏板": "踩下" if CS.brakePressed else "松开"
+            }
+          })
+
+        return vehicle_info
+      return None
+    except Exception as e:
+      print(f"获取车辆信息错误: {e}")
+      return None
+
+  def broadcast_presence(self):
+    """广播设备存在信息"""
+    try:
+      message = "comma_device_present"
+      self.broadcast_socket.sendto(message.encode(), ('<broadcast>', self.broadcast_port))
+    except Exception as e:
+      print(f"广播错误: {e}")
 
 
 import traceback

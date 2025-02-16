@@ -7,22 +7,22 @@
 #include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
-  adbToggle = new ParamControl("AdbEnabled", tr("Enable ADB"),
-            tr("ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."), "");
+  adbToggle = new ParamControl("AdbEnabled", tr("启用 ADB"),
+            tr("ADB (Android 调试桥)允许通过 USB 或网络连接到您的设备。更多信息请访问 https://docs.comma.ai/how-to/connect-to-comma"), "");
   addItem(adbToggle);
 
-  // SSH keys
+  // SSH 密钥
   addItem(new SshToggle());
   addItem(new SshControl());
 
-  joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
+  joystickToggle = new ParamControl("JoystickDebugMode", tr("游戏手柄调试模式"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
     longManeuverToggle->refresh();
   });
   addItem(joystickToggle);
 
-  longManeuverToggle = new ParamControl("LongitudinalManeuverMode", tr("Longitudinal Maneuver Mode"), "", "");
+  longManeuverToggle = new ParamControl("LongitudinalManeuverMode", tr("纵向操控模式"), "", "");
   QObject::connect(longManeuverToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("JoystickDebugMode", false);
     joystickToggle->refresh();
@@ -31,11 +31,11 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   experimentalLongitudinalToggle = new ParamControl(
     "ExperimentalLongitudinalEnabled",
-    tr("openpilot Longitudinal Control (Alpha)"),
+    tr("openpilot 纵向控制 (测试版)"),
     QString("<b>%1</b><br><br>%2")
-      .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
-              "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
+      .arg(tr("警告：此车型的 openpilot 纵向控制仍处于测试阶段，启用后将禁用自动紧急制动(AEB)。"))
+      .arg(tr("在此车型上，openpilot 默认使用车辆内置的自适应巡航控制(ACC)而不是 openpilot 的纵向控制。"
+              "启用此选项将切换到 openpilot 的纵向控制。启用 openpilot 纵向控制测试版时，建议同时启用实验模式。")),
     ""
   );
   experimentalLongitudinalToggle->setConfirmation(true, false);
@@ -44,10 +44,10 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(experimentalLongitudinalToggle);
 
-  // Joystick and longitudinal maneuvers should be hidden on release branches
+  // 在正式发布版中应隐藏游戏手柄和纵向操控选项
   is_release = params.getBool("IsReleaseBranch");
 
-  // Toggles should be not available to change in onroad state
+  // 在行驶状态下不应允许更改开关状态
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
@@ -56,16 +56,16 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     btn->setVisible(!is_release);
 
     /*
-     * experimentalLongitudinalToggle should be toggelable when:
-     * - visible, and
-     * - during onroad & offroad states
+     * experimentalLongitudinalToggle 在以下情况下可切换：
+     * - 可见时
+     * - 在行驶和停车状态下
      */
     if (btn != experimentalLongitudinalToggle) {
       btn->setEnabled(_offroad);
     }
   }
 
-  // longManeuverToggle and experimentalLongitudinalToggle should not be toggleable if the car does not have longitudinal control
+  // 如果车辆不支持纵向控制，则不应允许切换 longManeuverToggle 和 experimentalLongitudinalToggle
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
@@ -78,9 +78,9 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     }
 
     /*
-     * experimentalLongitudinalToggle should be visible when:
-     * - is not a release branch, and
-     * - the car supports experimental longitudinal control (alpha)
+     * experimentalLongitudinalToggle 在以下情况下可见：
+     * - 不是正式发布版本
+     * - 车辆支持实验性纵向控制(测试版)
      */
     experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
