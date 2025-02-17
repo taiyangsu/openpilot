@@ -44,6 +44,24 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(experimentalLongitudinalToggle);
 
+  // 添加 CSLC 开关
+  cslcToggle = new ParamControl(
+    "CSLCEnabled",
+    tr("CSLC Control"),
+    tr("Enable to use automatic speed control. Disable to use stock MRCC without speed control."),
+    ""
+  );
+  QObject::connect(cslcToggle, &ParamControl::toggleFlipped, [=](bool state) {
+    params.putBool("CSLCEnabled", state);
+    if (state) {
+      params.remove("DisableOpenpilotLongitudinal"); // 启用 openpilot 纵向控制
+    } else {
+      params.putBool("DisableOpenpilotLongitudinal", true); // 禁用 openpilot 纵向控制
+    }
+    updateToggles(offroad);
+  });
+  addItem(cslcToggle);
+
   // Joystick and longitudinal maneuvers should be hidden on release branches
   is_release = params.getBool("IsReleaseBranch");
 
@@ -55,12 +73,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
   for (auto btn : findChildren<ParamControl *>()) {
     btn->setVisible(!is_release);
 
-    /*
-     * experimentalLongitudinalToggle should be toggelable when:
-     * - visible, and
-     * - during onroad & offroad states
-     */
-    if (btn != experimentalLongitudinalToggle) {
+    if (btn != experimentalLongitudinalToggle && btn != cslcToggle) {
       btn->setEnabled(_offroad);
     }
   }
@@ -77,17 +90,18 @@ void DeveloperPanel::updateToggles(bool _offroad) {
       experimentalLongitudinalToggle->setEnabled(false);
     }
 
-    /*
-     * experimentalLongitudinalToggle should be visible when:
-     * - is not a release branch, and
-     * - the car supports experimental longitudinal control (alpha)
-     */
     experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
+
+    // 更新 CSLC 开关状态
+    bool isMazda = CP.getCarFingerprint().toString().find("MAZDA") != std::string::npos;
+    cslcToggle->setVisible(isMazda && !is_release);
+    cslcToggle->setEnabled(_offroad);
 
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
     longManeuverToggle->setEnabled(false);
     experimentalLongitudinalToggle->setVisible(false);
+    cslcToggle->setVisible(false);
   }
 
   offroad = _offroad;
