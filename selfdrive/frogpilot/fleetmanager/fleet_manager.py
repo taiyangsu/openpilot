@@ -25,27 +25,50 @@
 import os
 import secrets
 
-from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort
+from flask import Flask, jsonify, render_template, Response, request, send_from_directory, redirect, url_for, abort, Blueprint
 from openpilot.common.realtime import set_core_affinity
 import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 import traceback
 from ftplib import FTP
+from selfdrive.frogpilot.fleetmanager.helpers import save_location, get_current_location
 
 app = Flask(__name__)
+bp = Blueprint("fleet_manager", __name__)
 
-@app.route("/")
+@bp.route("/amap_addr_input", methods=["GET", "POST"])
+def amap_addr_input():
+    if request.method == "POST":
+        # 处理导航请求
+        lat = request.form.get("lat")
+        lon = request.form.get("lon")
+        save_type = request.form.get("save_type")
+        name = request.form.get("name")
+
+        if lat and lon:
+            save_location(float(lat), float(lon), save_type, name)
+            return redirect(url_for("fleet_manager.amap_addr_input"))
+
+    # GET 请求显示地图
+    current_lat, current_lon = get_current_location()
+    return render_template(
+        "amap_addr_input.html",
+        lat=current_lat,
+        lon=current_lon
+    )
+
+@bp.route("/")
 def home_page():
   return render_template("index.html")
 
-@app.errorhandler(500)
+@bp.errorhandler(500)
 def internal_error(exception):
   print('500 error caught')
   tberror = traceback.format_exc()
   return render_template("error.html", error=tberror)
 
-@app.route("/footage/full/<cameratype>/<route>")
+@bp.route("/footage/full/<cameratype>/<route>")
 def full(cameratype, route):
   chunk_size = 1024 * 512  # 5KiB
   file_name = cameratype + (".ts" if cameratype == "qcamera" else ".hevc")
@@ -57,25 +80,25 @@ def full(cameratype, route):
         yield bytes(chunk)
   return Response(generate_buffered_stream(), status=200, mimetype='video/mp4')
 
-@app.route("/footage/full/rlog/<route>/<segment>")
+@bp.route("/footage/full/rlog/<route>/<segment>")
 def download_rlog(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "rlog", as_attachment=True)
 
-@app.route("/footage/full/qcamera/<route>/<segment>")
+@bp.route("/footage/full/qcamera/<route>/<segment>")
 def download_qcamera(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "qcamera.ts", as_attachment=True)
 
-@app.route("/footage/full/fcamera/<route>/<segment>")
+@bp.route("/footage/full/fcamera/<route>/<segment>")
 def download_fcamera(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
   return send_from_directory(file_name, "fcamera.hevc", as_attachment=True)
 
-@app.route("/footage/full/dcamera/<route>/<segment>")
+@bp.route("/footage/full/dcamera/<route>/<segment>")
 def download_dcamera(route, segment):
   file_name = Paths.log_root() + route + "--" + segment + "/"
   print("download_route=", route, file_name, segment)
@@ -132,7 +155,7 @@ def upload_folder_to_ftp(local_folder, directory, remote_path):
         print(f"FTP Upload Error: {e}")
         return False
 
-@app.route("/footage/full/upload_carrot/<route>/<segment>")
+@bp.route("/footage/full/upload_carrot/<route>/<segment>")
 def upload_carrot(route, segment):
     from openpilot.common.params import Params
 
@@ -160,7 +183,7 @@ def upload_carrot(route, segment):
     else:
         return "Failed to upload files", 500
 
-@app.route("/footage/<cameratype>/<segment>")
+@bp.route("/footage/<cameratype>/<segment>")
 def fcamera(cameratype, segment):
   if not fleet.is_valid_segment(segment):
     return render_template("error.html", error="invalid segment")
@@ -168,7 +191,7 @@ def fcamera(cameratype, segment):
   return Response(fleet.ffmpeg_mp4_wrap_process_builder(file_name).stdout.read(), status=200, mimetype='video/mp4')
 
 
-@app.route("/footage/<route>")
+@bp.route("/footage/<route>")
 def route(route):
   if len(route) != 20:
     return render_template("error.html", error="route not found")
@@ -188,8 +211,8 @@ def route(route):
   return render_template("route.html", route=route, query_type=query_type, links=links, segments=segments, query_segment=query_segment)
 
 
-@app.route("/footage/")
-@app.route("/footage")
+@bp.route("/footage/")
+@bp.route("/footage")
 def footage():
   route_paths = fleet.all_routes()
   gifs = []
@@ -202,8 +225,8 @@ def footage():
   zipped = zip(route_paths, gifs, strict=False)
   return render_template("footage.html", zipped=zipped)
 
-@app.route("/preserved/")
-@app.route("/preserved")
+@bp.route("/preserved/")
+@bp.route("/preserved")
 def preserved():
   query_type = "qcamera"
   route_paths = []
@@ -221,8 +244,8 @@ def preserved():
   zipped = zip(route_paths, gifs, segments, strict=False)
   return render_template("preserved.html", zipped=zipped)
 
-@app.route("/screenrecords/")
-@app.route("/screenrecords")
+@bp.route("/screenrecords/")
+@bp.route("/screenrecords")
 def screenrecords():
   rows = fleet.list_file(fleet.SCREENRECORD_PATH)
   if not rows:
@@ -230,28 +253,28 @@ def screenrecords():
   return render_template("screenrecords.html", rows=rows, clip=rows[0])
 
 
-@app.route("/screenrecords/<clip>")
+@bp.route("/screenrecords/<clip>")
 def screenrecord(clip):
   return render_template("screenrecords.html", rows=fleet.list_files(fleet.SCREENRECORD_PATH), clip=clip)
 
 
-@app.route("/screenrecords/play/pipe/<file>")
+@bp.route("/screenrecords/play/pipe/<file>")
 def videoscreenrecord(file):
   file_name = fleet.SCREENRECORD_PATH + file
   return Response(fleet.ffplay_mp4_wrap_process_builder(file_name).stdout.read(), status=200, mimetype='video/mp4')
 
 
-@app.route("/screenrecords/download/<clip>")
+@bp.route("/screenrecords/download/<clip>")
 def download_file(clip):
   return send_from_directory(fleet.SCREENRECORD_PATH, clip, as_attachment=True)
 
 
-@app.route("/about")
+@bp.route("/about")
 def about():
   return render_template("about.html")
 
 
-@app.route("/error_logs")
+@bp.route("/error_logs")
 def error_logs():
   rows = fleet.list_file(fleet.ERROR_LOGS_PATH)
   if not rows:
@@ -259,13 +282,13 @@ def error_logs():
   return render_template("error_logs.html", rows=rows)
 
 
-@app.route("/error_logs/<file_name>")
+@bp.route("/error_logs/<file_name>")
 def open_error_log(file_name):
   f = open(fleet.ERROR_LOGS_PATH + file_name)
   error = f.read()
   return render_template("error_log.html", file_name=file_name, file_content=error)
 
-@app.route("/addr_input", methods=['GET', 'POST'])
+@bp.route("/addr_input", methods=['GET', 'POST'])
 def addr_input():
   preload = fleet.preload_favs()
   SearchInput = fleet.get_SearchInput()
@@ -329,7 +352,7 @@ def addr_input():
                              gmap_key=None, lon=None, lat=None,
                              home=preload[0], work=preload[1], fav1=preload[2], fav2=preload[3], fav3=preload[4])
 
-@app.route("/nav_confirmation", methods=['GET', 'POST'])
+@bp.route("/nav_confirmation", methods=['GET', 'POST'])
 def nav_confirmation():
   token = fleet.get_public_token()
   lon = request.args.get('lon')
@@ -342,7 +365,7 @@ def nav_confirmation():
   else:
     return render_template("nav_confirmation.html", addr=addr, lon=lon, lat=lat, token=token)
 
-@app.route("/public_token_input", methods=['GET', 'POST'])
+@bp.route("/public_token_input", methods=['GET', 'POST'])
 def public_token_input():
   if request.method == 'POST':
     postvars = request.form.to_dict()
@@ -351,7 +374,7 @@ def public_token_input():
   else:
     return render_template("public_token_input.html")
 
-@app.route("/app_token_input", methods=['GET', 'POST'])
+@bp.route("/app_token_input", methods=['GET', 'POST'])
 def app_token_input():
   if request.method == 'POST':
     postvars = request.form.to_dict()
@@ -360,7 +383,7 @@ def app_token_input():
   else:
     return render_template("app_token_input.html")
 
-@app.route("/gmap_key_input", methods=['GET', 'POST'])
+@bp.route("/gmap_key_input", methods=['GET', 'POST'])
 def gmap_key_input():
   if request.method == 'POST':
     postvars = request.form.to_dict()
@@ -369,7 +392,7 @@ def gmap_key_input():
   else:
     return render_template("gmap_key_input.html")
 
-@app.route("/amap_key_input", methods=['GET', 'POST'])
+@bp.route("/amap_key_input", methods=['GET', 'POST'])
 def amap_key_input():
   if request.method == 'POST':
     postvars = request.form.to_dict()
@@ -378,39 +401,24 @@ def amap_key_input():
   else:
     return render_template("amap_key_input.html")
 
-@app.route("/amap_addr_input", methods=['GET', 'POST'])
-def amap_addr_input():
-    if request.method == 'POST':
-        postvars = request.form.to_dict()
-        fleet.nav_confirmed(postvars)
-        return redirect(url_for('amap_addr_input'))
-    else:
-        lat = 39.90923  # 默认北京坐标
-        lon = 116.397428
-        return render_template(
-            "amap_addr_input.html",
-            lat=lat,
-            lon=lon,
-        )
-
-@app.route("/CurrentStep.json", methods=['GET'])
+@bp.route("/CurrentStep.json", methods=['GET'])
 def find_CurrentStep():
   directory = "/data/openpilot/selfdrive/manager/"
   filename = "CurrentStep.json"
   return send_from_directory(directory, filename, as_attachment=True)
 
-@app.route("/navdirections.json", methods=['GET'])
+@bp.route("/navdirections.json", methods=['GET'])
 def find_nav_directions():
   directory = "/data/openpilot/selfdrive/manager/"
   filename = "navdirections.json"
   return send_from_directory(directory, filename, as_attachment=True)
 
-@app.route("/locations", methods=['GET'])
+@bp.route("/locations", methods=['GET'])
 def get_locations():
   data = fleet.get_locations()
   return Response(data, content_type="application/json")
 
-@app.route("/set_destination", methods=['POST'])
+@bp.route("/set_destination", methods=['POST'])
 def set_destination():
   valid_addr = False
   postvars = request.get_json()
@@ -420,26 +428,26 @@ def set_destination():
   else:
     return Response('{"success": false}', content_type='application/json')
 
-@app.route("/navigation/<file_name>", methods=['GET'])
+@bp.route("/navigation/<file_name>", methods=['GET'])
 def find_navicon(file_name):
   directory = "/data/openpilot/selfdrive/assets/navigation/"
   return send_from_directory(directory, file_name, as_attachment=True)
 
-@app.route("/previewgif/<path:file_path>", methods=['GET'])
+@bp.route("/previewgif/<path:file_path>", methods=['GET'])
 def find_previewgif(file_path):
   directory = "/data/media/0/realdata/"
   return send_from_directory(directory, file_path, as_attachment=True)
 
-@app.route("/tools", methods=['GET'])
+@bp.route("/tools", methods=['GET'])
 def tools_route():
   return render_template("tools.html")
 
-@app.route("/get_toggle_values", methods=['GET'])
+@bp.route("/get_toggle_values", methods=['GET'])
 def get_toggle_values_route():
   toggle_values = fleet.get_all_toggle_values()
   return jsonify(toggle_values)
 
-@app.route("/store_toggle_values", methods=['POST'])
+@bp.route("/store_toggle_values", methods=['POST'])
 def store_toggle_values_route():
   try:
     updated_values = request.get_json()
