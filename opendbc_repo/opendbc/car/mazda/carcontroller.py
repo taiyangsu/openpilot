@@ -57,7 +57,6 @@ class CarController(CarControllerBase):
         if spam_button > 0:
           self.brake_counter = 0
           can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame // 10, spam_button))
-          can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame // 10 + 1, spam_button))
 
     self.apply_steer_last = apply_steer
 
