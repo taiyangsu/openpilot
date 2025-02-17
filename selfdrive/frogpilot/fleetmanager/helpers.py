@@ -236,11 +236,6 @@ def get_gmap_key():
   token = params.get("GMapKey", encoding='utf8')
   return token.strip() if token is not None else None
 
-def get_amap_key():
-  token = params.get("AMapKey1", encoding='utf8')
-  token2 = params.get("AMapKey2", encoding='utf8')
-  return (token.strip() if token is not None else None, token2.strip() if token2 is not None else None)
-
 def get_SearchInput():
   SearchInput = params.get_int("SearchInput")
   return SearchInput
@@ -400,16 +395,6 @@ def gmap_key_input(postvars):
     params.put("GMapKey", token)
   return token
 
-def amap_key_input(postvars):
-  if postvars is None or "amap_key_val" not in postvars or postvars.get("amap_key_val")[0] == "":
-    return postvars
-  else:
-    token = postvars.get("amap_key_val").strip()
-    token2 = postvars.get("amap_key_val_2").strip()
-    params.put("AMapKey1", token)
-    params.put("AMapKey2", token2)
-  return token
-
 def gcj02towgs84(lng, lat):
   dlat = transform_lat(lng - 105.0, lat - 35.0)
   dlng = transform_lng(lng - 105.0, lat - 35.0)
@@ -462,3 +447,15 @@ def store_toggle_values(updated_values):
   #params_memory.put_bool("FrogPilotTogglesUpdated", True)
   #time.sleep(1)
   #params_memory.put_bool("FrogPilotTogglesUpdated", False)
+
+class FleetManager:
+    def __init__(self):
+        # ... existing code ...
+
+    # 移除 get_amap_key 方法，因为我们不再需要它
+    # def get_amap_key(self):
+    #     token = params.get("AMapKey1", encoding='utf8')
+    #     token2 = params.get("AMapKey2", encoding='utf8')
+    #     return token, token2
+
+    # ... existing code ...

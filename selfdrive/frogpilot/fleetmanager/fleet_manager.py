@@ -380,14 +380,18 @@ def amap_key_input():
 
 @app.route("/amap_addr_input", methods=['GET', 'POST'])
 def amap_addr_input():
-  if request.method == 'POST':
-    postvars = request.form.to_dict()
-    fleet.nav_confirmed(postvars)
-    return redirect(url_for('amap_addr_input'))
-  else:
-    lon, lat = fleet.get_last_lon_lat()
-    amap_key, amap_key_2 = fleet.get_amap_key()
-    return render_template("amap_addr_input.html", lon=lon, lat=lat, amap_key=amap_key, amap_key_2=amap_key_2)
+    if request.method == 'POST':
+        postvars = request.form.to_dict()
+        fleet.nav_confirmed(postvars)
+        return redirect(url_for('amap_addr_input'))
+    else:
+        lat = 39.90923  # 默认北京坐标
+        lon = 116.397428
+        return render_template(
+            "amap_addr_input.html",
+            lat=lat,
+            lon=lon,
+        )
 
 @app.route("/CurrentStep.json", methods=['GET'])
 def find_CurrentStep():
