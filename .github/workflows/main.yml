@@ -18,8 +18,8 @@ jobs:
 
       - name: Setup Git
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"       
+          git config --global user.email '29983802+github-actions[bot]@users.noreply.github.com'
       # Existing remotes and branches
       - name: Add remote repositories 
         run: |         
