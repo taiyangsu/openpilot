@@ -1,6 +1,7 @@
 #pragma once
 
 #include "selfdrive/ui/qt/offroad/settings.h"
+#include <string>
 
 class DeveloperPanel : public ListWidget {
   Q_OBJECT

@@ -93,7 +93,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
     // 更新 CSLC 开关状态
-    bool isMazda = CP.getCarFingerprint().toString().find("MAZDA") != std::string::npos;
+    bool isMazda = std::string(CP.getCarFingerprint()).find("MAZDA") != std::string::npos;
     cslcToggle->setVisible(isMazda && !is_release);
     cslcToggle->setEnabled(_offroad);
 
