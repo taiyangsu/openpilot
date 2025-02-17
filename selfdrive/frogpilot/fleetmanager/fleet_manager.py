@@ -461,6 +461,10 @@ def main():
     set_core_affinity([0, 1, 2, 3])
   except Exception:
     cloudlog.exception("fleet_manager: failed to set core affinity")
+
+  # 注册 Blueprint
+  app.register_blueprint(bp)
+
   app.secret_key = secrets.token_hex(32)
   app.run(host="0.0.0.0", port=8082)
 
