@@ -59,17 +59,8 @@ def amap_addr_input():
         name = request.form.get("name")
 
         if lat and lon:
-            try:
-                # 保存位置并设置导航
-                save_location(float(lat), float(lon), save_type, name)
-
-                # 设置导航状态参数，触发导航启动
-                params = Params()
-                params.put_bool("NavEnabled", True)
-
-                return jsonify({"status": "success", "message": "导航已启动"})
-            except Exception as e:
-                return jsonify({"status": "error", "message": str(e)})
+            save_location(float(lat), float(lon), save_type, name)
+            return redirect(url_for("fleet_manager.amap_addr_input"))
 
     # GET 请求显示地图
     current_lat, current_lon = get_current_location()

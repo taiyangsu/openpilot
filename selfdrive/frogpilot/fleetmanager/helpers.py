@@ -496,11 +496,6 @@ def save_location(lat: float, lon: float, save_type: str, name: str = "") -> Non
         "place_name": name
     }
     params.put("NavDestination", json.dumps(nav_dest))
-    params.put_bool("NavEnabled", True)  # 启用导航
-
-    # 可以添加其他必要的导航参数
-    params.put_bool("IsNavigationActive", True)  # 如果需要这个参数
-    params.put_bool("IsNavigationEnabled", True)  # 如果需要这个参数
 
     # 更新导航目的地缓存
     new_dest = {
