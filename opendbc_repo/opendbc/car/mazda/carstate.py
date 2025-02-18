@@ -168,7 +168,7 @@ class CarState(CarStateBase):
         ("DOORS", 10),
         ("GEAR", 20),
         ("BSM", 10),
-        ("GEAR_BOX", "GEAR"),
+       # ("GEAR_BOX", "GEAR"),
       ]
 
     cam_messages = []
