@@ -21,7 +21,7 @@ jobs:
       - name: Add the source repository as a remote and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
-          git fetch upstream v8-wip2 v8-wip2-da-mazda_spam --no-tags
+          git fetch upstream v8-wip2 v8-wip2-da --no-tags
 
       # 3. Push v8-wip2 branch to your repository
       - name: Push v8-wip2 branch to your repository
@@ -29,8 +29,8 @@ jobs:
           git checkout -B v8-wip2 upstream/v8-wip2
           git push origin v8-wip2 --force
 
-      # 4. Push v8-wip2-da-mazda_spam branch to your repository
-      - name: Push v8-wip2-da-mazda_spam branch to your repository
+      # 4. Push v8-wip2-da branch to your repository
+      - name: Push v8-wip2-da branch to your repository
         run: |
-          git checkout -B v8-wip2-da-mazda_spam upstream/v8-wip2-da-mazda_spam
-          git push origin v8-wip2-da-mazda_spam --force
+          git checkout -B v8-wip2-da upstream/v8-wip2-da
+          git push origin v8-wip2-da --force
