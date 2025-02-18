@@ -514,29 +514,35 @@ def save_location(lat: float, lon: float, save_type: str, name: str = "") -> Non
     val = params.get("ApiCache_NavDestinations", encoding='utf8')
     if val is not None:
         val = val.rstrip('\x00')
-    dests = [] if val is None else json.loads(val)
+        try:
+            dests = json.loads(val)
+        except json.JSONDecodeError:
+            dests = []
+    else:
+        dests = []
 
     # 查找现有位置
     type_label_ids = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None, "recent": []}
-    idx = 0
-    for d in dests:
-        if d["save_type"] == "favorite":
+    for idx, d in enumerate(dests):
+        if d.get("save_type") == "favorite" and "label" in d:
             type_label_ids[d["label"]] = idx
         else:
             type_label_ids["recent"].append(idx)
-        idx += 1
 
     if save_type == "recent":
-        dest_id = None
+        # 对于最近位置，添加到列表开头
         if len(type_label_ids["recent"]) > 10:
-            dests.pop(type_label_ids["recent"][-1])
-    else:
-        dest_id = type_label_ids[save_type]
-
-    if dest_id is None:
+            # 如果超过10个最近位置，删除最旧的
+            oldest_recent = type_label_ids["recent"][-1]
+            dests.pop(oldest_recent)
         dests.insert(0, new_dest)
     else:
-        dests[dest_id] = new_dest
+        # 对于收藏位置，更新或添加
+        dest_id = type_label_ids.get(save_type)
+        if dest_id is not None:
+            dests[dest_id] = new_dest
+        else:
+            dests.append(new_dest)
 
     params.put("ApiCache_NavDestinations", json.dumps(dests).rstrip("\n\r"))
 
