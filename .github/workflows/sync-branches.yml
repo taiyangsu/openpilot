@@ -10,18 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the target repository (your repo)
       - name: Checkout the target repository (your repo)
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # 完整克隆仓库，确保所有历史记录
           token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
 
+      # 2. Add the source repository as a remote and fetch branches
       - name: Add the source repository as a remote and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
           git fetch upstream v8-wip2 v8-wip2-da-mazda_spam --no-tags
 
+      # 3. Push v8-wip2 branch to your repository
+      - name: Push v8-wip2 branch to your repository
+        run: |
+          git checkout -B v8-wip2 upstream/v8-wip2
+          git push origin v8-wip2 --force
 
+      # 4. Push v8-wip2-da-mazda_spam branch to your repository
       - name: Push v8-wip2-da-mazda_spam branch to your repository
         run: |
           git checkout -B v8-wip2-da-mazda_spam upstream/v8-wip2-da-mazda_spam
