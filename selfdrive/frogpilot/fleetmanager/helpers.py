@@ -466,7 +466,8 @@ def store_toggle_values(updated_values):
 LOCATIONS_FILE = "/data/frogpilot_locations.json"
 
 def save_location(lat: float, lon: float, save_type: str, name: str = "") -> None:
-    """保存位置信息到本地文件"""
+    """保存位置信息到本地文件和参数"""
+    # 保存到本地文件
     locations = {}
     if os.path.exists(LOCATIONS_FILE):
         with open(LOCATIONS_FILE, "r") as f:
@@ -480,6 +481,69 @@ def save_location(lat: float, lon: float, save_type: str, name: str = "") -> Non
 
     with open(LOCATIONS_FILE, "w") as f:
         json.dump(locations, f)
+
+    # 更新 NavDestination 参数
+    if name == "":
+        name = f"{lat},{lon}"
+
+    # 如果是高德地图坐标，需要转换为 WGS84
+    if params.get_int("SearchInput") == 1:
+        lon, lat = gcj02towgs84(lon, lat)
+
+    nav_dest = {
+        "latitude": lat,
+        "longitude": lon,
+        "place_name": name
+    }
+    params.put("NavDestination", json.dumps(nav_dest))
+    params.put_bool("NavEnabled", True)  # 启用导航
+
+    # 可以添加其他必要的导航参数
+    params.put_bool("IsNavigationActive", True)  # 如果需要这个参数
+    params.put_bool("IsNavigationEnabled", True)  # 如果需要这个参数
+
+    # 更新导航目的地缓存
+    new_dest = {
+        "latitude": float(lat),
+        "longitude": float(lon),
+        "place_name": name
+    }
+
+    if save_type == "recent":
+        new_dest["save_type"] = "recent"
+    else:
+        new_dest["save_type"] = "favorite"
+        new_dest["label"] = save_type
+
+    # 更新 ApiCache_NavDestinations
+    val = params.get("ApiCache_NavDestinations", encoding='utf8')
+    if val is not None:
+        val = val.rstrip('\x00')
+    dests = [] if val is None else json.loads(val)
+
+    # 查找现有位置
+    type_label_ids = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None, "recent": []}
+    idx = 0
+    for d in dests:
+        if d["save_type"] == "favorite":
+            type_label_ids[d["label"]] = idx
+        else:
+            type_label_ids["recent"].append(idx)
+        idx += 1
+
+    if save_type == "recent":
+        dest_id = None
+        if len(type_label_ids["recent"]) > 10:
+            dests.pop(type_label_ids["recent"][-1])
+    else:
+        dest_id = type_label_ids[save_type]
+
+    if dest_id is None:
+        dests.insert(0, new_dest)
+    else:
+        dests[dest_id] = new_dest
+
+    params.put("ApiCache_NavDestinations", json.dumps(dests).rstrip("\n\r"))
 
 def get_current_location():
     """获取当前位置"""
