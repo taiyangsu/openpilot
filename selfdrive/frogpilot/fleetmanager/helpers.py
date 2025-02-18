@@ -467,95 +467,116 @@ LOCATIONS_FILE = "/data/frogpilot_locations.json"
 
 def save_location(lat: float, lon: float, save_type: str, name: str = "") -> None:
     """保存位置信息到本地文件和参数"""
-    # 保存到本地文件
-    locations = {}
-    if os.path.exists(LOCATIONS_FILE):
-        with open(LOCATIONS_FILE, "r") as f:
-            locations = json.load(f)
+    try:
+        # 保存到本地文件
+        locations = {}
+        if os.path.exists(LOCATIONS_FILE):
+            try:
+                with open(LOCATIONS_FILE, "r") as f:
+                    locations = json.load(f)
+            except json.JSONDecodeError:
+                print("Error reading locations file")
 
-    locations[save_type] = {
-        "lat": lat,
-        "lon": lon,
-        "name": name
-    }
+        locations[save_type] = {
+            "lat": lat,
+            "lon": lon,
+            "name": name
+        }
 
-    with open(LOCATIONS_FILE, "w") as f:
-        json.dump(locations, f)
-
-    # 更新 NavDestination 参数
-    if name == "":
-        name = f"{lat},{lon}"
-
-    # 如果是高德地图坐标，需要转换为 WGS84
-    if params.get_int("SearchInput") == 1:
-        lon, lat = gcj02towgs84(lon, lat)
-
-    nav_dest = {
-        "latitude": lat,
-        "longitude": lon,
-        "place_name": name
-    }
-    params.put("NavDestination", json.dumps(nav_dest))
-
-    # 更新导航目的地缓存
-    new_dest = {
-        "latitude": float(lat),
-        "longitude": float(lon),
-        "place_name": name
-    }
-
-    if save_type == "recent":
-        new_dest["save_type"] = "recent"
-    else:
-        new_dest["save_type"] = "favorite"
-        new_dest["label"] = save_type
-
-    # 更新 ApiCache_NavDestinations
-    val = params.get("ApiCache_NavDestinations", encoding='utf8')
-    if val is not None:
-        val = val.rstrip('\x00')
+        # 保存到文件
         try:
-            dests = json.loads(val)
-        except json.JSONDecodeError:
-            dests = []
-    else:
+            with open(LOCATIONS_FILE, "w") as f:
+                json.dump(locations, f)
+        except Exception as e:
+            print(f"Error saving to locations file: {e}")
+
+        # 更新 NavDestination 参数
+        if not name:
+            name = f"{lat},{lon}"
+
+        # 如果是高德地图坐标，需要转换为 WGS84
+        if params.get_int("SearchInput") == 1:
+            lon, lat = gcj02towgs84(lon, lat)
+
+        nav_dest = {
+            "latitude": lat,
+            "longitude": lon,
+            "place_name": name
+        }
+        params.put("NavDestination", json.dumps(nav_dest))
+
+        # 更新导航目的地缓存
+        new_dest = {
+            "latitude": float(lat),
+            "longitude": float(lon),
+            "place_name": name,
+            "save_type": "recent" if save_type == "recent" else "favorite"
+        }
+
+        if save_type != "recent":
+            new_dest["label"] = save_type
+
+        # 获取现有目的地列表
         dests = []
+        val = params.get("ApiCache_NavDestinations", encoding='utf8')
+        if val:
+            try:
+                dests = json.loads(val.rstrip('\x00'))
+                if not isinstance(dests, list):
+                    dests = []
+            except (json.JSONDecodeError, AttributeError):
+                dests = []
 
-    # 查找现有位置
-    type_label_ids = {"home": None, "work": None, "fav1": None, "fav2": None, "fav3": None, "recent": []}
-    for idx, d in enumerate(dests):
-        if d.get("save_type") == "favorite" and "label" in d:
-            type_label_ids[d["label"]] = idx
+        # 更新目的地列表
+        if save_type == "recent":
+            # 移除旧的相同位置（如果存在）
+            dests = [d for d in dests if not (
+                d.get("save_type") == "recent" and
+                d.get("latitude") == lat and
+                d.get("longitude") == lon
+            )]
+            # 添加到开头
+            dests.insert(0, new_dest)
+            # 保持最近位置不超过10个
+            dests = [d for d in dests if d.get("save_type") != "recent"][:10] + [d for d in dests if d.get("save_type") == "recent"]
         else:
-            type_label_ids["recent"].append(idx)
+            # 更新或添加收藏位置
+            found = False
+            for i, d in enumerate(dests):
+                if d.get("save_type") == "favorite" and d.get("label") == save_type:
+                    dests[i] = new_dest
+                    found = True
+                    break
+            if not found:
+                dests.append(new_dest)
 
-    if save_type == "recent":
-        # 对于最近位置，添加到列表开头
-        if len(type_label_ids["recent"]) > 10:
-            # 如果超过10个最近位置，删除最旧的
-            oldest_recent = type_label_ids["recent"][-1]
-            dests.pop(oldest_recent)
-        dests.insert(0, new_dest)
-    else:
-        # 对于收藏位置，更新或添加
-        dest_id = type_label_ids.get(save_type)
-        if dest_id is not None:
-            dests[dest_id] = new_dest
-        else:
-            dests.append(new_dest)
+        # 保存更新后的目的地列表
+        params.put("ApiCache_NavDestinations", json.dumps(dests).rstrip("\n\r"))
 
-    params.put("ApiCache_NavDestinations", json.dumps(dests).rstrip("\n\r"))
+        return True
+
+    except Exception as e:
+        print(f"Error in save_location: {e}")
+        traceback.print_exc()
+        return False
 
 def get_current_location():
     """获取当前位置"""
-    params = Params()
-    # 从 params 获取最后已知位置，如果没有则使用默认值
     try:
-        location = json.loads(params.get("LastGPSPosition", encoding='utf8'))
-        return location["latitude"], location["longitude"]
-    except:
-        # 默认位置（可以设置为你所在城市的中心坐标）
-        return 39.90923, 116.397428
+        # 从 params 获取最后已知位置
+        last_pos = params.get("LastGPSPosition", encoding='utf8')
+        if last_pos:
+            try:
+                location = json.loads(last_pos)
+                return location.get("latitude", 39.90923), location.get("longitude", 116.397428)
+            except (json.JSONDecodeError, KeyError):
+                print("Error parsing LastGPSPosition")
+
+        # 如果无法获取位置，返回默认值
+        return 39.90923, 116.397428  # 默认位置（北京天安门）
+    except Exception as e:
+        print(f"Error getting current location: {e}")
+        return 39.90923, 116.397428  # 出错时返回默认位置
 
 def get_saved_locations():
     """获取所有保存的位置"""

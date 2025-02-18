@@ -56,15 +56,17 @@ def amap_addr_input():
             # 处理导航请求
             lat = request.form.get("lat")
             lon = request.form.get("lon")
-            save_type = request.form.get("save_type")
+            save_type = request.form.get("save_type", "recent")  # 默认为recent
             name = request.form.get("name", "")
 
             if lat is not None and lon is not None:
                 try:
                     lat_float = float(lat)
                     lon_float = float(lon)
-                    save_location(lat_float, lon_float, save_type, name)
-                    return redirect(url_for("fleet_manager.amap_addr_input"))
+                    if save_location(lat_float, lon_float, save_type, name):
+                        return redirect(url_for("fleet_manager.amap_addr_input"))
+                    else:
+                        return render_template("error.html", error="Failed to save location")
                 except ValueError as e:
                     print(f"Error converting coordinates: {e}")
                     return render_template("error.html", error="Invalid coordinates format")
@@ -72,14 +74,25 @@ def amap_addr_input():
                 return render_template("error.html", error="Missing coordinates")
 
         # GET 请求显示地图
-        current_lat, current_lon = get_current_location()
-        return render_template(
-            "amap_addr_input.html",
-            lat=current_lat,
-            lon=current_lon
-        )
+        try:
+            current_lat, current_lon = get_current_location()
+            return render_template(
+                "amap_addr_input.html",
+                lat=current_lat,
+                lon=current_lon
+            )
+        except Exception as e:
+            print(f"Error getting current location: {e}")
+            # 使用默认坐标
+            return render_template(
+                "amap_addr_input.html",
+                lat=39.90923,
+                lon=116.397428
+            )
+
     except Exception as e:
         print(f"Error in amap_addr_input: {e}")
+        traceback.print_exc()
         return render_template("error.html", error=str(e))
 
 @bp.route("/")
