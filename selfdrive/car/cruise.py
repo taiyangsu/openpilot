@@ -438,8 +438,8 @@ class VCruiseCarrot:
           speed_kph = int(self.carrot_arg)
           if 0 < speed_kph < 200:
             v_cruise_kph = speed_kph
-            self._add_log(f"Cruise speed set to {v_cruise_kph} (carrot command)")       
-    
+            self._add_log(f"Cruise speed set to {v_cruise_kph} (carrot command)")
+
     return v_cruise_kph, button_type, long_pressed
 
   def _update_cruise_buttons(self, CS, CC, v_cruise_kph):
@@ -486,12 +486,10 @@ class VCruiseCarrot:
         self._v_cruise_kph_at_brake = 0
 
       elif button_type == ButtonType.gapAdjustCruise:
-        longitudinalPersonalityMax = self.params.get_int("LongitudinalPersonalityMax")
-        if CS.pcmCruiseGap == 0:
-          personality = (self.params.get_int('LongitudinalPersonality') - 1) % longitudinalPersonalityMax
+        if "MAZDA" in str(self.CP.carFingerprint):
+          self.params.put_int_nonblocking("SpeedFromPCM", self.params.get_int("SpeedFromPCM") % 4) # 0,1,2,3
         else:
-          personality = np.clip(CS.pcmCruiseGap - 1, 0, longitudinalPersonalityMax)
-        self.params.put_int_nonblocking('LongitudinalPersonality', personality)
+          self.params.put_int_nonblocking("MyDrivingMode", self.params.get_int("MyDrivingMode") % 4 + 1) # 1,2,3,4 (1:eco, 2:safe, 3:normal, 4:high speed)
         #self.events.append(EventName.personalityChanged)
       elif button_type == ButtonType.lfaButton:
         self._lat_enabled = not self._lat_enabled
