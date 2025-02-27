@@ -2780,7 +2780,7 @@ public:
 
         // bottom_left
         QString gitBranch = QString::fromStdString(params.get("GitBranch"));
-        int speedFromPCM = params.get_int("SpeedFromPCM");
+        int speedFromPCM = params.getInt("SpeedFromPCM");
         sprintf(bottom_left, "%s - FCM:%d", gitBranch.toStdString().c_str(), speedFromPCM);
 
         // bottom_right
