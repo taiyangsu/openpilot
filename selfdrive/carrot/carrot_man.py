@@ -16,7 +16,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.params import Params
-from openpilot.common.filter_simple import StreamingMovingAverage
+from openpilot.common.filter_simple import MyMovingAverage
 from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.navd.helpers import Coordinate
 
@@ -253,7 +253,7 @@ class CarrotMan:
     self.remote_addr = None
 
     self.turn_speed_last = 250
-    self.curvatureFilter = StreamingMovingAverage(20)
+    self.curvatureFilter = MyMovingAverage(20)
     self.carrot_curve_speed_params()
 
     self.carrot_zmq_thread = threading.Thread(target=self.carrot_cmd_zmq, args=[])

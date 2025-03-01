@@ -445,6 +445,19 @@
     },
     {
       "group": "주행튜닝",
+      "name": "JLeadFactor",
+      "title": "JerkLeadFactor(0)",
+      "descr": "x0.01, 값이 크면 전방차량의 Jerk에 민감하게 반응",
+      "egroup": "LONG",
+      "etitle": "JerkLeadFactor(0)",
+      "edescr": "",
+      "min": 0,
+      "max": 100,
+      "default": 0,
+      "unit": 5
+    },
+    {
+      "group": "주행튜닝",
       "name": "LongTuningKpV",
       "title": "Long KpV(100)x0.01",
       "descr": "",

@@ -1,8 +1,10 @@
+from collections import deque
 import json
 import os
 import numpy as np
 import time
 import tomllib
+import math
 from abc import abstractmethod, ABC
 from difflib import SequenceMatcher
 from enum import StrEnum
@@ -399,13 +401,110 @@ class CarInterfaceBase(ABC):
 
     return ret
 
+class RadarConfig:
+  ALPHA = 0.15
+  MAX_VLEAD_DIFF = 20.0
+  MAX_DREL_DIFF = 5.0
+
+class MyTrack:
+  def __init__(self, track_id: int, dRel: float, vRel: float, yRel: float, v_ego: float):
+    self.track_id = track_id
+    self.dRel = dRel
+    self.vRel = vRel
+    self.yRel = yRel
+    self.vLead = v_ego + vRel
+    self.aLead = 0.0
+    self.jLead = 0.0
+    self.filtered_vLead = self.vLead
+    self.filtered_aLead = 0.0
+    self.filtered_jLead = 0.0
+    self.cnt = 0  # 초기값 0
+    
+  def update(self, v_ego: float, new_dRel: float, new_vRel: float, new_yRel: float, dt: float):
+    self.yRel = new_yRel
+    new_vLead = v_ego + new_vRel    
+    dRel_diff = abs(new_dRel - self.dRel)
+    vLead_diff = abs(new_vLead - self.vLead) * dt
+
+    if dRel_diff > RadarConfig.MAX_DREL_DIFF:
+      self.filtered_vLead = new_vLead
+      self.filtered_aLead = 0.0
+      self.filtered_jLead = 0.0
+      self.cnt = 0  # 거리 변화가 크면 초기화
+    else:
+      if vLead_diff > RadarConfig.MAX_VLEAD_DIFF:
+        self.filtered_vLead = new_vLead
+        self.cnt = 0
+      else:
+        self.filtered_vLead = RadarConfig.ALPHA * new_vLead + (1 - RadarConfig.ALPHA) * self.filtered_vLead
+
+      self.cnt += 1  # cnt 증가
+
+      if self.cnt > 2:  # 2 이상일 때 가속도 계산 (원래 1이상인데.. 이해못할 vLead초기 에러값이 있음, 아래 전반적으로 1씩 안정cnt를 증가함.)
+        aLead_new = (self.filtered_vLead - self.vLead) / dt
+        if self.cnt > 3:  # 2
+          self.filtered_aLead = RadarConfig.ALPHA * aLead_new + (1 - RadarConfig.ALPHA) * self.filtered_aLead
+        else:
+          self.filtered_aLead = aLead_new
+        
+        if self.cnt > 4:  # 3
+          jLead_new = (self.filtered_aLead - self.aLead) / dt
+          self.filtered_jLead = RadarConfig.ALPHA * jLead_new + (1 - RadarConfig.ALPHA) * self.filtered_jLead
+        else:
+          jLead_new = 0.0
+      else:
+        self.filtered_aLead = 0.0
+        self.filtered_jLead = 0.0
+
+        
+    self.vLead = self.filtered_vLead
+    self.aLead = self.filtered_aLead
+    self.jLead = self.filtered_jLead
+    self.dRel = new_dRel
+    self.vRel = new_vRel
+
+    
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.rcp = None
+    self.tracks: dict[int, MyTrack] = {}
     self.pts: dict[int, structs.RadarData.RadarPoint] = {}
     self.frame = 0
+    delay = CP.radarDelay
+    self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_CTRL)) + 1)
+    self.v_ego = 0.0
+    self.last_timestamp = time.time()
+    self.dt = 0.05
+     
+  def update_carrot(self, v_ego, rcv_time, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
+    self.v_ego_hist.append(v_ego)
+    self.v_ego = self.v_ego_hist[0]
+    ret = self.update(can_packets)
+
+    if ret is not None:
+      current_time = rcv_time #time.time()
+      dt = max(current_time - self.last_timestamp, 1e-3)
+      self.dt = self.dt * 0.98 + dt * 0.02
+      self.last_timestamp = current_time
+      #print(f"{rcv_time:.6f}, dt: {self.dt:.5f}")
+      new_tracks = {}
+
+      for addr, radar_point in self.pts.items():
+        track_id = radar_point.trackId
+        if track_id not in self.tracks:
+          new_tracks[track_id] = MyTrack(track_id, radar_point.dRel, radar_point.vRel, radar_point.yRel, self.v_ego)
+        else:
+          new_tracks[track_id] = self.tracks[track_id]
+          new_tracks[track_id].update(self.v_ego, radar_point.dRel, radar_point.vRel, radar_point.yRel, self.dt)
+
+        radar_point.vLead = new_tracks[track_id].vLead
+        radar_point.aLead = new_tracks[track_id].aLead
+        radar_point.jLead = new_tracks[track_id].jLead
+                
+      self.tracks = new_tracks
+    return ret
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.RadarDataT | None:
     self.frame += 1

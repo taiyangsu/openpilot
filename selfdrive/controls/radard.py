@@ -50,7 +50,7 @@ class KalmanParams:
 
 
 class Track:
-  def __init__(self, identifier: int, v_lead: float, kalman_params: KalmanParams):
+  def __init__(self, identifier: int, v_lead: float, a_lead: float, j_lead: float, kalman_params: KalmanParams):
     self.identifier = identifier
     self.cnt = 0
     self.aLeadTau = _LEAD_ACCEL_TAU
@@ -61,32 +61,24 @@ class Track:
 
     self.dRel = 0.0
     self.vRel = 0.0
-    self.aLead = 0.0
-    self.vLead_last = v_lead
+    self.aLead = a_lead
+    self.jLead = j_lead
     self.radar_reaction_factor = Params().get_float("RadarReactionFactor") * 0.01
 
-  def update(self, d_rel: float, y_rel: float, v_rel: float, v_lead: float, measured: float):
-
-    if abs(self.dRel - d_rel) > 3.0 or abs(self.vRel - v_rel) > 20.0 * DT_MDL:
-      self.cnt = 0
-      self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
-      self.aLead = 0.0
-      self.vLead_last = v_lead
+  def update(self, d_rel: float, y_rel: float, v_rel: float, v_lead: float, a_lead: float, j_lead: float, measured: float):
 
     # relative values, copy
     self.dRel = d_rel   # LONG_DIST
     self.yRel = y_rel   # -LAT_DIST
     self.vRel = v_rel   # REL_SPEED
     self.vLead = v_lead
+    self.aLead = a_lead
+    self.jLead = j_lead
     self.measured = measured   # measured or estimate
 
     # computed velocity and accelerations
     if self.cnt > 0:
       self.kf.update(self.vLead)
-      alpha = 0.15
-      #dv = 0.0 if abs(self.vLead) < 0.5 else self.vLead - self.vLead_last
-      dv = self.vLead - self.vLead_last
-      self.aLead = self.aLead * (1 - alpha) + dv / DT_MDL * alpha
 
     self.vLeadK = float(self.kf.x[SPEED][0])
     self.aLeadK = float(self.kf.x[ACCEL][0])
@@ -99,7 +91,6 @@ class Track:
       self.aLeadTau *= 0.9
 
     self.cnt += 1
-    self.vLead_last = self.vLead
 
   def reset_a_lead(self, aLeadK: float, aLeadTau: float):
     self.kf = KF1D([[self.vLead], [aLeadK]], self.K_A, self.K_C, self.K_K)
@@ -119,6 +110,7 @@ class Track:
       "aLead": float(self.aLead),
       "aLeadK": float(self.aLeadK),
       "aLeadTau": float(self.aLeadTau),
+      "jLead": float(self.jLead),
       "status": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
@@ -186,6 +178,7 @@ def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: 
     "aLead": float(lead_msg.a[0]),
     "aLeadK": float(lead_msg.a[0]),
     "aLeadTau": 0.3,
+    "jLead": 0.0,
     "fcw": False,
     "modelProb": float(lead_msg.prob),
     "status": True,
@@ -324,6 +317,7 @@ class VisionTrack:
       "aLead": self.aLead,
       "aLeadK": self.aLeadK,
       "aLeadTau": self.aLeadTau,
+      "jLead": 0.0,
       "fcw": False,
       "modelProb": self.prob,
       "status": self.status,
@@ -356,7 +350,7 @@ class VisionTrack:
       self.yRel = float(-lead_msg.y[0])
       dPath = self.yRel + np.interp(self.dRel, md.position.x, md.position.y)
       a_lead_vision = lead_msg.a[0]
-      if self.cnt < 1 or self.prob < 0.99:
+      if self.cnt < 2 or self.prob < 0.99:
         self.vRel = lead_v_rel_pred
         self.vLead = float(v_ego + lead_v_rel_pred)
         self.aLead = a_lead_vision
@@ -434,10 +428,10 @@ class RadarD:
     ar_pts = {}
     for pt in rr.points:
       pt_yRel = pt.yRel
-      if pt.trackId == 0 and pt.yRel == 0: # scc radar
+      if pt.trackId == 0 and pt.yRel == 0: # scc radar for HKG
         if self.ready and leads_v3[0].prob > 0.5:
           pt_yRel = -leads_v3[0].y[0]
-      ar_pts[pt.trackId] = [pt.dRel, pt_yRel, pt.vRel, pt.measured]
+      ar_pts[pt.trackId] = [pt.dRel, pt_yRel, pt.vRel, pt.measured, pt.vLead, pt.aLead, pt.jLead]
 
     # *** remove missing points from meta data ***
     for ids in list(self.tracks.keys()):
@@ -449,12 +443,15 @@ class RadarD:
       rpt = ar_pts[ids]
 
       # align v_ego by a fixed time to align it with the radar measurement
-      v_lead = rpt[2] + self.v_ego_hist[0]
+      #v_lead = rpt[2] + self.v_ego_hist[0]
+      v_lead = rpt[4] # carrot
+      a_lead = rpt[5]
+      j_lead = rpt[6]
 
       # create the track if it doesn't exist or it's a new track
       if ids not in self.tracks:
-        self.tracks[ids] = Track(ids, v_lead, self.kalman_params)
-      self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
+        self.tracks[ids] = Track(ids, v_lead, a_lead, j_lead, self.kalman_params)
+      self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, a_lead, j_lead, rpt[3])
 
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks() and len(rr.errors) == 0
