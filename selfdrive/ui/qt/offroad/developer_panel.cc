@@ -99,7 +99,8 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
     // CSLC开关应该在Mazda车型上可见
-    bool isMazda = CP.getCarName() == "mazda";
+    bool isMazda = CP.getCarFingerprint() >= cereal::CarParams::CarFingerprint::MAZDA_CX5 &&
+                  CP.getCarFingerprint() <= cereal::CarParams::CarFingerprint::MAZDA_CX5_2022;
     cslcToggle->setVisible(isMazda && !is_release);
     // CSLC开关在行驶和停车状态下都可用
     cslcToggle->setEnabled(isMazda);
