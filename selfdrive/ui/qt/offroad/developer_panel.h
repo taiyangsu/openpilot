@@ -14,6 +14,7 @@ private:
   ParamControl* joystickToggle;
   ParamControl* longManeuverToggle;
   ParamControl* experimentalLongitudinalToggle;
+  ParamControl* cslcToggle;
   bool is_release;
   bool offroad;
 

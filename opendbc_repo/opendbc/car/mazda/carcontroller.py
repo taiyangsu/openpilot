@@ -5,9 +5,12 @@ from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
+# 使用共享内存参数，提高性能
+params_memory = Params("/dev/shm/params")
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
@@ -15,15 +18,30 @@ class CarController(CarControllerBase):
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.brake_counter = 0
-    
+    self.frame = 0
+
+    # 初始化CSLC相关参数
     self.activateCruise = 0
     self.speed_from_pcm = 1
+    self.is_metric = True
+    self.experimental_mode = False
 
   def update(self, CC, CS, now_nanos):
-
+    # 每50帧更新一次参数
     if self.frame % 50 == 0:
       params = Params()
       self.speed_from_pcm = params.get_int("SpeedFromPCM")
+      self.is_metric = params.get_bool("IsMetric")
+      self.cslc_enabled = params.get_bool("CSLCEnabled")
+      self.experimental_mode = params.get_bool("ExperimentalMode")
+
+    hud_control = CC.hudControl
+    hud_v_cruise = hud_control.setSpeed
+    if hud_v_cruise > 70:
+      hud_v_cruise = 0
+
+    actuators = CC.actuators
+    accel = actuators.accel if hasattr(actuators, 'accel') else 0
 
     can_sends = []
 
@@ -45,18 +63,24 @@ class CarController(CarControllerBase):
         # Cancel Stock ACC if it's enabled while OP is disengaged
         # Send at a rate of 10hz until we sync with stock ACC state
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.CANCEL))
-    elif False:
+    else:
       self.brake_counter = 0
       if CC.cruiseControl.resume and self.frame % 5 == 0:
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
-    else:
-      if self.frame % 20 == 0:
-        spam_button = self.make_spam_button(CC, CS)
-        if spam_button > 0:
-          self.brake_counter = 0
-          can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame // 10, spam_button))
+      # CSLC功能 - 自动控制车速
+      elif self.cslc_enabled:
+        if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
+          slcSet = get_set_speed(self, hud_v_cruise)
+          can_sends.extend(mazdacan.create_mazda_acc_spam_command(self.packer, self, CS, slcSet, CS.out.vEgo, self.is_metric, self.experimental_mode, accel))
+      else:
+        # 原有的按钮控制逻辑
+        if self.frame % 20 == 0:
+          spam_button = self.make_spam_button(CC, CS)
+          if spam_button > 0:
+            self.brake_counter = 0
+            can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, self.frame // 10, spam_button))
 
     self.apply_steer_last = apply_steer
 
@@ -111,3 +135,22 @@ class CarController(CarControllerBase):
         return Buttons.RESUME
 
     return 0
+
+def get_set_speed(self, hud_v_cruise):
+  """
+  获取目标速度
+
+  参数:
+  - hud_v_cruise: HUD显示的巡航速度
+
+  返回:
+  - 目标速度(m/s)
+  """
+  v_cruise = min(hud_v_cruise, V_CRUISE_MAX * CV.KPH_TO_MS)
+
+  v_cruise_slc = params_memory.get_float("CSLCSpeed")
+
+  if v_cruise_slc > 0.:
+    v_cruise = v_cruise_slc
+
+  return v_cruise

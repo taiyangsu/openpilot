@@ -1,5 +1,5 @@
-from opendbc.car.mazda.values import Buttons, MazdaFlags
-from opendbc.car.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.mazda.values import Buttons, MazdaFlags
+from openpilot.common.conversions import Conversions as CV
 
 
 def create_steering_control(packer, CP, frame, apply_steer, lkas):
@@ -130,42 +130,25 @@ def create_button_cmd(packer, CP, counter, button):
 
     return packer.make_can_msg("CRZ_BTNS", 0, values)
 
-
-def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, is_metric=True, experimental_mode=False, accel=0):
-  """
-  创建自动控制车速的CAN消息
-
-  参数:
-  - packer: CAN消息打包器
-  - controller: 车辆控制器
-  - CS: 车辆状态
-  - slcSet: 目标速度(m/s)
-  - Vego: 当前车速(m/s)
-  - is_metric: 是否使用公制单位
-  - experimental_mode: 是否使用实验模式
-  - accel: 加速度
-
-  返回:
-  - CAN消息列表
-  """
+def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, frogpilot_variables, accel):
   cruiseBtn = Buttons.NONE
 
-  MS_CONVERT = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
+  MS_CONVERT = CV.MS_TO_KPH if frogpilot_variables.is_metric else CV.MS_TO_MPH
 
   speedSetPoint = int(round(CS.out.cruiseState.speed * MS_CONVERT))
   slcSet = int(round(slcSet * MS_CONVERT))
 
-  if not experimental_mode:
+  if not frogpilot_variables.experimentalMode:
     if slcSet + 5 < Vego * MS_CONVERT:
-      slcSet = slcSet - 10  # 降低10单位以增加减速效果，直到与当前速度差小于5
+      slcSet = slcSet - 10 # 10 lower to increase deceleration until with 5
   else:
     slcSet = int(round((Vego + 5 * accel) * MS_CONVERT))
 
-  if is_metric:  # 公制单位时按5km/h的步长调整
+  if frogpilot_variables.is_metric: # Default is by 5 kph
     slcSet = int(round(slcSet/5.0)*5.0)
     speedSetPoint = int(round(speedSetPoint/5.0)*5.0)
 
-  if slcSet < speedSetPoint and speedSetPoint > (30 if is_metric else 20):
+  if slcSet < speedSetPoint and speedSetPoint > (30 if frogpilot_variables.is_metric else 20):
     cruiseBtn = Buttons.SET_MINUS
   elif slcSet > speedSetPoint:
     cruiseBtn = Buttons.SET_PLUS
