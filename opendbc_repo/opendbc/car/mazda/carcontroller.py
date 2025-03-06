@@ -5,7 +5,9 @@ from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+
+# 定义最大巡航速度常量（km/h）
+V_CRUISE_MAX = 160
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -146,6 +148,7 @@ def get_set_speed(self, hud_v_cruise):
   返回:
   - 目标速度(m/s)
   """
+  # 使用本地定义的V_CRUISE_MAX常量
   v_cruise = min(hud_v_cruise, V_CRUISE_MAX * CV.KPH_TO_MS)
 
   v_cruise_slc = params_memory.get_float("CSLCSpeed")
