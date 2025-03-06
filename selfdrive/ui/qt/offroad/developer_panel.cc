@@ -29,6 +29,11 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
+  // 确保CSLCEnabled参数在初始化时就被设置
+  if (!params.getBool("CSLCEnabled", false)) {
+    params.putBool("CSLCEnabled", true);
+  }
+
   cslcToggle = new ParamControl(
     "CSLCEnabled",
     tr("Cruise Speed Limit Control (CSLC)"),
@@ -38,9 +43,6 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
               "此功能依赖于车辆原厂巡航系统的可用性，速度调整精度受限于原厂巡航系统的调速精度。")),
     ""
   );
-  if (!params.getBool("CSLCEnabled", false)) {
-    params.putBool("CSLCEnabled", true);
-  }
   addItem(cslcToggle);
 
   experimentalLongitudinalToggle = new ParamControl(

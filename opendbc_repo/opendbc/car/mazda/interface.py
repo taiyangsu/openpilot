@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
 
     # 检查是否启用CSLC功能
     params = Params()
-    if params.get_bool("CSLCEnabled"):
+    if params.get_bool("CSLCEnabled", False):
         # 配置CSLC的纵向控制参数
         ret.openpilotLongitudinalControl = True
         ret.longitudinalTuning.deadzoneBP = [0.]
