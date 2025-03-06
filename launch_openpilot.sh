@@ -1,21 +1,16 @@
 #!/usr/bin/env bash
 
-# 初始化Mazda CSLC功能参数 - 在任何其他操作之前执行
-if [ -d "/data/params/d" ]; then
-  # 确保CSLCEnabled参数默认开启
-  if [ ! -f "/data/params/d/CSLCEnabled" ]; then
-    echo "初始化CSLCEnabled参数..."
-    echo "1" > /data/params/d/CSLCEnabled
-  fi
+# Mazda CSLC功能初始化 - 确保在任何其他操作之前执行
+echo "初始化Mazda CSLC功能参数..."
 
-  # 确保MazdaCSLC参数默认开启
-  if [ ! -f "/data/params/d/MazdaCSLC" ]; then
-    echo "初始化MazdaCSLC参数..."
-    echo "1" > /data/params/d/MazdaCSLC
-  fi
+# 创建参数目录（如果不存在）
+mkdir -p /data/params/d
 
-  echo "Mazda CSLC功能初始化完成"
-fi
+# 使用直接的方法创建参数文件
+echo -n "1" > /data/params/d/CSLCEnabled
+echo -n "1" > /data/params/d/MazdaCSLC
+
+echo "Mazda CSLC功能初始化完成"
 
 export API_HOST=https://api.konik.ai
 export ATHENA_HOST=wss://athena.konik.ai

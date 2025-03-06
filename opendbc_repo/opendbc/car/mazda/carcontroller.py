@@ -13,25 +13,6 @@ VisualAlert = structs.CarControl.HUDControl.VisualAlert
 # 使用共享内存参数，提高性能
 params_memory = Params("/dev/shm/params")
 
-# 辅助函数：安全读取参数文件
-def read_param_file(file_path, default_value):
-  try:
-    if os.path.exists(file_path):
-      with open(file_path, "r") as f:
-        content = f.read().strip()
-        if content == "1":
-          return True
-        elif content == "0":
-          return False
-        else:
-          try:
-            return float(content)
-          except:
-            return default_value
-    return default_value
-  except:
-    return default_value
-
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
@@ -45,18 +26,41 @@ class CarController(CarControllerBase):
     self.speed_from_pcm = 1
     self.is_metric = True
     self.experimental_mode = False
-    self.cslc_enabled = read_param_file("/data/params/d/CSLCEnabled", False)
-    self.mazda_cslc = read_param_file("/data/params/d/MazdaCSLC", False)
+    self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+    self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
 
   def update(self, CC, CS, now_nanos):
     # 每50帧更新一次参数
     if self.frame % 50 == 0:
-      # 直接读取参数文件
-      self.speed_from_pcm = read_param_file("/data/params/d/SpeedFromPCM", 1)
-      self.is_metric = read_param_file("/data/params/d/IsMetric", True)
-      self.cslc_enabled = read_param_file("/data/params/d/CSLCEnabled", False)
-      self.mazda_cslc = read_param_file("/data/params/d/MazdaCSLC", False)
-      self.experimental_mode = read_param_file("/data/params/d/ExperimentalMode", False)
+      try:
+        params = Params()
+        # 使用安全的方式获取参数，提供默认值
+        try:
+          self.speed_from_pcm = params.get_int("SpeedFromPCM")
+        except:
+          self.speed_from_pcm = 1
+
+        try:
+          self.is_metric = params.get_bool("IsMetric")
+        except:
+          self.is_metric = True
+
+        # 直接检查文件是否存在，不依赖params方法
+        self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+        self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
+
+        try:
+          self.experimental_mode = params.get_bool("ExperimentalMode")
+        except:
+          self.experimental_mode = False
+      except Exception as e:
+        print(f"更新参数时出错: {e}")
+        # 使用默认值
+        self.speed_from_pcm = 1
+        self.is_metric = True
+        self.cslc_enabled = False
+        self.mazda_cslc = False
+        self.experimental_mode = False
 
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed
@@ -171,10 +175,7 @@ def get_set_speed(self, hud_v_cruise):
   """
   v_cruise = min(hud_v_cruise, V_CRUISE_MAX * CV.KPH_TO_MS)
 
-  try:
-    v_cruise_slc = params_memory.get_float("CSLCSpeed")
-  except:
-    v_cruise_slc = 0.0
+  v_cruise_slc = params_memory.get_float("CSLCSpeed")
 
   if v_cruise_slc > 0.:
     v_cruise = v_cruise_slc
