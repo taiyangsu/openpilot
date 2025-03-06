@@ -27,22 +27,15 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.41
 
-    # 读取参数文件内容，而不只是检查文件是否存在
-    cslc_enabled = False
-    try:
-        if os.path.exists("/data/params/d/CSLCEnabled"):
-            with open("/data/params/d/CSLCEnabled", "rb") as f:
-                value = f.read()
-                # 如果值为1（二进制01），则启用CSLC
-                cslc_enabled = (value == b'\x01')
-    except Exception as e:
-        print(f"读取CSLCEnabled参数时出错: {e}")
-        cslc_enabled = False
+    # 设置马自达车型支持实验纵向控制功能
+    ret.experimentalLongitudinalAvailable = True
 
-    # 如果CSLC功能已启用（参数值为1），配置相关参数
-    if cslc_enabled:
-        # 配置CSLC的纵向控制参数
+    # 判断是否开启了实验模式
+    if experimental_long:
+        # 如果开启了实验模式，则设置openpilot控制纵向功能
         ret.openpilotLongitudinalControl = True
+
+        # 配置纵向控制参数
         ret.longitudinalTuning.deadzoneBP = [0.]
         ret.longitudinalTuning.deadzoneV = [0.9]  # 允许2mph的速度误差
         ret.stoppingDecelRate = 4.5  # 10 mph/s的减速率
@@ -53,5 +46,31 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kpV = [0., 4., 2.]  # 低速时设为0，因为无法在该速度以下驾驶
         ret.longitudinalTuning.kiBP = [0.]
         ret.longitudinalTuning.kiV = [0.1]
+
+    # 尝试读取CSLC参数，如果已启用CSLC，也设置纵向控制为True
+    try:
+        cslc_enabled = False
+        if os.path.exists("/data/params/d/CSLCEnabled"):
+            with open("/data/params/d/CSLCEnabled", "rb") as f:
+                value = f.read()
+                cslc_enabled = (value == b'\x01')
+
+        if cslc_enabled:
+            ret.openpilotLongitudinalControl = True
+
+            # 如果CSLC已启用但实验模式参数尚未配置纵向控制参数
+            if not experimental_long:
+                ret.longitudinalTuning.deadzoneBP = [0.]
+                ret.longitudinalTuning.deadzoneV = [0.9]
+                ret.stoppingDecelRate = 4.5
+                ret.longitudinalActuatorDelayLowerBound = 1.
+                ret.longitudinalActuatorDelayUpperBound = 2.
+
+                ret.longitudinalTuning.kpBP = [8.94, 7.2, 28.]
+                ret.longitudinalTuning.kpV = [0., 4., 2.]
+                ret.longitudinalTuning.kiBP = [0.]
+                ret.longitudinalTuning.kiV = [0.1]
+    except Exception as e:
+        print(f"读取CSLCEnabled参数时出错: {e}")
 
     return ret

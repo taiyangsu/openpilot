@@ -31,52 +31,60 @@ class CarController(CarControllerBase):
     self.activateCruise = 0
     self.speed_from_pcm = 1
     self.is_metric = True
-    self.experimental_mode = False
-    self.cslc_enabled = self._read_cslc_param()
 
-  def _read_cslc_param(self):
-    """读取CSLCEnabled参数的值"""
+    # 创建Params实例
+    self.params = Params()
+
+    # 初始化实验模式和CSLC状态
     try:
-        if os.path.exists("/data/params/d/CSLCEnabled"):
-            with open("/data/params/d/CSLCEnabled", "rb") as f:
-                value = f.read()
-                # 如果值为1（二进制01），则启用CSLC
-                return (value == b'\x01')
-        return False
-    except Exception as e:
-        print(f"读取CSLCEnabled参数时出错: {e}")
-        return False
+      self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    except:
+      self.experimental_mode = False
+
+    try:
+      self.cslc_enabled = self.params.get_bool("CSLCEnabled")
+    except:
+      self.cslc_enabled = False
+
+    # 如果实验模式已开启，确保CSLC也开启
+    if self.experimental_mode and not self.cslc_enabled:
+      self.params.put_bool("CSLCEnabled", True)
+      self.cslc_enabled = True
 
   def update(self, CC, CS, now_nanos):
-    # 每50帧更新一次参数
-    if self.frame % 50 == 0:
+    # 每30帧更新一次参数，提高性能
+    if self.frame % 30 == 0:
       try:
-        params = Params()
         # 使用安全的方式获取参数，提供默认值
         try:
-          self.speed_from_pcm = params.get_int("SpeedFromPCM")
+          self.speed_from_pcm = self.params.get_int("SpeedFromPCM")
         except:
           self.speed_from_pcm = 1
 
         try:
-          self.is_metric = params.get_bool("IsMetric")
+          self.is_metric = self.params.get_bool("IsMetric")
         except:
           self.is_metric = True
 
-        # 读取CSLC参数值，而不是检查文件存在
-        self.cslc_enabled = self._read_cslc_param()
-
+        # 读取实验模式和CSLC状态
         try:
-          self.experimental_mode = params.get_bool("ExperimentalMode")
+          self.experimental_mode = self.params.get_bool("ExperimentalMode")
         except:
           self.experimental_mode = False
+
+        try:
+          self.cslc_enabled = self.params.get_bool("CSLCEnabled")
+        except:
+          self.cslc_enabled = False
+
+        # 如果实验模式已开启，确保CSLC也开启
+        if self.experimental_mode and not self.cslc_enabled:
+          self.params.put_bool("CSLCEnabled", True)
+          self.cslc_enabled = True
+
       except Exception as e:
         print(f"更新参数时出错: {e}")
-        # 使用默认值
-        self.speed_from_pcm = 1
-        self.is_metric = True
-        self.cslc_enabled = False
-        self.experimental_mode = False
+        # 使用默认值，不改变当前状态
 
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed
@@ -114,12 +122,12 @@ class CarController(CarControllerBase):
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       elif CS.out.activateCruise and CS.cruiseStateActive and CS.out.brakeLights:
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
-      # CSLC功能 - 自动控制车速
-      elif self.cslc_enabled:
+      # 实验模式或CSLC功能 - 自动控制车速
+      elif self.experimental_mode or self.cslc_enabled:
         if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
-          slcSet = get_set_speed(self, hud_v_cruise)
-          if slcSet != Buttons.NONE:
-            can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, slcSet))
+          button_cmd = self.get_speed_button(CS, hud_v_cruise)
+          if button_cmd != Buttons.NONE:
+            can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, button_cmd))
       else:
         # 原有的按钮控制逻辑
         if self.frame % 20 == 0:
@@ -148,6 +156,46 @@ class CarController(CarControllerBase):
 
     self.frame += 1
     return new_actuators, can_sends
+
+  def get_speed_button(self, CS, target_speed_ms):
+    """
+    计算需要发送的速度按钮命令
+
+    参数:
+    - CS: 车辆状态
+    - target_speed_ms: 目标速度(m/s)
+
+    返回:
+    - 按钮命令(Buttons.SET_PLUS, Buttons.SET_MINUS, Buttons.NONE)
+    """
+    # 将m/s转换为km/h
+    target_speed_kph = target_speed_ms * CV.MS_TO_KPH
+
+    # 尝试从共享内存读取CSLCSpeed
+    try:
+      cslc_speed = params_memory.get_float("CSLCSpeed")
+      if cslc_speed > 0:
+        target_speed_kph = cslc_speed
+    except:
+      pass
+
+    # 限制目标速度在合理范围内
+    target_speed_kph = min(max(target_speed_kph, V_CRUISE_MIN), V_CRUISE_MAX)
+
+    # 获取当前巡航速度
+    current_cruise_kph = CS.out.cruiseState.speed * CV.MS_TO_KPH if hasattr(CS.out.cruiseState, 'speed') else 0
+
+    # 将速度调整为5km/h的倍数
+    target_speed_kph = round(target_speed_kph / V_CRUISE_DELTA) * V_CRUISE_DELTA
+    current_cruise_kph = round(current_cruise_kph / V_CRUISE_DELTA) * V_CRUISE_DELTA
+
+    # 根据目标速度和当前速度计算按钮命令
+    if target_speed_kph > current_cruise_kph:
+      return Buttons.SET_PLUS
+    elif target_speed_kph < current_cruise_kph:
+      return Buttons.SET_MINUS
+
+    return Buttons.NONE
 
   def make_spam_button(self, CC, CS):
     hud_control = CC.hudControl
@@ -181,22 +229,3 @@ class CarController(CarControllerBase):
         return Buttons.RESUME
 
     return 0
-
-def get_set_speed(self, hud_v_cruise):
-  """
-  获取目标速度
-
-  参数:
-  - hud_v_cruise: HUD显示的巡航速度
-
-  返回:
-  - 目标速度(m/s)
-  """
-  v_cruise = min(hud_v_cruise, V_CRUISE_MAX * CV.KPH_TO_MS)
-
-  v_cruise_slc = params_memory.get_float("CSLCSpeed")
-
-  if v_cruise_slc > 0.:
-    v_cruise = v_cruise_slc
-
-  return v_cruise
