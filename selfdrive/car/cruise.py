@@ -553,7 +553,7 @@ class VCruiseCarrot:
 
     if self.v_lead_kph + 5 > v_cruise_kph and v_cruise_kph < road_limit_kph and self.d_rel < 60:
       v_cruise_kph = min(v_cruise_kph + 5, road_limit_kph)
-    elif road_limit_kph < self.road_limit_kph:
+    elif road_limit_kph < self.road_limit_kph and self.autoRoadSpeedAdjust > 0:
       new_road_limit_kph = road_limit_kph * self.autoRoadSpeedAdjust + self.road_limit_kph * (1 - self.autoRoadSpeedAdjust)
       v_cruise_kph = min(v_cruise_kph, new_road_limit_kph)
       self._add_log(f"AutoSpeed change {self.road_limit_kph} -> {new_road_limit_kph}")

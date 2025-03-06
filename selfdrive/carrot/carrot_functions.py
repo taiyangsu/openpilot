@@ -5,7 +5,7 @@ from openpilot.common.params import Params
 import numpy as np
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.filter_simple import StreamingMovingAverage
+from openpilot.common.filter_simple import MyMovingAverage
 from openpilot.selfdrive.selfdrived.events import Events
 
 EventName = log.OnroadEvent.EventName
@@ -59,9 +59,9 @@ class CarrotPlanner:
     #self.v_ego_prev = 0.0
 
     self.trafficState = TrafficState.off
-    self.xStopFilter = StreamingMovingAverage(3)
-    self.xStopFilter2 = StreamingMovingAverage(15)
-    self.vFilter = StreamingMovingAverage(10)
+    self.xStopFilter = MyMovingAverage(3)
+    self.xStopFilter2 = MyMovingAverage(15)
+    self.vFilter = MyMovingAverage(10)
     #self.t_follow_prev = self.get_T_FOLLOW()
     self.stop_distance = 6.0
     self.fakeCruiseDistance = 0.0
@@ -120,6 +120,8 @@ class CarrotPlanner:
     self.jerk_factor = 1.0
     self.jerk_factor_apply = 1.0
 
+    self.j_lead_factor = 0.0
+
     self.activeCarrot = 0
     self.xDistToTurn = 0
     self.atcType = ""
@@ -167,6 +169,7 @@ class CarrotPlanner:
     elif self.params_count == 40:
       self.stop_distance = self.params.get_float("StopDistanceCarrot") / 100.
       self.comfortBrake = self.params.get_float("ComfortBrake") / 100.
+      self.j_lead_factor = self.params.get_float("JLeadFactor") / 100.
       self.eco_over_speed = self.params.get_int("CruiseEcoControl")
 
     elif self.params_count >= 100:

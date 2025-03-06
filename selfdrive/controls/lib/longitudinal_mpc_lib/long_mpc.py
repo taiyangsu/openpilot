@@ -241,6 +241,7 @@ class LongitudinalMpc:
 
     self.t_follow = 1.0
     self.desired_distance = 0.0
+    self.lead_danger_factor = LEAD_DANGER_FACTOR
 
   def reset(self):
     # self.solver = AcadosOcpSolverCython(MODEL_NAME, ACADOS_SOLVER_TYPE, N)
@@ -310,25 +311,55 @@ class LongitudinalMpc:
         self.solver.set(i, 'x', self.x0)
 
   @staticmethod
-  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
+  def extrapolate_lead_old(x_lead, v_lead, a_lead, a_lead_tau):
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
+  
+  @staticmethod
+  def extrapolate_lead(x_lead, v_lead, a_lead, j_lead, a_lead_tau):
+    a_lead_traj = np.zeros_like(T_IDXS)
+    a_lead_traj[0] = a_lead 
 
-  def process_lead(self, lead):
+    for i in range(1, len(T_IDXS)):
+        dt = T_IDXS[i] - T_IDXS[i - 1]
+        a_lead_traj[i] = (
+            a_lead_traj[i - 1] * np.exp(-a_lead_tau * dt)  # `a_lead`만 감쇄
+            + j_lead * dt  # `j_lead` 감쇄 없이 그대로 적용
+        )
+    """
+    # `j_lead`도 감쇄하고 싶다면 아래 코드 사용
+    j_lead_tau = 0.4
+    for i in range(1, len(T_IDXS)):
+      dt = T_IDXS[i] - T_IDXS[i - 1]
+      j_lead_decayed = j_lead * np.exp(-j_lead_tau * dt)
+      a_lead_traj[i] = (
+          a_lead_traj[i - 1] * np.exp(-a_lead_tau * dt) 
+          + j_lead_decayed * dt  
+      )
+    """
+
+    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
+    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
+    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
+    return lead_xv
+  
+  def process_lead(self, lead, carrot):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
       x_lead = lead.dRel
-      v_lead = lead.vLeadK
-      a_lead = lead.aLeadK
+      v_lead = lead.vLead
+      a_lead = lead.aLead
+      j_lead = lead.jLead
       a_lead_tau = lead.aLeadTau
     else:
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
+      j_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
 
     # MPC will not converge if immediate crash is expected
@@ -337,8 +368,9 @@ class LongitudinalMpc:
     x_lead = np.clip(x_lead, min_x_lead, 1e8)
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
-    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
-    return lead_xv
+    j_lead = np.clip(j_lead, -2., 2.)
+    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, j_lead * carrot.j_lead_factor, a_lead_tau)
+    return lead_xv, v_lead
 
   def set_accel_limits(self, min_a, max_a):
     # TODO this sets a max accel limit, but the minimum limit is only for cruise decel
@@ -352,8 +384,8 @@ class LongitudinalMpc:
     a_ego = self.x0[2]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0, lead_v_0 = self.process_lead(radarstate.leadOne, carrot)
+    lead_xv_1, _ = self.process_lead(radarstate.leadTwo, carrot)
 
     mode = self.mode
     comfort_brake = carrot.comfort_brake
@@ -363,7 +395,7 @@ class LongitudinalMpc:
       stop_x = 1000.0
     else:
       v_cruise, stop_x, mode = carrot.v_cruise, carrot.stop_dist, carrot.mode
-      desired_distance = desired_follow_distance(v_ego, radarstate.leadOne.vLead, comfort_brake, stop_distance, t_follow)
+      desired_distance = desired_follow_distance(v_ego, lead_v_0, comfort_brake, stop_distance, t_follow)
       t_follow = carrot.dynamic_t_follow(t_follow, radarstate.leadOne, desired_distance)
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
@@ -372,7 +404,7 @@ class LongitudinalMpc:
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
     
-    self.desired_distance = desired_follow_distance(v_ego, radarstate.leadOne.vLead, comfort_brake, stop_distance, t_follow)
+    self.desired_distance = desired_follow_distance(v_ego, lead_v_0, comfort_brake, stop_distance, t_follow)
 
     self.params[:,0] = ACCEL_MIN if not reset_state else a_ego
     # negative accel constraint causes problems because negative speed is not allowed
@@ -380,7 +412,7 @@ class LongitudinalMpc:
 
     # Update in ACC mode or ACC/e2e blend
     if mode == 'acc':
-      self.params[:,5] = LEAD_DANGER_FACTOR
+      #self.params[:,5] = LEAD_DANGER_FACTOR
       # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
       # when the leads are no factor.
       v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
@@ -402,6 +434,11 @@ class LongitudinalMpc:
       # These are not used in ACC mode
       x[:], v[:], a[:], j[:] = 0.0, 0.0, 0.0, 0.0
 
+      safe_distance = lead_0_obstacle[0] - get_safe_obstacle_distance(v_ego, comfort_brake, stop_distance)
+      lead_danger_factor = np.interp(safe_distance, [-50.0, 0.0], [2.0, LEAD_DANGER_FACTOR])
+      self.lead_danger_factor = self.lead_danger_factor * 0.9 + lead_danger_factor * 0.1
+      self.params[:,5] = self.lead_danger_factor
+      
     elif mode == 'blended':
       self.params[:,5] = 1.0
 

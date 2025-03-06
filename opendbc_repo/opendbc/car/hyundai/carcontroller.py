@@ -452,7 +452,7 @@ class CarController(CarControllerBase):
       self.button_spamming_count = 0
     return 0
 
-from openpilot.common.filter_simple import StreamingMovingAverage
+from openpilot.common.filter_simple import MyMovingAverage
 class HyundaiJerk:
   def __init__(self):
     self.jerk = 0.0

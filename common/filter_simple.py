@@ -19,7 +19,7 @@ class FirstOrderFilter:
       self.x = x
     return self.x
 
-class StreamingMovingAverage:
+class MyMovingAverage:
   def __init__(self, window_size):
     self.window_size = window_size
     self.values = []
