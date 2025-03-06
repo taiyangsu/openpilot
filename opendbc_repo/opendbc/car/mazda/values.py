@@ -22,8 +22,15 @@ class CarControllerParams:
   STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
   STEER_STEP = 1  # 100 Hz
 
+  # CX5 2022特殊参数
+  CX5_2022_STEER_DELTA_UP = 12   # 为CX5 2022增加转向响应速度
+  CX5_2022_STEER_DELTA_DOWN = 22 # 为CX5 2022优化转向释放速度
+
   def __init__(self, CP):
-    pass
+    # 对于CX5 2022使用特殊参数
+    if CP is not None and CP.carFingerprint == CAR.MAZDA_CX5_2022:
+      self.STEER_DELTA_UP = self.CX5_2022_STEER_DELTA_UP
+      self.STEER_DELTA_DOWN = self.CX5_2022_STEER_DELTA_DOWN
 
 
 @dataclass
@@ -41,6 +48,8 @@ class MazdaFlags(IntFlag):
   # Static flags
   # Gen 1 hardware: same CAN messages and same camera
   GEN1 = 1
+  # 添加CX5 2022特殊标志
+  CX5_2022 = 2
 
 
 @dataclass
@@ -72,7 +81,8 @@ class CAR(Platforms):
   )
   MAZDA_CX5_2022 = MazdaPlatformConfig(
     [MazdaCarDocs("Mazda CX-5 2022-25")],
-    MAZDA_CX5.specs,
+    MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.3),  # 优化后的转向比
+    flags=MazdaFlags.GEN1 | MazdaFlags.CX5_2022,  # 添加CX5_2022特殊标志
   )
 
 
@@ -80,6 +90,11 @@ class LKAS_LIMITS:
   STEER_THRESHOLD = 15
   DISABLE_SPEED = 45    # kph
   ENABLE_SPEED = 52     # kph
+
+  # CX5 2022 优化的LKAS限制
+  CX5_2022_STEER_THRESHOLD = 14  # 稍微降低触发阈值
+  CX5_2022_DISABLE_SPEED = 42    # 降低禁用速度，更早启用转向辅助
+  CX5_2022_ENABLE_SPEED = 48     # 降低启用速度，更早启用转向辅助
 
 
 class Buttons:

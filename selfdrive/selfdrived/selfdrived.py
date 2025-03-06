@@ -98,8 +98,14 @@ class SelfdriveD:
     # cleanup old params
     if not self.CP.experimentalLongitudinalAvailable:
       self.params.remove("ExperimentalLongitudinalEnabled")
-    if not self.CP.openpilotLongitudinalControl:
+
+    # 只有当不是马自达车型且不支持纵向控制时才删除实验模式参数
+    if not self.CP.openpilotLongitudinalControl and self.CP.brand != "mazda":
       self.params.remove("ExperimentalMode")
+
+    # 对于马自达车型，确保实验模式可用
+    if self.CP.brand == "mazda" and not self.params.get_bool("CSLCEnabled", False):
+      self.params.put_bool("CSLCEnabled", True)
 
     self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()

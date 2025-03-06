@@ -2,17 +2,20 @@ from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, apply_driver_steer_torque_limits, structs
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.mazda import mazdacan
-from opendbc.car.mazda.values import CarControllerParams, Buttons
+from opendbc.car.mazda.values import CAR, CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-# 移除V_CRUISE_MAX导入，自己定义常量
-# from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+from openpilot.common.realtime import DT_CTRL
+from openpilot.common.filter_simple import FirstOrderFilter
 import os
 
 # 定义CSLC相关常量
 V_CRUISE_MAX = 144  # 144 km/h = 90 mph
 V_CRUISE_MIN = 30   # 30 km/h
 V_CRUISE_DELTA = 5  # 5 km/h增量
+
+# CX5 2022特殊常量
+CX5_2022_V_CRUISE_MIN = 25   # CX5 2022可以设置更低的最小速度
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -22,15 +25,23 @@ params_memory = Params("/dev/shm/params")
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP):
     super().__init__(dbc_names, CP)
+    self.CP = CP
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_names[Bus.pt])
     self.brake_counter = 0
     self.frame = 0
 
+    # 初始化速度滤波器
+    self.speed_filter = FirstOrderFilter(0.0, 0.2, DT_CTRL, initialized=False)
+    self.filtered_speed_last = 0
+
     # 初始化CSLC相关参数
     self.activateCruise = 0
     self.speed_from_pcm = 1
     self.is_metric = True
+    self.resume_required = False
+    self.last_button_frame = 0
+    self.button_counter = 0
 
     # 创建Params实例
     self.params = Params()
@@ -104,6 +115,18 @@ class CarController(CarControllerBase):
       apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last,
                                                      CS.out.steeringTorque, CarControllerParams)
 
+    # 检查是否需要恢复巡航
+    # 当车辆停止超过3秒后，马自达需要按下RES或踩油门才能重新启动
+    is_cx5_2022 = self.CP.carFingerprint == CAR.MAZDA_CX5_2022
+    car_stopping = CS.out.vEgo < 0.1
+    car_starting = (not car_stopping) and (CS.out.vEgo < 1.0) and self.resume_required
+
+    # 在车辆启动时更新状态
+    if car_stopping:
+      self.resume_required = True
+    elif not car_stopping and self.resume_required and car_starting:
+      self.resume_required = False
+
     if CC.cruiseControl.cancel:
       # If brake is pressed, let us wait >70ms before trying to disable crz to avoid
       # a race condition with the stock system, where the second cancel from openpilot
@@ -116,18 +139,25 @@ class CarController(CarControllerBase):
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.CANCEL))
     else:
       self.brake_counter = 0
-      if CC.cruiseControl.resume and self.frame % 5 == 0:
+
+      # 特别处理CX5 2022的恢复巡航情况
+      if (CC.cruiseControl.resume or car_starting) and self.frame % 5 == 0:
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       elif CS.out.activateCruise and CS.cruiseStateActive and CS.out.brakeLights:
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       # 实验模式或CSLC功能 - 自动控制车速
-      elif self.experimental_mode or self.cslc_enabled:
-        if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
+      elif (self.experimental_mode or self.cslc_enabled) and not car_starting:
+        # 避免发送过于频繁的按钮命令，特别是对于CX5 2022
+        button_interval = 8 if is_cx5_2022 else 10
+
+        if CC.enabled and (self.frame - self.last_button_frame >= button_interval) and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
           button_cmd = self.get_speed_button(CS, hud_v_cruise)
           if button_cmd != Buttons.NONE:
             can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, button_cmd))
+            self.last_button_frame = self.frame
+            self.button_counter += 1
       else:
         # 原有的按钮控制逻辑
         if self.frame % 20 == 0:
@@ -159,14 +189,14 @@ class CarController(CarControllerBase):
 
   def get_speed_button(self, CS, target_speed_ms):
     """
-    计算需要发送的速度按钮命令
+    为CX5 2022优化的速度按钮命令计算
 
     参数:
     - CS: 车辆状态
     - target_speed_ms: 目标速度(m/s)
 
     返回:
-    - 按钮命令(Buttons.SET_PLUS, Buttons.SET_MINUS, Buttons.NONE)
+    - 按钮命令(Buttons.SET_PLUS, Buttons.SET_MINUS, Buttons.RESUME, Buttons.NONE)
     """
     # 将m/s转换为km/h
     target_speed_kph = target_speed_ms * CV.MS_TO_KPH
@@ -179,21 +209,54 @@ class CarController(CarControllerBase):
     except:
       pass
 
-    # 限制目标速度在合理范围内
-    target_speed_kph = min(max(target_speed_kph, V_CRUISE_MIN), V_CRUISE_MAX)
+    # 检查是否为CX5 2022
+    is_cx5_2022 = self.CP.carFingerprint == CAR.MAZDA_CX5_2022
+    min_speed = CX5_2022_V_CRUISE_MIN if is_cx5_2022 else V_CRUISE_MIN
 
-    # 获取当前巡航速度
+    # 限制目标速度在合理范围内
+    target_speed_kph = min(max(target_speed_kph, min_speed), V_CRUISE_MAX)
+
+    # 获取当前车速和巡航速度
+    current_speed_kph = CS.out.vEgo * CV.MS_TO_KPH
     current_cruise_kph = CS.out.cruiseState.speed * CV.MS_TO_KPH if hasattr(CS.out.cruiseState, 'speed') else 0
 
     # 将速度调整为5km/h的倍数
     target_speed_kph = round(target_speed_kph / V_CRUISE_DELTA) * V_CRUISE_DELTA
     current_cruise_kph = round(current_cruise_kph / V_CRUISE_DELTA) * V_CRUISE_DELTA
 
-    # 根据目标速度和当前速度计算按钮命令
-    if target_speed_kph > current_cruise_kph:
-      return Buttons.SET_PLUS
-    elif target_speed_kph < current_cruise_kph:
-      return Buttons.SET_MINUS
+    # 应用速度滤波器平滑转换
+    if self.speed_filter.x != target_speed_kph:
+      # 根据变化幅度调整滤波器参数
+      speed_diff = abs(target_speed_kph - self.filtered_speed_last)
+      alpha = 0.1 if speed_diff < 10 else (0.2 if speed_diff < 20 else 0.3)
+      self.speed_filter.update_alpha(alpha)
+      filtered_target = self.speed_filter.update(target_speed_kph)
+      self.filtered_speed_last = filtered_target
+      target_speed_kph = round(filtered_target / V_CRUISE_DELTA) * V_CRUISE_DELTA
+
+    # 车辆停止状态下需要RESUME
+    if CS.out.standstill and current_speed_kph < 0.1:
+      return Buttons.RESUME
+
+    # CX5 2022处理逻辑优化
+    if is_cx5_2022:
+      # CX5 2022对按钮响应比较慢，需要更大的速度差阈值
+      threshold = V_CRUISE_DELTA * 1.2
+      # 根据目标速度和当前速度计算按钮命令
+      speed_diff = target_speed_kph - current_cruise_kph
+
+      # 只有当速度差大于阈值时才发送命令，避免频繁切换
+      if abs(speed_diff) >= threshold:
+        if speed_diff > 0:
+          return Buttons.SET_PLUS
+        elif speed_diff < 0:
+          return Buttons.SET_MINUS
+    else:
+      # 其他马自达车型的标准逻辑
+      if target_speed_kph > current_cruise_kph:
+        return Buttons.SET_PLUS
+      elif target_speed_kph < current_cruise_kph:
+        return Buttons.SET_MINUS
 
     return Buttons.NONE
 

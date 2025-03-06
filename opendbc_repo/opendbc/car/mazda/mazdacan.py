@@ -1,23 +1,35 @@
-from opendbc.car.mazda.values import Buttons, MazdaFlags
+from opendbc.car.mazda.values import Buttons, MazdaFlags, CAR
 from opendbc.car.common.conversions import Conversions as CV
 
 
 def create_steering_control(packer, CP, frame, apply_steer, lkas):
+  """
+  创建转向控制CAN消息
 
+  参数:
+  - packer: CAN消息打包器
+  - CP: 车辆参数
+  - frame: 当前帧
+  - apply_steer: 应用的转向力矩
+  - lkas: LKAS相关信息
+
+  返回:
+  - 打包后的CAN消息
+  """
   tmp = apply_steer + 2048
 
   lo = tmp & 0xFF
   hi = tmp >> 8
 
-  # copy values from camera
+  # 从相机信息中复制值
   b1 = int(lkas["BIT_1"])
   er1 = int(lkas["ERR_BIT_1"])
   lnv = 0
   ldw = 0
   er2 = int(lkas["ERR_BIT_2"])
 
-  # Some older models do have these, newer models don't.
-  # Either way, they all work just fine if set to zero.
+  # 某些旧款车型有这些字段，新款没有
+  # 不管怎样，设为0都没问题
   steering_angle = 0
   b2 = 0
 
@@ -28,10 +40,10 @@ def create_steering_control(packer, CP, frame, apply_steer, lkas):
   alo = (tmp & 0x3) << 2
 
   ctr = frame % 16
-  # bytes:     [    1  ] [ 2 ] [             3               ]  [           4         ]
+  # 字节:     [    1  ] [ 2 ] [             3               ]  [           4         ]
   csum = 249 - ctr - hi - lo - (lnv << 3) - er1 - (ldw << 7) - ( er2 << 4) - (b1 << 5)
 
-  # bytes      [ 5 ] [ 6 ] [    7   ]
+  # 字节      [ 5 ] [ 6 ] [    7   ]
   csum = csum - ahi - amd - alo - b2
 
   if ahi == 1:
@@ -45,6 +57,7 @@ def create_steering_control(packer, CP, frame, apply_steer, lkas):
 
   csum = csum % 256
 
+  # 根据车型创建不同的CAN消息
   values = {}
   if CP.flags & MazdaFlags.GEN1:
     values = {
@@ -64,6 +77,18 @@ def create_steering_control(packer, CP, frame, apply_steer, lkas):
 
 
 def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool):
+  """
+  创建警告命令CAN消息
+
+  参数:
+  - packer: CAN消息打包器
+  - cam_msg: 相机消息
+  - ldw: 是否需要车道偏离警告
+  - steer_required: 是否需要方向盘警告
+
+  返回:
+  - 打包后的CAN消息
+  """
   values = {s: cam_msg[s] for s in [
     "LINE_VISIBLE",
     "LINE_NOT_VISIBLE",
@@ -76,13 +101,12 @@ def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool)
     "S1_HBEAM",
   ]}
   values.update({
-    # TODO: what's the difference between all these? do we need to send all?
+    # 警告相关字段
     "HANDS_WARN_3_BITS": 0b111 if steer_required else 0,
     "HANDS_ON_STEER_WARN": steer_required,
     "HANDS_ON_STEER_WARN_2": steer_required,
 
-    # TODO: right lane works, left doesn't
-    # TODO: need to do something about L/R
+    # 车道偏离警告
     "LDW_WARN_LL": 0,
     "LDW_WARN_RL": 0,
   })
@@ -90,7 +114,22 @@ def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool)
 
 
 def create_button_cmd(packer, CP, counter, button):
+  """
+  创建按钮命令CAN消息
 
+  参数:
+  - packer: CAN消息打包器
+  - CP: 车辆参数
+  - counter: 计数器
+  - button: 按钮类型
+
+  返回:
+  - 打包后的CAN消息
+  """
+  # 检查是否为CX5 2022车型
+  is_cx5_2022 = CP.carFingerprint == CAR.MAZDA_CX5_2022
+
+  # 为不同按钮设置标志位
   can = int(button == Buttons.CANCEL)
   res = int(button == Buttons.RESUME)
   inc = int(button == Buttons.SET_PLUS)
@@ -128,19 +167,25 @@ def create_button_cmd(packer, CP, counter, button):
       "CTR": (counter + 1) % 16,
     }
 
+    # CX5 2022按钮特殊处理
+    if is_cx5_2022:
+      # 调整CTR字段的增长速度，为CX5 2022提高响应性
+      if button != Buttons.NONE:
+        values["CTR"] = (counter + 2) % 16
+
     return packer.make_can_msg("CRZ_BTNS", 0, values)
 
 
-def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, is_metric=True, experimental_mode=False, accel=0):
+def create_mazda_acc_spam_command(packer, CP, CS, target_speed_ms, current_speed_ms, is_metric=True, experimental_mode=False, accel=0):
   """
   创建自动控制车速的CAN消息
 
   参数:
   - packer: CAN消息打包器
-  - controller: 车辆控制器
+  - CP: 车辆参数
   - CS: 车辆状态
-  - slcSet: 目标速度(m/s)
-  - Vego: 当前车速(m/s)
+  - target_speed_ms: 目标速度(m/s)
+  - current_speed_ms: 当前车速(m/s)
   - is_metric: 是否使用公制单位
   - experimental_mode: 是否使用实验模式
   - accel: 加速度
@@ -150,29 +195,53 @@ def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, is_metri
   """
   cruiseBtn = Buttons.NONE
 
+  # 检查是否为CX5 2022车型
+  is_cx5_2022 = CP.carFingerprint == CAR.MAZDA_CX5_2022
+
+  # 单位转换系数
   MS_CONVERT = CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH
 
-  speedSetPoint = int(round(CS.out.cruiseState.speed * MS_CONVERT))
-  slcSet = int(round(slcSet * MS_CONVERT))
+  # 获取当前和目标速度值
+  current_speed_units = current_speed_ms * MS_CONVERT
+  cruise_speed_units = CS.cruiseState.speed * MS_CONVERT if hasattr(CS, 'cruiseState') and hasattr(CS.cruiseState, 'speed') else 0
+  target_speed_units = target_speed_ms * MS_CONVERT
 
-  if not experimental_mode:
-    if slcSet + 5 < Vego * MS_CONVERT:
-      slcSet = slcSet - 10  # 降低10单位以增加减速效果，直到与当前速度差小于5
-  else:
-    slcSet = int(round((Vego + 5 * accel) * MS_CONVERT))
+  # 车辆静止状态处理
+  if CS.standstill:
+    return [create_button_cmd(packer, CP, CS.crz_btns_counter, Buttons.RESUME)]
 
+  # 实验模式下调整目标速度
+  if experimental_mode:
+    target_speed_units = int(round((current_speed_ms + 5 * accel) * MS_CONVERT))
+
+  # 根据单位调整速度步长
   if is_metric:  # 公制单位时按5km/h的步长调整
-    slcSet = int(round(slcSet/5.0)*5.0)
-    speedSetPoint = int(round(speedSetPoint/5.0)*5.0)
+    step = 5.0
+  else:  # 英制单位时按5mph的步长调整
+    step = 5.0
 
-  if slcSet < speedSetPoint and speedSetPoint > (30 if is_metric else 20):
-    cruiseBtn = Buttons.SET_MINUS
-  elif slcSet > speedSetPoint:
-    cruiseBtn = Buttons.SET_PLUS
+  # CX5 2022特殊调整
+  if is_cx5_2022:
+    # 加大目标与当前速度差值的阈值，减少过度调整
+    threshold = 6.0 if is_metric else 3.5
   else:
-    cruiseBtn = Buttons.NONE
+    threshold = 5.0 if is_metric else 3.0
 
-  if (cruiseBtn != Buttons.NONE):
-    return [create_button_cmd(packer, controller.CP, controller.frame // 10, cruiseBtn)]
+  # 将速度调整为步长的整数倍
+  target_speed_units = int(round(target_speed_units / step) * step)
+  cruise_speed_units = int(round(cruise_speed_units / step) * step)
+
+  # 根据速度差值选择按钮命令
+  speed_diff = target_speed_units - cruise_speed_units
+
+  if abs(speed_diff) >= threshold:
+    if speed_diff < 0 and cruise_speed_units > (30 if is_metric else 20):
+      cruiseBtn = Buttons.SET_MINUS
+    elif speed_diff > 0:
+      cruiseBtn = Buttons.SET_PLUS
+
+  # 仅在有按钮操作时发送消息，避免无意义的CAN总线通信
+  if cruiseBtn != Buttons.NONE:
+    return [create_button_cmd(packer, CP, CS.crz_btns_counter, cruiseBtn)]
   else:
     return []
