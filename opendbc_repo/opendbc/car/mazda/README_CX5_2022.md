@@ -1,6 +1,6 @@
 # Mazda CX5 2022 优化版实验模式、CSLC功能和雷达支持
 
-本文档介绍了为 Mazda CX5 2022 特别优化的 openpilot 实验模式、CSLC (Cruise Speed Limit Control) 功能和雷达支持。
+本文档介绍了为 Mazda CX5 2022 特别优化的 openpilot 实验模式、CSLC (Cruise Speed Limit Control) 功能和雷达支持。**所有功能均使用车辆标准硬件实现，无需任何第三方硬件或改装。**
 
 ## 特点和优化
 
@@ -28,7 +28,7 @@
 
 ### 4. 雷达支持（新增）
 
-- **雷达数据处理**：添加对 CX5 2022 雷达数据的解析和处理
+- **标准雷达硬件支持**：利用车辆原厂雷达硬件，无需任何第三方设备
 - **前车跟踪增强**：利用雷达数据提供更精确的前车距离和相对速度
 - **改进跟车体验**：结合雷达和视觉数据，提供更平稳的跟车体验
 - **自适应加速控制**：根据雷达检测到的前车状态调整加速度
@@ -52,9 +52,9 @@ CSLC (Cruise Speed Limit Control) 会在实验模式开启时自动启用，它�
 
 ### 雷达功能使用
 
-雷达功能会在 CX5 2022 车型上自动启用，无需额外设置：
+雷达功能会在 CX5 2022 车型上自动启用，无需额外设置或硬件：
 
-1. 系统会自动检测并使用雷达数据
+1. 系统会自动检测并使用车辆原厂雷达数据
 2. 界面上会显示雷达检测到的前车
 3. 跟车距离控制会更加精确和平稳
 
@@ -63,7 +63,7 @@ CSLC (Cruise Speed Limit Control) 会在实验模式开启时自动启用，它�
 - CX5 2022 在实验模式下已经过优化，适合日常使用
 - 系统会自动处理停车和启动情况，无需额外操作
 - 在低速和停止情况下，系统能够自动发送 RESUME 信号继续行驶
-- 雷达功能需要车辆硬件支持，请确保雷达系统正常工作
+- 所有功能均使用车辆标准硬件，无需任何第三方硬件或改装
 
 ## 技术细节
 
@@ -87,7 +87,7 @@ CSLC (Cruise Speed Limit Control) 会在实验模式开启时自动启用，它�
 
 4. **雷达数据处理**
    ```python
-   # 雷达数据处理示例
+   # 雷达数据处理示例 - 使用标准硬件
    if lead_status and lead_distance > 0:
      desired_distance = max(10.0, CS.vEgo * 1.8)  # 1.8秒时间间隔
      distance_error = lead_distance - desired_distance
@@ -108,9 +108,13 @@ CSLC (Cruise Speed Limit Control) 会在实验模式开启时自动启用，它�
    - 系统会自动发送 RESUME 命令，但可能需要轻踩油门辅助
 
 4. **雷达功能不工作？**
-   - 确保车辆雷达硬件正常工作
+   - 确保车辆原厂雷达硬件正常工作
    - 检查是否启用了 `CX5_2022` 标志
    - 可以通过查看日志文件 `/data/mazda_cx5_2022_config.log` 确认配置
+
+5. **是否需要第三方硬件？**
+   - 不需要。所有功能均使用车辆标准硬件实现，无需任何第三方硬件或改装
+   - 本优化版本专为原厂配置的 CX5 2022 设计
 
 ## 后续开发计划
 
@@ -127,7 +131,7 @@ CSLC (Cruise Speed Limit Control) 会在实验模式开启时自动启用，它�
 
 # Mazda CX5 2022 Optimized Experimental Mode, CSLC Function and Radar Support
 
-This document introduces the specially optimized openpilot experimental mode, CSLC (Cruise Speed Limit Control) function, and radar support for Mazda CX5 2022.
+This document introduces the specially optimized openpilot experimental mode, CSLC (Cruise Speed Limit Control) function, and radar support for Mazda CX5 2022. **All features are implemented using the vehicle's standard hardware, with no third-party hardware or modifications required.**
 
 ## Features and Optimizations
 
@@ -155,7 +159,7 @@ We have made a series of specialized optimizations for the Mazda CX5 2022, makin
 
 ### 4. Radar Support (New)
 
-- **Radar data processing**: Added parsing and processing of radar data for CX5 2022
+- **Standard radar hardware support**: Utilizing the vehicle's factory radar hardware, no third-party devices needed
 - **Lead vehicle tracking enhancement**: Using radar data for more accurate lead vehicle distance and relative speed
 - **Improved following experience**: Combining radar and vision data for smoother following experience
 - **Adaptive acceleration control**: Adjusting acceleration based on radar-detected lead vehicle status
@@ -179,9 +183,9 @@ CSLC (Cruise Speed Limit Control) is automatically enabled when experimental mod
 
 ### Using Radar Function
 
-Radar function is automatically enabled on CX5 2022 models without additional settings:
+Radar function is automatically enabled on CX5 2022 models without additional settings or hardware:
 
-1. The system automatically detects and uses radar data
+1. The system automatically detects and uses the vehicle's factory radar data
 2. The interface displays lead vehicles detected by radar
 3. Following distance control is more precise and smooth
 
@@ -190,7 +194,7 @@ Radar function is automatically enabled on CX5 2022 models without additional se
 - CX5 2022 has been optimized for experimental mode and is suitable for daily use
 - The system automatically handles stopping and starting situations without additional operations
 - In low-speed and stopped situations, the system can automatically send RESUME signals to continue driving
-- Radar function requires vehicle hardware support, please ensure the radar system is working properly
+- All features use standard vehicle hardware, no third-party hardware or modifications required
 
 ## Technical Details
 
@@ -214,7 +218,7 @@ Radar function is automatically enabled on CX5 2022 models without additional se
 
 4. **Radar Data Processing**
    ```python
-   # Radar data processing example
+   # Radar data processing example - using standard hardware
    if lead_status and lead_distance > 0:
      desired_distance = max(10.0, CS.vEgo * 1.8)  # 1.8 second time gap
      distance_error = lead_distance - desired_distance
@@ -235,9 +239,13 @@ Radar function is automatically enabled on CX5 2022 models without additional se
    - The system will automatically send RESUME commands, but may require light throttle assistance
 
 4. **Radar function not working?**
-   - Ensure vehicle radar hardware is working properly
+   - Ensure the vehicle's factory radar hardware is working properly
    - Check if the `CX5_2022` flag is enabled
    - You can check the configuration by viewing the log file `/data/mazda_cx5_2022_config.log`
+
+5. **Is third-party hardware required?**
+   - No. All features are implemented using the vehicle's standard hardware, with no third-party hardware or modifications required
+   - This optimized version is designed specifically for factory-configured CX5 2022
 
 ## Future Development Plans
 

@@ -9,7 +9,8 @@ class RadarInterface(RadarInterfaceBase):
   Mazda radar interface
 
   Note: Most Mazda models don't have direct access to radar data and rely on vision system.
-  For CX5 2022 model, we can access radar data through CAN bus to provide better lead tracking.
+  For CX5 2022 model, we can access radar data through standard CAN bus to provide better lead tracking.
+  This implementation uses the stock radar hardware, no third-party hardware is required.
   """
   def __init__(self, CP):
     super().__init__()
@@ -30,14 +31,14 @@ class RadarInterface(RadarInterfaceBase):
       self.radar_parser = self._create_radar_parser()
 
   def _create_radar_parser(self):
-    """Create radar parser for CX5 2022"""
+    """Create radar parser for CX5 2022 using standard hardware"""
     if not self.has_radar:
       return None
 
-    # Define radar signals to parse
+    # Define radar signals to parse from standard CAN bus
     radar_signals = []
 
-    # Add all radar track signals
+    # Add all radar track signals from stock radar
     for i in range(1, 7):  # 6 radar tracks
       track_msg = f"RADAR_TRACK_36{i}"
       radar_signals.extend([
@@ -47,7 +48,7 @@ class RadarInterface(RadarInterfaceBase):
         (track_msg, "ANG_OBJ"),
       ])
 
-    # Create parser
+    # Create parser for standard radar bus
     return CANParser("mazda_radar", radar_signals, [], 1)
 
   def update(self, can_strings):

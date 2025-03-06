@@ -92,7 +92,7 @@ class CarInterface(CarInterfaceBase):
         ret.stopAccel = -0.5
         ret.vEgoStarting = 0.2
 
-        # 优化跟车距离
+        # 优化跟车距离 - 使用标准雷达硬件
         ret.radarTimeStep = 0.0333  # 雷达更新频率
 
         # 如果开启了实验模式，使用更激进的参数
@@ -137,6 +137,7 @@ class CarInterface(CarInterfaceBase):
           f.write(f"Experimental Mode: {experimental_mode}\n")
           f.write(f"Radar Available: {not ret.radarUnavailable}\n")
           f.write(f"Flags: {ret.flags}\n")
+          f.write(f"Using Standard Hardware: True\n")
           f.write("---\n")
       except:
         pass

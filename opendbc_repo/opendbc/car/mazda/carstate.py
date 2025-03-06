@@ -70,7 +70,7 @@ class CarState(CarStateBase):
     self.lkas_previously_enabled = False
     self.lkas_enabled = False
 
-    # 雷达数据跟踪
+    # 雷达数据跟踪 - 使用标准硬件
     self.lead_distance = 0.0
     self.lead_speed = 0.0
     self.lead_present = False
@@ -100,7 +100,7 @@ class CarState(CarStateBase):
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
 
-    # 处理雷达数据（如果有）
+    # 处理雷达数据（如果有）- 使用标准硬件
     cp_radar = can_parsers.get(Bus.radar)
 
     # 更新帧计数器
@@ -132,7 +132,7 @@ class CarState(CarStateBase):
     # 读取巡航按钮状态
     self.prev_cruise_buttons = self.cruise_buttons
 
-    # 优化按钮读取逻辑，特别处理CX5 2022
+    # 优化按钮读取逻辑，特别处理CX5 2022 - 使用标准硬件
     if self.is_cx5_2022 and self.experimental_mode:
       # 检查CX5 2022特有的按钮信号
       try:
@@ -240,7 +240,7 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = cp.vl["PEDALS"]["STANDSTILL"] == 1
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
-    # 处理雷达数据（如果有）
+    # 处理雷达数据（如果有）- 使用标准硬件
     if cp_radar is not None and self.is_cx5_2022:
       # 检查前车
       lead_valid = False
@@ -333,7 +333,7 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
-    # 添加CX5 2022特有的消息
+    # 添加CX5 2022特有的消息 - 使用标准硬件
     if CP.carFingerprint == CAR.MAZDA_CX5_2022:
       pt_messages += [
         ("CX5_2022_BTNS", 10),
@@ -353,7 +353,7 @@ class CarState(CarStateBase):
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
     }
 
-    # 添加雷达解析器（如果是CX5 2022）
+    # 添加雷达解析器（如果是CX5 2022）- 使用标准硬件
     if CP.carFingerprint == CAR.MAZDA_CX5_2022 and CP.flags & MazdaFlags.CX5_2022:
       radar_messages = []
 
