@@ -4,8 +4,8 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.mazda.values import CAR, LKAS_LIMITS
 from opendbc.car.interfaces import CarInterfaceBase
-
-
+# 确保没有导入Params类
+# from openpilot.common.params import Params
 
 class CarInterface(CarInterfaceBase):
 
@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.41
 
-    # 直接检查文件是否存在，不使用Params类
+    # 直接检查CSLCEnabled文件是否存在
     cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
 
     # 检查是否为Mazda车型，只有Mazda车型才启用CSLC功能

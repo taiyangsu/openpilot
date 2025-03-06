@@ -27,7 +27,6 @@ class CarController(CarControllerBase):
     self.is_metric = True
     self.experimental_mode = False
     self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
-    self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
 
   def update(self, CC, CS, now_nanos):
     # 每50帧更新一次参数
@@ -47,7 +46,6 @@ class CarController(CarControllerBase):
 
         # 直接检查文件是否存在，不依赖params方法
         self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
-        self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
 
         try:
           self.experimental_mode = params.get_bool("ExperimentalMode")
@@ -59,7 +57,6 @@ class CarController(CarControllerBase):
         self.speed_from_pcm = 1
         self.is_metric = True
         self.cslc_enabled = False
-        self.mazda_cslc = False
         self.experimental_mode = False
 
     hud_control = CC.hudControl
@@ -97,7 +94,7 @@ class CarController(CarControllerBase):
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       # CSLC功能 - 自动控制车速
-      elif self.cslc_enabled and self.mazda_cslc and self.CP.getBrand() == "mazda":
+      elif self.cslc_enabled and self.CP.getBrand() == "mazda":
         if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
           slcSet = get_set_speed(self, hud_v_cruise)
           can_sends.extend(mazdacan.create_mazda_acc_spam_command(self.packer, self, CS, slcSet, CS.out.vEgo, self.is_metric, self.experimental_mode, accel))

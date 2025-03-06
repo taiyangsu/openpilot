@@ -121,9 +121,4 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     Params().putBool("CSLCEnabled", true);
     cslcToggle->refresh();
   }
-
-  // 确保MazdaCSLC参数默认开启
-  if (!Params().getBool("MazdaCSLC", false)) {
-    Params().putBool("MazdaCSLC", true);
-  }
 }

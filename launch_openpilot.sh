@@ -6,10 +6,8 @@ echo "初始化Mazda CSLC功能参数..."
 # 创建参数目录（如果不存在）
 mkdir -p /data/params/d
 
-# 使用直接的方法创建参数文件
+# 只创建CSLCEnabled参数，不再创建MazdaCSLC参数
 echo -n "1" > /data/params/d/CSLCEnabled
-echo -n "1" > /data/params/d/MazdaCSLC
-
 echo "Mazda CSLC功能初始化完成"
 
 export API_HOST=https://api.konik.ai
