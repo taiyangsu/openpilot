@@ -5,8 +5,14 @@ from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+# 移除V_CRUISE_MAX导入，自己定义常量
+# from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 import os
+
+# 定义CSLC相关常量
+V_CRUISE_MAX = 144  # 144 km/h = 90 mph
+V_CRUISE_MIN = 30   # 30 km/h
+V_CRUISE_DELTA = 5  # 5 km/h增量
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -26,7 +32,20 @@ class CarController(CarControllerBase):
     self.speed_from_pcm = 1
     self.is_metric = True
     self.experimental_mode = False
-    self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+    self.cslc_enabled = self._read_cslc_param()
+
+  def _read_cslc_param(self):
+    """读取CSLCEnabled参数的值"""
+    try:
+        if os.path.exists("/data/params/d/CSLCEnabled"):
+            with open("/data/params/d/CSLCEnabled", "rb") as f:
+                value = f.read()
+                # 如果值为1（二进制01），则启用CSLC
+                return (value == b'\x01')
+        return False
+    except Exception as e:
+        print(f"读取CSLCEnabled参数时出错: {e}")
+        return False
 
   def update(self, CC, CS, now_nanos):
     # 每50帧更新一次参数
@@ -44,8 +63,8 @@ class CarController(CarControllerBase):
         except:
           self.is_metric = True
 
-        # 直接检查文件是否存在，不依赖params方法
-        self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+        # 读取CSLC参数值，而不是检查文件存在
+        self.cslc_enabled = self._read_cslc_param()
 
         try:
           self.experimental_mode = params.get_bool("ExperimentalMode")
@@ -93,11 +112,14 @@ class CarController(CarControllerBase):
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
+      elif CS.out.activateCruise and CS.cruiseStateActive and CS.out.brakeLights:
+        can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       # CSLC功能 - 自动控制车速
-      elif self.cslc_enabled and self.CP.getBrand() == "mazda":
+      elif self.cslc_enabled:
         if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
           slcSet = get_set_speed(self, hud_v_cruise)
-          can_sends.extend(mazdacan.create_mazda_acc_spam_command(self.packer, self, CS, slcSet, CS.out.vEgo, self.is_metric, self.experimental_mode, accel))
+          if slcSet != Buttons.NONE:
+            can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, slcSet))
       else:
         # 原有的按钮控制逻辑
         if self.frame % 20 == 0:

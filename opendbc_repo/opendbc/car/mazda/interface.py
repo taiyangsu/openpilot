@@ -27,14 +27,20 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.41
 
-    # 直接检查CSLCEnabled文件是否存在
-    cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+    # 读取参数文件内容，而不只是检查文件是否存在
+    cslc_enabled = False
+    try:
+        if os.path.exists("/data/params/d/CSLCEnabled"):
+            with open("/data/params/d/CSLCEnabled", "rb") as f:
+                value = f.read()
+                # 如果值为1（二进制01），则启用CSLC
+                cslc_enabled = (value == b'\x01')
+    except Exception as e:
+        print(f"读取CSLCEnabled参数时出错: {e}")
+        cslc_enabled = False
 
-    # 检查是否为Mazda车型，只有Mazda车型才启用CSLC功能
-    is_mazda_car = candidate in (CAR.MAZDA_CX5, CAR.MAZDA_CX5_2022, CAR.MAZDA_CX9, CAR.MAZDA_CX9_2021, CAR.MAZDA_3, CAR.MAZDA_6)
-
-    # 如果是Mazda车型且CSLC功能已启用，配置相关参数
-    if is_mazda_car and cslc_enabled:
+    # 如果CSLC功能已启用（参数值为1），配置相关参数
+    if cslc_enabled:
         # 配置CSLC的纵向控制参数
         ret.openpilotLongitudinalControl = True
         ret.longitudinalTuning.deadzoneBP = [0.]
