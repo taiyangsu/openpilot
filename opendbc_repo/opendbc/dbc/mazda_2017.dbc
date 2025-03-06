@@ -789,3 +789,65 @@ VAL_ 540 RADAR_HAS_LEAD 0 "NO LEAD" 1 "HAS LEAD" ;
 VAL_ 540 RADAR_LEAD_RELATIVE_DISTANCE 0 "NO LEAD" 1 "FARTHEST" 2 "4" 3 "3" 4 "2" 5 "NEAREST" ;
 VAL_ 1143 LEFT_BS_STATUS 0 "No object detected" 1 "Object detected in left blindspot" 2 "Object detected in left blindspot with blinker - warning"
 VAL_ 1143 RIGHT_BS_STATUS 0 "No object detected" 1 "Object detected in right blindspot" 2 "Object detected in right blindspot with blinker - warning"
+
+BO_ 535 CRZ_BTNS: 8 XXX
+ SG_ CTR : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ CAN_OFF : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAN_OFF_INV : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_P : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_P_INV : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ RES : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ RES_INV : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_M : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_M_INV : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_LESS : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_LESS_INV : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_MORE : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_MORE_INV : 11|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_X : 12|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_X_INV : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_Y : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ MODE_Y_INV : 15|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT1 : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT2 : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ BIT3 : 18|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 536 CX5_2022_BTNS: 8 XXX
+ SG_ CTR : 15|4@0+ (1,0) [0|15] "" XXX
+ SG_ BTN_STATE : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ RESPONSE_FACTOR : 23|8@0+ (0.1,0) [0|25.5] "" XXX
+ SG_ RESPONSE_TYPE : 31|4@0+ (1,0) [0|15] "" XXX
+ SG_ CX5_2022_STATUS : 35|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 537 ACC_CONTROL: 8 XXX
+ SG_ SET_SPEED : 15|8@0+ (1,0) [0|255] "kph" XXX
+ SG_ CTR : 23|4@0+ (1,0) [0|15] "" XXX
+ SG_ CONTROL_ON : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ CONTROL_ALLOWED : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_CMD_PRIMARY : 31|16@0+ (0.01,-327.68) [-327.68|327.67] "m/s2" XXX
+
+BO_ 538 BRAKE_COMMAND: 8 XXX
+ SG_ BRAKE_ON : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_PRESSURE : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ CTR : 23|4@0+ (1,0) [0|15] "" XXX
+ SG_ BRAKE_COMMAND : 31|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 542 CAM_LKAS2: 8 XXX
+ SG_ LKAS_REQUEST : 15|12@0+ (1,-2048) [0|4095] "" XXX
+ SG_ CHKSUM : 27|8@0+ (1,0) [0|255] "" XXX
+ SG_ KEY : 63|32@0+ (1,0) [0|4294967295] "" XXX
+
+CM_ SG_ 535 CAN_OFF "Cancel button pressed";
+CM_ SG_ 535 SET_P "Set+ button pressed";
+CM_ SG_ 535 RES "Resume button pressed";
+CM_ SG_ 535 SET_M "Set- button pressed";
+CM_ SG_ 535 DISTANCE_LESS "Distance setting decrease button";
+CM_ SG_ 536 BTN_STATE "Button state for CX5 2022";
+CM_ SG_ 536 RESPONSE_FACTOR "Response sensitivity for CX5 2022";
+CM_ SG_ 537 SET_SPEED "Speed setpoint for ACC";
+CM_ SG_ 537 CONTROL_ON "ACC control enabled";
+CM_ SG_ 537 ACCEL_CMD_PRIMARY "Primary acceleration command for longitudinal control";
+CM_ SG_ 538 BRAKE_ON "Brake activation status";
+CM_ SG_ 538 BRAKE_COMMAND "Brake command value";
+CM_ SG_ 542 LKAS_REQUEST "LKAS steering torque request";
+CM_ SG_ 542 KEY "Security key for torque interceptor";

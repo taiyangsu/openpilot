@@ -48,7 +48,7 @@ class MazdaFlags(IntFlag):
   # Static flags
   # Gen 1 hardware: same CAN messages and same camera
   GEN1 = 1
-  # 添加CX5 2022特殊标志
+  # CX5 2022 specific flag
   CX5_2022 = 2
 
 
@@ -56,6 +56,11 @@ class MazdaFlags(IntFlag):
 class MazdaPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'mazda_2017'})
   flags: int = MazdaFlags.GEN1
+
+  def __post_init__(self):
+    # For CX5 2022, use radar support
+    if self.flags & MazdaFlags.CX5_2022:
+      self.dbc_dict = {Bus.pt: 'mazda_2017', Bus.radar: 'mazda_radar'}
 
 
 class CAR(Platforms):
@@ -81,8 +86,8 @@ class CAR(Platforms):
   )
   MAZDA_CX5_2022 = MazdaPlatformConfig(
     [MazdaCarDocs("Mazda CX-5 2022-25")],
-    MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.3),  # 优化后的转向比
-    flags=MazdaFlags.GEN1 | MazdaFlags.CX5_2022,  # 添加CX5_2022特殊标志
+    MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.3),  # optimized steering ratio
+    flags=MazdaFlags.GEN1 | MazdaFlags.CX5_2022,  # add CX5_2022 flag
   )
 
 
@@ -91,10 +96,10 @@ class LKAS_LIMITS:
   DISABLE_SPEED = 45    # kph
   ENABLE_SPEED = 52     # kph
 
-  # CX5 2022 优化的LKAS限制
-  CX5_2022_STEER_THRESHOLD = 14  # 稍微降低触发阈值
-  CX5_2022_DISABLE_SPEED = 42    # 降低禁用速度，更早启用转向辅助
-  CX5_2022_ENABLE_SPEED = 48     # 降低启用速度，更早启用转向辅助
+  # CX5 2022 optimized limits
+  CX5_2022_STEER_THRESHOLD = 14
+  CX5_2022_DISABLE_SPEED = 42
+  CX5_2022_ENABLE_SPEED = 48
 
 
 class Buttons:

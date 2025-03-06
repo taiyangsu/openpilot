@@ -4,10 +4,29 @@ from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags, Buttons, CAR
+from openpilot.common.params import Params
+from dataclasses import dataclass
+import numpy as np
+from cereal import car
 
 ButtonType = structs.CarState.ButtonEvent.Type
 BUTTONS_DICT = {Buttons.SET_PLUS: ButtonType.accelCruise, Buttons.SET_MINUS: ButtonType.decelCruise,
                 Buttons.RESUME: ButtonType.resumeCruise, Buttons.CANCEL: ButtonType.cancel}
+
+# Speed threshold for LKAS enabling (km/h)
+LKAS_ENABLE_SPEED = 52
+LKAS_DISABLE_SPEED = 44
+
+@dataclass
+class MazdaButtonEvents:
+  cancel: bool = False
+  set_p: bool = False
+  set_m: bool = False
+  resume: bool = False
+  gra_acc_p: bool = False
+  gra_acc_m: bool = False
+  distance: bool = False
+  lkas_btn: bool = False
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -31,6 +50,9 @@ class CarState(CarStateBase):
     self.distance_button = 0
     self.pcmCruiseGap = 0 # 巡航跟车距离设置
 
+    # 帧计数器，用于控制更新频率
+    self.frame = 0
+
     # CX5 2022特殊处理
     self.is_cx5_2022 = CP.carFingerprint == CAR.MAZDA_CX5_2022
 
@@ -48,12 +70,58 @@ class CarState(CarStateBase):
     self.lkas_previously_enabled = False
     self.lkas_enabled = False
 
+    # 雷达数据跟踪
+    self.lead_distance = 0.0
+    self.lead_speed = 0.0
+    self.lead_present = False
+    self.lead_status_counter = 0
+
     # 添加巡航状态缓存，用于CSLC功能
     self.cruiseStateActive = False
+
+    # Initialize params for settings
+    self.params = Params()
+    try:
+      self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    except:
+      self.experimental_mode = False
+
+    try:
+      self.speed_from_pcm = self.params.get_int("SpeedFromPCM")
+    except:
+      self.speed_from_pcm = 1
+
+    try:
+      self.is_metric = self.params.get_bool("IsMetric")
+    except:
+      self.is_metric = True
 
   def update(self, can_parsers) -> structs.CarState:
     cp = can_parsers[Bus.pt]
     cp_cam = can_parsers[Bus.cam]
+
+    # 处理雷达数据（如果有）
+    cp_radar = can_parsers.get(Bus.radar)
+
+    # 更新帧计数器
+    self.frame += 1
+
+    # 每50帧更新一次参数设置
+    if self.frame % 50 == 0:
+      try:
+        self.experimental_mode = self.params.get_bool("ExperimentalMode")
+      except:
+        self.experimental_mode = False
+
+      try:
+        self.speed_from_pcm = self.params.get_int("SpeedFromPCM")
+      except:
+        self.speed_from_pcm = 1
+
+      try:
+        self.is_metric = self.params.get_bool("IsMetric")
+      except:
+        self.is_metric = True
 
     ret = structs.CarState()
 
@@ -64,14 +132,40 @@ class CarState(CarStateBase):
     # 读取巡航按钮状态
     self.prev_cruise_buttons = self.cruise_buttons
 
-    if bool(cp.vl["CRZ_BTNS"]["SET_P"]):
-      self.cruise_buttons = Buttons.SET_PLUS
-    elif bool(cp.vl["CRZ_BTNS"]["SET_M"]):
-      self.cruise_buttons = Buttons.SET_MINUS
-    elif bool(cp.vl["CRZ_BTNS"]["RES"]):
-      self.cruise_buttons = Buttons.RESUME
+    # 优化按钮读取逻辑，特别处理CX5 2022
+    if self.is_cx5_2022 and self.experimental_mode:
+      # 检查CX5 2022特有的按钮信号
+      try:
+        if cp.vl["CX5_2022_BTNS"]["CX5_2022_RES_BTN"] == 1:
+          self.cruise_buttons = Buttons.RESUME
+        elif bool(cp.vl["CRZ_BTNS"]["SET_P"]):
+          self.cruise_buttons = Buttons.SET_PLUS
+        elif bool(cp.vl["CRZ_BTNS"]["SET_M"]):
+          self.cruise_buttons = Buttons.SET_MINUS
+        elif bool(cp.vl["CRZ_BTNS"]["RES"]):
+          self.cruise_buttons = Buttons.RESUME
+        else:
+          self.cruise_buttons = Buttons.NONE
+      except:
+        # 如果CX5_2022_BTNS不存在，使用标准按钮逻辑
+        if bool(cp.vl["CRZ_BTNS"]["SET_P"]):
+          self.cruise_buttons = Buttons.SET_PLUS
+        elif bool(cp.vl["CRZ_BTNS"]["SET_M"]):
+          self.cruise_buttons = Buttons.SET_MINUS
+        elif bool(cp.vl["CRZ_BTNS"]["RES"]):
+          self.cruise_buttons = Buttons.RESUME
+        else:
+          self.cruise_buttons = Buttons.NONE
     else:
-      self.cruise_buttons = Buttons.NONE
+      # 标准按钮逻辑
+      if bool(cp.vl["CRZ_BTNS"]["SET_P"]):
+        self.cruise_buttons = Buttons.SET_PLUS
+      elif bool(cp.vl["CRZ_BTNS"]["SET_M"]):
+        self.cruise_buttons = Buttons.SET_MINUS
+      elif bool(cp.vl["CRZ_BTNS"]["RES"]):
+        self.cruise_buttons = Buttons.RESUME
+      else:
+        self.cruise_buttons = Buttons.NONE
 
     # 车轮速度
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -146,6 +240,39 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = cp.vl["PEDALS"]["STANDSTILL"] == 1
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
+    # 处理雷达数据（如果有）
+    if cp_radar is not None and self.is_cx5_2022:
+      # 检查前车
+      lead_valid = False
+      for track_id in range(1, 7):  # 处理所有6个雷达跟踪
+        track_msg = f"RADAR_TRACK_36{track_id}"
+        if track_msg in cp_radar.vl:
+          status = cp_radar.vl[track_msg].get("STATUS", 0)
+          if status >= 3:  # 状态3+表示可靠检测
+            distance = cp_radar.vl[track_msg].get("DIST_OBJ", 0)
+            rel_speed = cp_radar.vl[track_msg].get("RELV_OBJ", 0)
+            if distance > 0 and distance < 150:  # 有效检测范围
+              lead_valid = True
+              if distance < self.lead_distance or self.lead_distance == 0:
+                self.lead_distance = float(distance)
+                self.lead_speed = float(rel_speed)
+
+      # 更新前车检测
+      if lead_valid:
+        self.lead_present = True
+        self.lead_status_counter = 20  # 保持检测20帧
+      elif self.lead_status_counter > 0:
+        self.lead_status_counter -= 1
+      else:
+        self.lead_present = False
+        self.lead_distance = 0.0
+        self.lead_speed = 0.0
+
+      # 更新ret.leadOne字段
+      ret.leadOne.dRel = float(self.lead_distance)
+      ret.leadOne.vRel = float(self.lead_speed)
+      ret.leadOne.status = self.lead_present
+
     # 检查LKAS设置
     ret.invalidLkasSetting = cp_cam.vl["CAM_LANEINFO"]["LANE_LINES"] == 0
 
@@ -206,6 +333,12 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
+    # 添加CX5 2022特有的消息
+    if CP.carFingerprint == CAR.MAZDA_CX5_2022:
+      pt_messages += [
+        ("CX5_2022_BTNS", 10),
+      ]
+
     cam_messages = []
     if CP.flags & MazdaFlags.GEN1:
       cam_messages += [
@@ -214,7 +347,26 @@ class CarState(CarStateBase):
         ("CAM_LKAS", 16),
       ]
 
-    return {
+    # 创建基本解析器
+    parsers = {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
     }
+
+    # 添加雷达解析器（如果是CX5 2022）
+    if CP.carFingerprint == CAR.MAZDA_CX5_2022 and CP.flags & MazdaFlags.CX5_2022:
+      radar_messages = []
+
+      # 添加所有雷达跟踪信号
+      for i in range(1, 7):  # 6个雷达跟踪
+        track_msg = f"RADAR_TRACK_36{i}"
+        radar_messages.append((track_msg, 20))
+
+      # 添加巡航控制信息
+      radar_messages += [
+        ("CRZ_INFO", 50),
+      ]
+
+      parsers[Bus.radar] = CANParser("mazda_radar", radar_messages, 1)
+
+    return parsers

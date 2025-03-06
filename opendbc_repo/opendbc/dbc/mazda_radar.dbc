@@ -37,37 +37,86 @@ BU_: XXX
 
 
 BO_ 540 CRZ_CTRL: 8 XXX
+ SG_ CRZ_ACTIVE : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRZ_AVAILABLE : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_ACTIVE_2 : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISABLE_TIMER_1 : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISABLE_TIMER_2 : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ DISTANCE_SETTING : 5|2@0+ (1,0) [0|3] "" XXX
+ SG_ CTR : 7|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 539 CRZ_INFO: 8 XXX
+ SG_ ACC_ACTIVE : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_SET_ALLOWED : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRZ_ENDED : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_CMD : 8|16@1+ (1,0) [-1000|1000] "" XXX
+ SG_ STOPPING_MAYBE : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ STOPPING_MAYBE2 : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ CTR : 55|8@0+ (1,0) [0|255] "" XXX
 
 BO_ 865 RADAR_TRACK_361: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
+ SG_ INVERSE_SPEED : 40|14@0- (1,0) [-8191|8191] "" XXX
+ SG_ BIT : 36|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 866 RADAR_TRACK_362: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
+ SG_ CLIPPED_STEER_ANGLE : 39|12@0+ (1,0) [0|4095] "" XXX
 
 BO_ 867 RADAR_TRACK_363: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 868 RADAR_TRACK_364: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 869 RADAR_TRACK_365: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 870 RADAR_TRACK_366: 8 XXX
  SG_ DIST_OBJ : 7|12@0+ (1,0) [0|4095] "" XXX
  SG_ ANG_OBJ : 11|12@0- (1,0) [-2047|2047] "" XXX
  SG_ RELV_OBJ : 31|11@0- (1,0) [-1023|1023] "" XXX
+ SG_ CTR : 47|4@0+ (1,0) [0|15] "" XXX
+ SG_ MSGS_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+ SG_ MSGS_2 : 63|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 1177 RADAR_499: 8 XXX
+
+CM_ SG_ 539 ACC_ACTIVE "Adaptive Cruise Control active status";
+CM_ SG_ 539 ACC_SET_ALLOWED "Allow ACC to be set";
+CM_ SG_ 539 CRZ_ENDED "Cruise control ended status";
+CM_ SG_ 539 ACCEL_CMD "Acceleration command for CSLC";
+CM_ SG_ 539 STOPPING_MAYBE "Signal active when car is stopping";
+CM_ SG_ 540 CRZ_ACTIVE "Cruise control active status";
+CM_ SG_ 540 CRZ_AVAILABLE "Cruise control available status";
+CM_ SG_ 540 DISTANCE_SETTING "Following distance setting for ACC";
+CM_ SG_ 865 DIST_OBJ "Distance to object";
+CM_ SG_ 865 ANG_OBJ "Angle to object";
+CM_ SG_ 865 RELV_OBJ "Relative velocity of object";
+CM_ SG_ 865 INVERSE_SPEED "Inverse of current speed, used for radar";
+CM_ SG_ 866 CLIPPED_STEER_ANGLE "Steering angle clipped to valid range";
