@@ -407,12 +407,12 @@ class RadarConfig:
   MAX_DREL_DIFF = 5.0
 
 class MyTrack:
-  def __init__(self, track_id: int, dRel: float, vRel: float, yRel: float, v_ego: float):
+  def __init__(self, track_id: int, radar_point):
     self.track_id = track_id
-    self.dRel = dRel
-    self.vRel = vRel
-    self.yRel = yRel
-    self.vLead = v_ego + vRel
+    self.dRel = radar_point.dRel
+    self.vRel = radar_point.vRel
+    self.yRel = radar_point.yRel
+    self.vLead = radar_point.vLead
     self.aLead = 0.0
     self.jLead = 0.0
     self.filtered_vLead = self.vLead
@@ -420,23 +420,23 @@ class MyTrack:
     self.filtered_jLead = 0.0
     self.cnt = 0  # 초기값 0
     
-  def update(self, v_ego: float, new_dRel: float, new_vRel: float, new_yRel: float, dt: float):
-    self.yRel = new_yRel
-    new_vLead = v_ego + new_vRel    
-    dRel_diff = abs(new_dRel - self.dRel)
-    vLead_diff = abs(new_vLead - self.vLead) * dt
+  def update(self, radar_point, dt: float):
+    self.yRel = radar_point.yRel
+    #new_vLead = v_ego + new_vRel    
+    dRel_diff = abs(radar_point.dRel - self.dRel)
+    vLead_diff = abs(radar_point.vLead - self.vLead) * dt
 
     if dRel_diff > RadarConfig.MAX_DREL_DIFF:
-      self.filtered_vLead = new_vLead
+      self.filtered_vLead = radar_point.vLead
       self.filtered_aLead = 0.0
       self.filtered_jLead = 0.0
       self.cnt = 0  # 거리 변화가 크면 초기화
     else:
       if vLead_diff > RadarConfig.MAX_VLEAD_DIFF:
-        self.filtered_vLead = new_vLead
+        self.filtered_vLead = radar_point.vLead
         self.cnt = 0
       else:
-        self.filtered_vLead = RadarConfig.ALPHA * new_vLead + (1 - RadarConfig.ALPHA) * self.filtered_vLead
+        self.filtered_vLead = RadarConfig.ALPHA * radar_point.vLead + (1 - RadarConfig.ALPHA) * self.filtered_vLead
 
       self.cnt += 1  # cnt 증가
 
@@ -460,8 +460,8 @@ class MyTrack:
     self.vLead = self.filtered_vLead
     self.aLead = self.filtered_aLead
     self.jLead = self.filtered_jLead
-    self.dRel = new_dRel
-    self.vRel = new_vRel
+    self.dRel = radar_point.dRel
+    self.vRel = radar_point.vRel
 
     
 
@@ -494,12 +494,11 @@ class RadarInterfaceBase(ABC):
       for addr, radar_point in self.pts.items():
         track_id = radar_point.trackId
         if track_id not in self.tracks:
-          new_tracks[track_id] = MyTrack(track_id, radar_point.dRel, radar_point.vRel, radar_point.yRel, self.v_ego)
+          new_tracks[track_id] = MyTrack(track_id, radar_point)
         else:
           new_tracks[track_id] = self.tracks[track_id]
-          new_tracks[track_id].update(self.v_ego, radar_point.dRel, radar_point.vRel, radar_point.yRel, self.dt)
+          new_tracks[track_id].update(radar_point, self.dt)
 
-        radar_point.vLead = new_tracks[track_id].vLead
         radar_point.aLead = new_tracks[track_id].aLead
         radar_point.jLead = new_tracks[track_id].jLead
                 

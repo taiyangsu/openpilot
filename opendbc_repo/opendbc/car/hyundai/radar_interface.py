@@ -95,6 +95,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].dRel = math.cos(azimuth) * msg['LONG_DIST']
         self.pts[addr].yRel = 0.5 * -math.sin(azimuth) * msg['LONG_DIST']
         self.pts[addr].vRel = msg['REL_SPEED']
+        self.pts[addr].vLead = self.pts[addr].vRel + self.v_ego
         self.pts[addr].aRel = msg['REL_ACCEL']
         self.pts[addr].yvRel = float('nan')
 
@@ -129,6 +130,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].dRel = dRel
           self.pts[ii].yRel = 0
           self.pts[ii].vRel = vRel
+          self.pts[ii].vLead = vRel + self.v_ego
           self.pts[ii].aRel = 0 #float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = True
@@ -147,6 +149,7 @@ class RadarInterface(RadarInterfaceBase):
           self.pts[ii].dRel = dRel
           self.pts[ii].yRel = -cpt["SCC11"]['ACC_ObjLatPos']  # in car frame's y axis, left is negative
           self.pts[ii].vRel = vRel
+          self.pts[ii].vLead = vRel + self.v_ego
           self.pts[ii].aRel = 0 #float('nan')
           self.pts[ii].yvRel = float('nan')
           self.pts[ii].measured = True
