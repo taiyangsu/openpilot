@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-export API_HOST=https://api.konik.ai
-export ATHENA_HOST=wss://athena.konik.ai
 
-# 初始化Mazda CSLC功能参数
+# 初始化Mazda CSLC功能参数 - 在任何其他操作之前执行
 if [ -d "/data/params/d" ]; then
   # 确保CSLCEnabled参数默认开启
   if [ ! -f "/data/params/d/CSLCEnabled" ]; then
@@ -18,5 +16,8 @@ if [ -d "/data/params/d" ]; then
 
   echo "Mazda CSLC功能初始化完成"
 fi
+
+export API_HOST=https://api.konik.ai
+export ATHENA_HOST=wss://athena.konik.ai
 
 exec ./launch_chffrplus.sh

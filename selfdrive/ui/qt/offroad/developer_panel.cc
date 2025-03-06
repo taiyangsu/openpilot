@@ -117,13 +117,13 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   updateToggles(offroad);
 
   // 确保CSLC功能默认开启
-  if (!Params().getBool("CSLCEnabled")) {
+  if (!Params().getBool("CSLCEnabled", false)) {
     Params().putBool("CSLCEnabled", true);
     cslcToggle->refresh();
   }
 
   // 确保MazdaCSLC参数默认开启
-  if (!Params().getBool("MazdaCSLC")) {
+  if (!Params().getBool("MazdaCSLC", false)) {
     Params().putBool("MazdaCSLC", true);
   }
 }

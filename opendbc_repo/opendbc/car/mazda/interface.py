@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 from opendbc.car import get_safety_config, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.mazda.values import CAR, LKAS_LIMITS
@@ -27,9 +28,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.41
 
-    # 检查是否启用CSLC功能
-    params = Params()
-    if params.get_bool("CSLCEnabled"):
+    # 检查是否启用CSLC功能 - 直接检查文件是否存在
+    cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+
+    # 对于Mazda车型，启用CSLC功能
+    if cslc_enabled and candidate in (CAR.MAZDA_CX5, CAR.MAZDA_CX5_2022, CAR.MAZDA_CX9, CAR.MAZDA_CX9_2021, CAR.MAZDA_3, CAR.MAZDA_6):
         # 配置CSLC的纵向控制参数
         ret.openpilotLongitudinalControl = True
         ret.longitudinalTuning.deadzoneBP = [0.]

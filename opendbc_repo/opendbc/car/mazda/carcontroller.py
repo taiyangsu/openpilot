@@ -6,6 +6,7 @@ from opendbc.car.mazda.values import CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+import os
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -25,19 +26,31 @@ class CarController(CarControllerBase):
     self.speed_from_pcm = 1
     self.is_metric = True
     self.experimental_mode = False
+    self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+    self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
 
   def update(self, CC, CS, now_nanos):
     # 每50帧更新一次参数
     if self.frame % 50 == 0:
       params = Params()
-      self.speed_from_pcm = params.get_int("SpeedFromPCM")
-      self.is_metric = params.get_bool("IsMetric")
-      self.cslc_enabled = params.get_bool("CSLCEnabled")
-      # 检查MazdaCSLC参数，如果不存在则创建并默认开启
-      if not params.get_bool("MazdaCSLC", False):
-        params.put_bool("MazdaCSLC", True)
-      self.mazda_cslc = params.get_bool("MazdaCSLC")
-      self.experimental_mode = params.get_bool("ExperimentalMode")
+      try:
+        self.speed_from_pcm = params.get_int("SpeedFromPCM")
+      except:
+        self.speed_from_pcm = 1
+
+      try:
+        self.is_metric = params.get_bool("IsMetric")
+      except:
+        self.is_metric = True
+
+      # 直接检查文件是否存在
+      self.cslc_enabled = os.path.exists("/data/params/d/CSLCEnabled")
+      self.mazda_cslc = os.path.exists("/data/params/d/MazdaCSLC")
+
+      try:
+        self.experimental_mode = params.get_bool("ExperimentalMode")
+      except:
+        self.experimental_mode = False
 
     hud_control = CC.hudControl
     hud_v_cruise = hud_control.setSpeed
