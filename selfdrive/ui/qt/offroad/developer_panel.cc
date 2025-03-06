@@ -29,11 +29,6 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  // 确保CSLCEnabled参数在初始化时就被设置
-  if (!params.getBool("CSLCEnabled", false)) {
-    params.putBool("CSLCEnabled", true);
-  }
-
   cslcToggle = new ParamControl(
     "CSLCEnabled",
     tr("Cruise Speed Limit Control (CSLC)"),
@@ -43,6 +38,9 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
               "此功能依赖于车辆原厂巡航系统的可用性，速度调整精度受限于原厂巡航系统的调速精度。")),
     ""
   );
+  if (!params.getBool("CSLCEnabled", false)) {
+    params.putBool("CSLCEnabled", true);
+  }
   addItem(cslcToggle);
 
   experimentalLongitudinalToggle = new ParamControl(
@@ -100,11 +98,10 @@ void DeveloperPanel::updateToggles(bool _offroad) {
      */
     experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
 
-    // CSLC开关应该在Mazda车型上可见
-    bool isMazda = CP.getBrand() == "mazda";
+    // CSLC开关应该对所有车型可见
     cslcToggle->setVisible(!is_release);
-    // CSLC开关在行驶和停车状态下都可用
-    cslcToggle->setEnabled(isMazda);
+    // CSLC开关在所有车型上都可用
+    cslcToggle->setEnabled(true);
 
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
@@ -120,8 +117,13 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
   updateToggles(offroad);
 
   // 确保CSLC功能默认开启
-  if (!params.getBool("CSLCEnabled", false)) {
-    params.putBool("CSLCEnabled", true);
+  if (!Params().getBool("CSLCEnabled")) {
+    Params().putBool("CSLCEnabled", true);
     cslcToggle->refresh();
+  }
+
+  // 确保MazdaCSLC参数默认开启
+  if (!Params().getBool("MazdaCSLC")) {
+    Params().putBool("MazdaCSLC", true);
   }
 }

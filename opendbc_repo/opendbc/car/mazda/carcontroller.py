@@ -5,9 +5,7 @@ from opendbc.car.mazda import mazdacan
 from opendbc.car.mazda.values import CarControllerParams, Buttons
 from opendbc.car.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-
-# 定义最大巡航速度常量（km/h）
-V_CRUISE_MAX = 160
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -35,6 +33,10 @@ class CarController(CarControllerBase):
       self.speed_from_pcm = params.get_int("SpeedFromPCM")
       self.is_metric = params.get_bool("IsMetric")
       self.cslc_enabled = params.get_bool("CSLCEnabled")
+      # 检查MazdaCSLC参数，如果不存在则创建并默认开启
+      if not params.get_bool("MazdaCSLC", False):
+        params.put_bool("MazdaCSLC", True)
+      self.mazda_cslc = params.get_bool("MazdaCSLC")
       self.experimental_mode = params.get_bool("ExperimentalMode")
 
     hud_control = CC.hudControl
@@ -72,7 +74,7 @@ class CarController(CarControllerBase):
         # Send Resume button when planner wants car to move
         can_sends.append(mazdacan.create_button_cmd(self.packer, self.CP, CS.crz_btns_counter, Buttons.RESUME))
       # CSLC功能 - 自动控制车速
-      elif self.cslc_enabled:
+      elif self.cslc_enabled and self.mazda_cslc and self.CP.getBrand() == "mazda":
         if CC.enabled and self.frame % 10 == 0 and getattr(CS, 'cruise_buttons', Buttons.NONE) == Buttons.NONE and not CS.out.gasPressed and not getattr(CS, 'distance_button', 0):
           slcSet = get_set_speed(self, hud_v_cruise)
           can_sends.extend(mazdacan.create_mazda_acc_spam_command(self.packer, self, CS, slcSet, CS.out.vEgo, self.is_metric, self.experimental_mode, accel))
@@ -148,7 +150,6 @@ def get_set_speed(self, hud_v_cruise):
   返回:
   - 目标速度(m/s)
   """
-  # 使用本地定义的V_CRUISE_MAX常量
   v_cruise = min(hud_v_cruise, V_CRUISE_MAX * CV.KPH_TO_MS)
 
   v_cruise_slc = params_memory.get_float("CSLCSpeed")
