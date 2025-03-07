@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
     # 如果是CX5 2022，检查是否有雷达总线
     if is_cx5_2022 and 1 in fingerprint:
       ret.radarUnavailable = False
-      ret.flags |= MazdaFlags.CX5_2022
+      ret.flags = int(ret.flags) | 2  # 2是MazdaFlags.CX5_2022的值
 
     ret.dashcamOnly = candidate not in (CAR.MAZDA_CX5_2022, CAR.MAZDA_CX9_2021)
 

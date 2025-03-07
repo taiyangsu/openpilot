@@ -319,7 +319,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
     ]
 
-    if CP.flags & MazdaFlags.GEN1:
+    # 使用整数值1代替MazdaFlags.GEN1
+    if CP.flags & 1:  # 1是MazdaFlags.GEN1的值
       pt_messages += [
         ("ENGINE_DATA", 100),
         ("CRZ_CTRL", 50),
@@ -340,7 +341,8 @@ class CarState(CarStateBase):
       ]
 
     cam_messages = []
-    if CP.flags & MazdaFlags.GEN1:
+    # 使用整数值1代替MazdaFlags.GEN1
+    if CP.flags & 1:  # 1是MazdaFlags.GEN1的值
       cam_messages += [
         # sig_address, frequency
         ("CAM_LANEINFO", 2),
@@ -354,7 +356,8 @@ class CarState(CarStateBase):
     }
 
     # 添加雷达解析器（如果是CX5 2022）- 使用标准硬件
-    if CP.carFingerprint == CAR.MAZDA_CX5_2022 and CP.flags & MazdaFlags.CX5_2022:
+    # 使用整数值2代替MazdaFlags.CX5_2022
+    if CP.carFingerprint == CAR.MAZDA_CX5_2022 and CP.flags & 2:  # 2是MazdaFlags.CX5_2022的值
       radar_messages = []
 
       # 添加所有雷达跟踪信号

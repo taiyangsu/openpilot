@@ -55,11 +55,11 @@ class MazdaFlags(IntFlag):
 @dataclass
 class MazdaPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'mazda_2017'})
-  flags: int = MazdaFlags.GEN1
+  flags: int = 1  # 使用整数值1代替MazdaFlags.GEN1
 
   def __post_init__(self):
     # For CX5 2022, use radar support
-    if self.flags & MazdaFlags.CX5_2022:
+    if self.flags & 2:  # 2是MazdaFlags.CX5_2022的值
       self.dbc_dict = {Bus.pt: 'mazda_2017', Bus.radar: 'mazda_radar'}
 
 
@@ -87,7 +87,7 @@ class CAR(Platforms):
   MAZDA_CX5_2022 = MazdaPlatformConfig(
     [MazdaCarDocs("Mazda CX-5 2022-25")],
     MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.3),  # optimized steering ratio
-    flags=MazdaFlags.GEN1 | MazdaFlags.CX5_2022,  # add CX5_2022 flag
+    flags=3,  # 使用整数值3代替MazdaFlags.GEN1 | MazdaFlags.CX5_2022
   )
 
 

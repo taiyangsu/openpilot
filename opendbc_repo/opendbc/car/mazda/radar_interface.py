@@ -18,7 +18,7 @@ class RadarInterface(RadarInterfaceBase):
 
     # Check if car is CX5 2022 with radar support
     self.is_cx5_2022 = CP.carFingerprint == CAR.MAZDA_CX5_2022
-    self.has_radar = self.is_cx5_2022 and CP.flags & MazdaFlags.CX5_2022
+    self.has_radar = self.is_cx5_2022 and CP.flags & 2
 
     # Initialize radar tracks
     self.track_id = 0
