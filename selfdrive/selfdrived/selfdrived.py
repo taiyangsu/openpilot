@@ -99,11 +99,8 @@ class SelfdriveD:
     if not self.CP.experimentalLongitudinalAvailable:
       self.params.remove("ExperimentalLongitudinalEnabled")
 
-    # 只有当不是马自达车型且不支持纵向控制时才删除实验模式参数
-    if not self.CP.openpilotLongitudinalControl and self.CP.brand != "mazda":
-      self.params.remove("ExperimentalMode")
-
-    # 对于马自达车型，确保实验模式可用
+    # 允许任何车型都可以开启实验模式，不再删除ExperimentalMode参数
+    # 对于马自达车型，确保CSLC功能可用
     if self.CP.brand == "mazda" and not self.params.get_bool("CSLCEnabled", False):
       self.params.put_bool("CSLCEnabled", True)
 
@@ -510,7 +507,8 @@ class SelfdriveD:
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      # 允许任何车型都可以开启实验模式，不再需要openpilotLongitudinalControl
+      self.experimental_mode = self.params.get_bool("ExperimentalMode")
       self.personality = self.read_personality_param()
       time.sleep(0.1)
 
