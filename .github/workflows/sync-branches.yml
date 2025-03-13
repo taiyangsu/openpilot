@@ -21,7 +21,7 @@ jobs:
       - name: Add the source repository as a remote and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
-          git fetch upstream v8-wip3 v8-wip3-da --no-tags
+          git fetch upstream v8-wip4 v8-wip4-da --no-tags
 
       # 3. Push v8-wip2 branch to your repository
       - name: Push v8-wip4 branch to your repository
