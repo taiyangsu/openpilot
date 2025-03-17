@@ -17,20 +17,29 @@ jobs:
           fetch-depth: 0  # 完整克隆仓库，确保所有历史记录
           token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
 
-      # 2. Add the source repository as a remote and fetch branches
-      - name: Add the source repository as a remote and fetch branches
+      # 2. Add the source repositories as remotes and fetch branches
+      - name: Add upstream repository and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
           git fetch upstream v8-wip4 v8-wip4-da --no-tags
+          
+          git remote add mazda_upstream https://github.com/MoreTore/openpilot.git
+          git fetch mazda_upstream mazda-frogpilot --no-tags
 
-      # 3. Push v8-wip2 branch to your repository
+      # 3. Push v8-wip4 branch to your repository
       - name: Push v8-wip4 branch to your repository
         run: |
           git checkout -B v8-wip4 upstream/v8-wip4
           git push origin v8-wip4 --force
 
-      # 4. Push v8-wip2-da branch to your repository
+      # 4. Push v8-wip4-da branch to your repository
       - name: Push v8-wip4-da branch to your repository
         run: |
           git checkout -B v8-wip4-da upstream/v8-wip4-da
           git push origin v8-wip4-da --force
+
+      # 5. Push mazda-frogpilot branch to your repository
+      - name: Push mazda-frogpilot branch to your repository
+        run: |
+          git checkout -B mazda-frogpilot mazda_upstream/mazda-frogpilot
+          git push origin mazda-frogpilot --force
