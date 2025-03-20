@@ -34,7 +34,7 @@ def get_default_params():
 
     ("SearchInput", "0"),
     ("GMapKey", "0"),
-    ("MapboxStyle", "0"),    
+    ("MapboxStyle", "0"),
 
 
     ("LongitudinalPersonalityMax", "3"),
@@ -338,6 +338,7 @@ def main() -> None:
   os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
   os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
   os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ../../opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
 
   if os.getenv("PREPAREONLY") is not None:
     return

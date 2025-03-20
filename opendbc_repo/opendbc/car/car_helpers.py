@@ -179,6 +179,7 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
       from opendbc.car.gm.values import CAR as GM
       from opendbc.car.toyota.values import CAR as TOYOTA
       from opendbc.car.mazda.values import CAR as MAZDA
+      from opendbc.car.volkswagen.values import CAR as VOLKSWAGEN
       for platform in GM:
         for doc in platform.config.car_docs:
           if name == doc.name:
@@ -195,6 +196,10 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
         for doc in platform.config.car_docs:
           if name == doc.name:
             return platform
+      for platform in VOLKSWAGEN:
+        for doc in platform.config.car_docs:
+          if name == doc.name:
+            return platform
       return None
     found_car = find_car(selected_car.decode("utf-8"))
     if found_car is not None:
@@ -202,7 +207,7 @@ def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multip
 
   print(f"SelectedCar = {candidate}")
   Params().put("CarName", candidate)
-  
+
   CarInterface, _, _, _ = interfaces[candidate]
   CP: CarParams = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
