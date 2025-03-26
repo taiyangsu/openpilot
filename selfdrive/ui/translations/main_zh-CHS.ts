@@ -15,6 +15,10 @@
         <source>Reboot and Update</source>
         <translation>重启并更新</translation>
     </message>
+    <message>
+        <source>Disable Internet Check</source>
+        <translation>禁用互联网检查</translation>
+    </message>
 </context>
 <context>
     <name>AdvancedNetworking</name>
@@ -109,6 +113,177 @@
         <source>LIMIT</source>
         <translation>LIMIT</translation>
     </message>
+    <message>
+        <source>Vehicle in blind spot</source>
+        <translation>车辆处于盲区</translation>
+    </message>
+    <message>
+        <source> m/s²</source>
+        <translation> 米/秒²</translation>
+    </message>
+    <message>
+        <source>m/s</source>
+        <translation>米/秒</translation>
+    </message>
+    <message>
+        <source>kph</source>
+        <translation>公里/小时</translation>
+    </message>
+    <message>
+        <source> ft/s²</source>
+        <translation> 英尺/秒²</translation>
+    </message>
+    <message>
+        <source>Accel: %1%2</source>
+        <translation>加速度：%1%2</translation>
+    </message>
+    <message>
+        <source> - Max: %1%2</source>
+        <translation> - 最大值：%1%2</translation>
+    </message>
+    <message>
+        <source> | Obstacle: </source>
+        <translation> | 障碍物： </translation>
+    </message>
+    <message>
+        <source>  |  Obstacle Factor: </source>
+        <translation>  |  障碍因子： </translation>
+    </message>
+    <message>
+        <source> - Stop: </source>
+        <translation> - 停止： </translation>
+    </message>
+    <message>
+        <source>  -  Stop Factor: </source>
+        <translation>  -  停止因子： </translation>
+    </message>
+    <message>
+        <source>Follow: </source>
+        <translation>跟随： </translation>
+    </message>
+    <message>
+        <source>Follow Distance: </source>
+        <translation>跟车距离： </translation>
+    </message>
+    <message>
+        <source>Confirm speed limit
+</source>
+        <translation>确认限速
+</translation>
+    </message>
+    <message>
+        <source>Ignore speed limit
+</source>
+        <translation>忽略限速</translation>
+    </message>
+    <message>
+        <source>Conditional Experimental Mode ready</source>
+        <translation>条件实验模式已准备好</translation>
+    </message>
+    <message>
+        <source>Conditional Experimental overridden</source>
+        <translation>条件实验模式已被覆盖</translation>
+    </message>
+    <message>
+        <source>Experimental Mode manually activated</source>
+        <translation>实验模式已手动激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for</source>
+        <translation>实验模式已为以下情况激活</translation>
+    </message>
+    <message>
+        <source> intersection</source>
+        <translation> 交叉口</translation>
+    </message>
+    <message>
+        <source> upcoming intersection</source>
+        <translation> 即将到来的交叉口</translation>
+    </message>
+    <message>
+        <source> turn</source>
+        <translation> 转弯</translation>
+    </message>
+    <message>
+        <source> upcoming turn</source>
+        <translation> 即将到来的转弯</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated due to</source>
+        <translation>实验模式因以下原因激活</translation>
+    </message>
+    <message>
+        <source> SLC</source>
+        <translation> SLC</translation>
+    </message>
+    <message>
+        <source> no speed limit set</source>
+        <translation> 未设置限速</translation>
+    </message>
+    <message>
+        <source> speed</source>
+        <translation> 速度</translation>
+    </message>
+    <message>
+        <source> speed being less than </source>
+        <translation> 速度低于 </translation>
+    </message>
+    <message>
+        <source> kph</source>
+        <translation> 公里每小时</translation>
+    </message>
+    <message>
+        <source> mph</source>
+        <translation> 英里每小时</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for stopped lead</source>
+        <translation>实验模式已为停止的前车激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for slower lead</source>
+        <translation>实验模式已为较慢的前车激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for turn</source>
+        <translation>实验模式已为转弯激活</translation>
+    </message>
+    <message>
+        <source> / lane change</source>
+        <translation> / 变道</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for curve</source>
+        <translation>实验模式已为曲线激活</translation>
+    </message>
+    <message>
+        <source>Experimental Mode activated for stop</source>
+        <translation>实验模式已为停车激活</translation>
+    </message>
+    <message>
+        <source> sign / stop light</source>
+        <translation> 标志 / 停止信号灯</translation>
+    </message>
+    <message>
+        <source>Always On Lateral active</source>
+        <translation>始终开启的侧向控制已激活</translation>
+    </message>
+    <message>
+        <source>. Press the &quot;Cruise Control&quot; button to disable</source>
+        <translation>。按下“巡航控制”按钮以禁用</translation>
+    </message>
+    <message>
+        <source>. Long press the &quot;distance&quot; button to revert</source>
+        <translation>。长按“距离”按钮以恢复</translation>
+    </message>
+    <message>
+        <source>. Double press the &quot;LKAS&quot; button to revert</source>
+        <translation>。双击“LKAS”按钮以恢复</translation>
+    </message>
+    <message>
+        <source>. Double tap the screen to revert</source>
+        <translation>。双击屏幕以恢复</translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -140,7 +315,7 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation>住家</translation>
+        <translation>家</translation>
     </message>
     <message>
         <source>Work</source>
@@ -156,7 +331,7 @@
     </message>
     <message>
         <source>home</source>
-        <translation>住家</translation>
+        <translation>家</translation>
     </message>
     <message>
         <source>work</source>
@@ -293,6 +468,181 @@
         <source>Review</source>
         <translation>预览</translation>
     </message>
+    <message>
+        <source>Backup</source>
+        <translation>备份</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation>恢复</translation>
+    </message>
+    <message>
+        <source>FrogPilot Backups</source>
+        <translation>FrogPilot 备份</translation>
+    </message>
+    <message>
+        <source>Backup, delete, or restore your FrogPilot backups.</source>
+        <translation>备份、删除或恢复您的 FrogPilot 备份。</translation>
+    </message>
+    <message>
+        <source>Name your backup</source>
+        <translation>为您的备份命名</translation>
+    </message>
+    <message>
+        <source>Backing up...</source>
+        <translation>正在备份...</translation>
+    </message>
+    <message>
+        <source>Success!</source>
+        <translation>成功！</translation>
+    </message>
+    <message>
+        <source>Failed...</source>
+        <translation>失败...</translation>
+    </message>
+    <message>
+        <source>Select a backup to delete</source>
+        <translation>选择要删除的备份</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this backup?</source>
+        <translation>您确定要删除此备份吗？</translation>
+    </message>
+    <message>
+        <source>Deleting...</source>
+        <translation>正在删除...</translation>
+    </message>
+    <message>
+        <source>Deleted!</source>
+        <translation>已删除！</translation>
+    </message>
+    <message>
+        <source>Select a restore point</source>
+        <translation>选择一个恢复点</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to restore this version of FrogPilot?</source>
+        <translation>您确定要恢复此版本的 FrogPilot 吗？</translation>
+    </message>
+    <message>
+        <source>Restoring...</source>
+        <translation>正在恢复...</translation>
+    </message>
+    <message>
+        <source>Toggle Backups</source>
+        <translation>切换备份</translation>
+    </message>
+    <message>
+        <source>Backup, delete, or restore your toggle backups.</source>
+        <translation>备份、删除或恢复您的切换备份。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to restore this toggle backup?</source>
+        <translation>您确定要恢复此切换备份吗？</translation>
+    </message>
+    <message>
+        <source>Delete Driving Data</source>
+        <translation>删除驾驶数据</translation>
+    </message>
+    <message>
+        <source>DELETE</source>
+        <translation>删除</translation>
+    </message>
+    <message>
+        <source>This button provides a swift and secure way to permanently delete all stored driving footage and data from your device. Ideal for maintaining privacy or freeing up space.</source>
+        <translation>此按钮提供了一种快速安全的方式，永久删除您设备上存储的所有驾驶录像和数据。适合维护隐私或释放空间。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to permanently delete all of your driving footage and data?</source>
+        <translation>您确定要永久删除所有驾驶录像和数据吗？</translation>
+    </message>
+    <message>
+        <source>Deleting footage...</source>
+        <translation>正在删除录像...</translation>
+    </message>
+    <message>
+        <source>Reset Toggles To Default</source>
+        <translation>重置切换为默认设置</translation>
+    </message>
+    <message>
+        <source>Reset your toggle settings back to their default settings.</source>
+        <translation>将您的切换设置重置为默认设置。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to completely reset all of your toggle settings?</source>
+        <translation>您确定要完全重置所有切换设置吗？</translation>
+    </message>
+    <message>
+        <source>Resetting toggles...</source>
+        <translation>正在重置切换...</translation>
+    </message>
+    <message>
+        <source>Reset!</source>
+        <translation>重置！</translation>
+    </message>
+    <message>
+        <source>Rebooting...</source>
+        <translation>重启中...</translation>
+    </message>
+    <message>
+        <source>Flash Panda</source>
+        <translation>刷写 Panda</translation>
+    </message>
+    <message>
+        <source>FLASH</source>
+        <translation>刷写</translation>
+    </message>
+    <message>
+        <source>Use this button to troubleshoot and update the Panda device&apos;s firmware.</source>
+        <translation>使用此按钮排查并更新 Panda 设备的固件。</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to flash the Panda?</source>
+        <translation>您确定要刷写 Panda 吗？</translation>
+    </message>
+    <message>
+        <source>Flash</source>
+        <translation>刷写</translation>
+    </message>
+    <message>
+        <source>Flashing...</source>
+        <translation>正在刷写...</translation>
+    </message>
+</context>
+<context>
+    <name>DriveStats</name>
+    <message>
+        <source>Drives</source>
+        <translation>行驶次数</translation>
+    </message>
+    <message>
+        <source>Hours</source>
+        <translation>小时</translation>
+    </message>
+    <message>
+        <source>ALL TIME</source>
+        <translation>所有时间</translation>
+    </message>
+    <message>
+        <source>PAST WEEK</source>
+        <translation>过去一周</translation>
+    </message>
+    <message>
+        <source>FROGPILOT</source>
+        <translation>FrogPilot</translation>
+    </message>
+    <message>
+        <source>KM</source>
+        <translation>公里</translation>
+    </message>
+    <message>
+        <source>Miles</source>
+        <translation>英里</translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -356,6 +706,10 @@
     <message>
         <source>Manage at connect.comma.ai</source>
         <translation>请在 connect.comma.ai 上管理</translation>
+    </message>
+    <message>
+        <source>Manage at %1</source>
+        <translation>请在 %1 上管理</translation>
     </message>
 </context>
 <context>
@@ -559,7 +913,7 @@
     </message>
     <message>
         <source>openpilot</source>
-        <translation>openpilot</translation>
+        <translation type="vanished">openpilot</translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
@@ -594,6 +948,10 @@
     <message>
         <source>ft</source>
         <translation>ft</translation>
+    </message>
+    <message>
+        <source>FrogPilot</source>
+        <translation>FrogPilot</translation>
     </message>
 </context>
 <context>
@@ -641,7 +999,7 @@ This may take up to a minute.</source>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
-        <translation>×</translation>
+        <translation type="vanished">x</translation>
     </message>
     <message>
         <source>Device</source>
@@ -658,6 +1016,26 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>软件</translation>
+    </message>
+    <message>
+        <source>← Back</source>
+        <translation>← 返回</translation>
+    </message>
+    <message>
+        <source>Controls</source>
+        <translation>控制设置</translation>
+    </message>
+    <message>
+        <source>Navigation</source>
+        <translation>导航设置</translation>
+    </message>
+    <message>
+        <source>Vehicles</source>
+        <translation>车辆设置</translation>
+    </message>
+    <message>
+        <source>Visuals</source>
+        <translation>视觉效果</translation>
     </message>
 </context>
 <context>
@@ -852,12 +1230,36 @@ This may take up to a minute.</source>
         <source>5G</source>
         <translation>5G</translation>
     </message>
+    <message>
+        <source>GPU</source>
+        <translation>GPU</translation>
+    </message>
+    <message>
+        <source>CPU</source>
+        <translation>CPU</translation>
+    </message>
+    <message>
+        <source> GB</source>
+        <translation> GB</translation>
+    </message>
+    <message>
+        <source>MEMORY</source>
+        <translation>内存</translation>
+    </message>
+    <message>
+        <source>LEFT</source>
+        <translation>剩余</translation>
+    </message>
+    <message>
+        <source>USED</source>
+        <translation>已用</translation>
+    </message>
 </context>
 <context>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>车辆熄火时才能下载升级文件。</translation>
+        <translation type="vanished">车辆熄火时才能下载升级文件。</translation>
     </message>
     <message>
         <source>Current Version</source>
@@ -926,6 +1328,30 @@ This may take up to a minute.</source>
     <message>
         <source>never</source>
         <translation>从未更新</translation>
+    </message>
+    <message>
+        <source>Updates are only downloaded while the car is off or in park.</source>
+        <translation>更新仅在汽车熄火或处于驻车状态时下载。</translation>
+    </message>
+    <message>
+        <source>Automatically Update FrogPilot</source>
+        <translation>自动更新FrogPilot</translation>
+    </message>
+    <message>
+        <source>FrogPilot will automatically update itself and it&apos;s assets when you&apos;re offroad and connected to Wi-Fi.</source>
+        <translation>当您在越野状态并连接到Wi-Fi时，FrogPilot将自动更新自身及其资源。</translation>
+    </message>
+    <message>
+        <source>Error Log</source>
+        <translation>错误日志</translation>
+    </message>
+    <message>
+        <source>VIEW</source>
+        <translation>查看</translation>
+    </message>
+    <message>
+        <source>View the error log for openpilot crashes.</source>
+        <translation>查看openpilot崩溃的错误日志。</translation>
     </message>
 </context>
 <context>
@@ -1129,7 +1555,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>推荐使用标准模式。在积极模式下，openpilot 将更靠近前车，并在油门和刹车上表现得更为激进。在放松模式下，openpilot 将与前车保持更远的距离。在支持的车辆上，您可以通过方向盘的距离按钮切换这些驾驶风格。</translation>
     </message>
 </context>
 <context>
@@ -1188,6 +1614,14 @@ This may take up to a minute.</source>
     <message>
         <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
         <translation>训练数据将定期通过 Wi-Fi 上载</translation>
+    </message>
+    <message>
+        <source>Uploading disabled</source>
+        <translation>上传已禁用</translation>
+    </message>
+    <message>
+        <source>Toggle off the &apos;Disable Uploading&apos; toggle to enable uploads.</source>
+        <translation>关闭“禁用上传”开关以启用上传。</translation>
     </message>
 </context>
 <context>

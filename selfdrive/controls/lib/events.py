@@ -475,7 +475,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.steerTempUnavailableSilent: {
     ET.WARNING: Alert(
-      "转向暂时不可用",
+      "驻车中...",
       "",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 1.8),
@@ -716,8 +716,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.steerTempUnavailable: {
-    ET.SOFT_DISABLE: soft_disable_alert("转向暂时不可用"),
-    ET.NO_ENTRY: NoEntryAlert("转向暂时不可用"),
+    ET.SOFT_DISABLE: soft_disable_alert("驻车中..."),
+    ET.NO_ENTRY: NoEntryAlert("驻车中..."),
   },
 
   EventName.steerTimeLimit: {
@@ -947,12 +947,12 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.reverseGear: {
     ET.PERMANENT: Alert(
-      "倒车\n档",
+      "倒车中",
       "",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2, creation_delay=0.5),
-    ET.USER_DISABLE: ImmediateDisableAlert("倒车档"),
-    ET.NO_ENTRY: NoEntryAlert("倒车档"),
+    ET.USER_DISABLE: ImmediateDisableAlert("倒车"),
+    ET.NO_ENTRY: NoEntryAlert("倒车"),
   },
 
   # On cars that use stock ACC the car can decide to cancel ACC for various reasons.
