@@ -34,16 +34,16 @@ class Priority(IntEnum):
 
 # Event types
 class ET:
-  ENABLE = '启用'
-  PRE_ENABLE = '预启用'
-  OVERRIDE_LATERAL = '覆盖横向'
-  OVERRIDE_LONGITUDINAL = '覆盖纵向'
-  NO_ENTRY = '无入口'
-  WARNING = '警告'
-  USER_DISABLE = '用户禁用'
-  SOFT_DISABLE = '软禁用'
-  IMMEDIATE_DISABLE = '立即禁用'
-  PERMANENT = '永久'
+  ENABLE = 'enable'
+  PRE_ENABLE = 'preEnable'
+  OVERRIDE_LATERAL = 'overrideLateral'
+  OVERRIDE_LONGITUDINAL = 'overrideLongitudinal'
+  NO_ENTRY = 'noEntry'
+  WARNING = 'warning'
+  USER_DISABLE = 'userDisable'
+  SOFT_DISABLE = 'softDisable'
+  IMMEDIATE_DISABLE = 'immediateDisable'
+  PERMANENT = 'permanent'
 
 
 # get event name from enum
