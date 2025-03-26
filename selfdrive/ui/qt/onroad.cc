@@ -1405,17 +1405,17 @@ void AnnotatedCameraWidget::initializeFrogPilotWidgets() {
 
 void AnnotatedCameraWidget::updateFrogPilotWidgets() {
   if (is_metric || scene.use_si) {
-    accelerationUnit = tr(" m/s²");
-    leadDistanceUnit = tr(mapOpen ? "m" : "meters");
-    leadSpeedUnit = scene.use_si ? tr("m/s") : tr("kph");
+    accelerationUnit = tr(" 米/秒²");
+    leadDistanceUnit = tr(mapOpen ? "米" : "米数");
+    leadSpeedUnit = scene.use_si ? tr("米/秒") : tr("公里/小时");
 
     accelerationConversion = 1.0f;
     distanceConversion = 1.0f;
     speedConversion = scene.use_si ? 1.0f : MS_TO_KPH;
   } else {
-    accelerationUnit = tr(" ft/s²");
-    leadDistanceUnit = tr(mapOpen ? "ft" : "feet");
-    leadSpeedUnit = tr("mph");
+    accelerationUnit = tr(" 英尺/秒²");
+    leadDistanceUnit = tr(mapOpen ? "英尺" : "英尺数");
+    leadSpeedUnit = tr("英里/小时");
 
     accelerationConversion = METER_TO_FOOT;
     distanceConversion = METER_TO_FOOT;
@@ -1780,9 +1780,9 @@ void AnnotatedCameraWidget::drawLeadInfo(QPainter &p) {
                       .arg(accelerationUnit);
   }
 
-  QString obstacleText = createText(mapOpen ? tr(" | Obstacle: ") : tr("  |  Obstacle Factor: "), obstacleDistance);
-  QString stopText = createText(mapOpen ? tr(" - Stop: ") : tr("  -  Stop Factor: "), scene.stopped_equivalence);
-  QString followText = " = " + createText(mapOpen ? tr("Follow: ") : tr("Follow Distance: "), scene.desired_follow);
+  QString obstacleText = createText(mapOpen ? tr(" | 障碍物: ") : tr("  |  障碍物因子: "), obstacleDistance);
+  QString stopText = createText(mapOpen ? tr(" - 停止: ") : tr("  -  停止因子: "), scene.stopped_equivalence);
+  QString followText = " = " + createText(mapOpen ? tr("跟随: ") : tr("跟随距离: "), scene.desired_follow);
 
   auto createDiffText = [&](const double data, const double stockData) {
     double difference = std::round((data - stockData) * distanceConversion);
@@ -1891,8 +1891,8 @@ void AnnotatedCameraWidget::drawSLCConfirmation(QPainter &p) {
 
   QString unitText = is_metric ? tr("kph") : tr("mph");
   QString speedText = QString::number(std::nearbyint(scene.unconfirmed_speed_limit * (is_metric ? MS_TO_KPH : MS_TO_MPH))) + " " + unitText;
-  QString confirmText = tr("Confirm speed limit\n") + speedText;
-  QString ignoreText = tr("Ignore speed limit\n") + speedText;
+  QString confirmText = tr("确认速度限制\n") + speedText;
+  QString ignoreText = tr("忽略速度限制\n") + speedText;
 
   QRect textLeftRect = QRect(leftRect.left(), leftRect.top() + leftRect.height() / 2 - 225, leftRect.width(), leftRect.height() / 2);
   QRect textRightRect = QRect(rightRect.left(), rightRect.top() + rightRect.height() / 2 - 225, rightRect.width(), rightRect.height() / 2);
@@ -1924,36 +1924,36 @@ void AnnotatedCameraWidget::drawStatusBar(QPainter &p) {
   p.drawRoundedRect(statusBarRect, 30, 30);
 
   std::map<int, QString> conditionalStatusMap = {
-    {0, tr("Conditional Experimental Mode ready")},
-    {1, tr("Conditional Experimental overridden")},
-    {2, tr("Experimental Mode manually activated")},
-    {3, tr("Conditional Experimental overridden")},
-    {4, tr("Experimental Mode manually activated")},
-    {5, tr("Conditional Experimental overridden")},
-    {6, tr("Experimental Mode manually activated")},
-    {7, tr("Experimental Mode activated for") + (mapOpen ? tr(" intersection") : tr(" upcoming intersection"))},
-    {8, tr("Experimental Mode activated for") + (mapOpen ? tr(" turn") : tr(" upcoming turn"))},
-    {9, tr("Experimental Mode activated due to") + (mapOpen ? tr(" SLC") : tr(" no speed limit set"))},
-    {10, tr("Experimental Mode activated due to") + (mapOpen ? tr(" speed") : tr(" speed being less than ") + QString::number(scene.conditional_speed_lead) + (is_metric ? tr(" kph") : tr(" mph")))},
-    {11, tr("Experimental Mode activated due to") + (mapOpen ? tr(" speed") : tr(" speed being less than ") + QString::number(scene.conditional_speed) + (is_metric ? tr(" kph") : tr(" mph")))},
-    {12, tr("Experimental Mode activated for stopped lead")},
-    {13, tr("Experimental Mode activated for slower lead")},
-    {14, tr("Experimental Mode activated for turn") + (mapOpen ? "" : tr(" / lane change"))},
-    {15, tr("Experimental Mode activated for curve")},
-    {16, tr("Experimental Mode activated for stop") + (mapOpen ? "" : tr(" sign / stop light"))},
+    {0, tr("条件实验模式准备就绪")},
+    {1, tr("条件实验模式被覆盖")},
+    {2, tr("实验模式手动激活")},
+    {3, tr("条件实验模式被覆盖")},
+    {4, tr("实验模式手动激活")},
+    {5, tr("条件实验模式被覆盖")},
+    {6, tr("实验模式手动激活")},
+    {7, tr("实验模式激活于") + (mapOpen ? tr(" 交叉口") : tr(" 即将到来的交叉口"))},
+    {8, tr("实验模式激活于") + (mapOpen ? tr(" 转弯") : tr(" 即将到来的转弯"))},
+    {9, tr("实验模式因") + (mapOpen ? tr(" SLC") : tr(" 未设置速度限制"))},
+    {10, tr("实验模式因") + (mapOpen ? tr(" 速度") : tr(" 速度低于 ") + QString::number(scene.conditional_speed_lead) + (is_metric ? tr(" 公里/小时") : tr(" 英里/小时")))},
+    {11, tr("实验模式因") + (mapOpen ? tr(" 速度") : tr(" 速度低于 ") + QString::number(scene.conditional_speed) + (is_metric ? tr(" 公里/小时") : tr(" 英里/小时")))},
+    {12, tr("实验模式激活于停止的前车")},
+    {13, tr("实验模式激活于较慢的前车")},
+    {14, tr("实验模式激活于转弯") + (mapOpen ? "" : tr(" / 变道"))},
+    {15, tr("实验模式激活于曲线")},
+    {16, tr("实验模式激活于停车") + (mapOpen ? "" : tr(" 标志 / 红绿灯"))},
   };
 
   QString roadName = roadNameUI ? QString::fromStdString(paramsMemory.get("RoadName")) : QString();
 
   if (alwaysOnLateralActive && showAlwaysOnLateralStatusBar) {
-    newStatus = tr("Always On Lateral active") + (mapOpen ? "" : tr(". Press the \"Cruise Control\" button to disable"));
+    newStatus = tr("始终开启的侧向控制激活") + (mapOpen ? "" : tr(". 按下 \"巡航控制\" 按钮以禁用"));
   } else if (showConditionalExperimentalStatusBar) {
     newStatus = conditionalStatusMap[status != STATUS_DISENGAGED ? conditionalStatus : 0];
   }
 
-  QString distanceSuffix = tr(". Long press the \"distance\" button to revert");
-  QString lkasSuffix = tr(". Double press the \"LKAS\" button to revert");
-  QString screenSuffix = tr(". Double tap the screen to revert");
+  QString distanceSuffix = tr(". 长按 \"距离\" 按钮以恢复");
+  QString lkasSuffix = tr(". 双击 \"车道保持\" 按钮以恢复");
+  QString screenSuffix = tr(". 双击屏幕以恢复");
 
   if (!alwaysOnLateralActive && !mapOpen && status != STATUS_DISENGAGED && !newStatus.isEmpty()) {
     if (conditionalStatus == 1 || conditionalStatus == 2) {
