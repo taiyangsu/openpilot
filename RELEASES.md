@@ -1,9 +1,8 @@
 Version 0.9.7 (2024-XX-XX)
 ========================
-* New driving model
-* Adjust driving personality with the follow distance button
-* Support for hybrid variants of supported Ford models
-
+* 汉化UI
+mazda 优化
+机械小鸽 修改
 Version 0.9.6 (2024-02-27)
 ========================
 * New driving model
