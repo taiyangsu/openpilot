@@ -17,7 +17,7 @@ BUTTONS_DICT = {Buttons.SET_PLUS: ButtonType.accelCruise, Buttons.SET_MINUS: But
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def _get_params(ret, params, candidate, fingerprint, car_fw, disable_openpilot_long, experimental_long, docs):
+  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mazda"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
     ret.radarUnavailable = True
@@ -26,8 +26,15 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
+    ret.steerRatio = 15.5
 
-    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    if candidate in [CAR.CX5_2022, CAR.CX9_2021]:
+      ret.lateralTuning.init('pid')
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kpBP = [0.]
+      ret.lateralTuning.pid.kpV = [0.19]
+      ret.lateralTuning.pid.kiV = [0.019]
 
     if candidate not in (CAR.CX5_2022, ):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS

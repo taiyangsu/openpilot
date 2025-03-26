@@ -3,7 +3,7 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags, Buttons
+from openpilot.selfdrive.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags, Buttons,CAR
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -125,6 +125,14 @@ class CarState(CarStateBase):
     # FrogPilot carstate functions
     self.lkas_previously_enabled = self.lkas_enabled
     self.lkas_enabled = not self.lkas_disabled
+
+    # Get steer warnings
+    if self.CP.carFingerprint in [CAR.CX5_2022, CAR.CX9_2021]:
+      ret.steerFaultTemporary = False
+    else:
+      hands_off = cp.vl["STEER_RATE"]["HANDS_OFF_5_SECONDS"] == 1
+      lkas_blocked = cp.vl["LKAS_FAULT"]["LKAS_BLOCKED"] == 1
+      ret.steerFaultTemporary = hands_off or lkas_blocked
 
     return ret, fp_ret
 

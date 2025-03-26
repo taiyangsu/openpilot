@@ -67,9 +67,13 @@ class CarController(CarControllerBase):
     # send HUD alerts
     if self.frame % 50 == 0:
       ldw = CC.hudControl.visualAlert == VisualAlert.ldw
-      steer_required = CC.hudControl.visualAlert == VisualAlert.steerRequired
-      # TODO: find a way to silence audible warnings so we can add more hud alerts
-      steer_required = steer_required and CS.lkas_allowed_speed
+      # 对于新款车型，使用不同的警告逻辑
+      if CS.CP.carFingerprint in [CAR.CX5_2022, CAR.CX9_2021]:
+        steer_required = CS.out.steerFaultTemporary
+      else:
+        steer_required = CC.hudControl.visualAlert == VisualAlert.steerRequired
+        steer_required = steer_required and CS.lkas_allowed_speed
+
       can_sends.append(mazdacan.create_alert_command(self.packer, CS.cam_laneinfo, ldw, steer_required))
 
     # send steering command
