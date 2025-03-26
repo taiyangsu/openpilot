@@ -1,73 +1,100 @@
+# 🚗 OpenPilot 中文定制版 - 让自动驾驶更懂中国车主
 
-What is openpilot?
-------
+> 历时数月精心打造，专为中国车主定制的 OpenPilot 分支。集成高德地图导航、中文界面、智能限速等多项创新功能，让您的自动驾驶体验更智能、更安全、更便捷！
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
+这是一个基于 OpenPilot 的中文优化定制版本，提供两个精心维护的分支：
+- 🐸 [CNFP (汉化版青蛙分支)](https://github.com/jixiexiaoge/openpilot) - 追求创新，热爱尝鲜的最佳选择
+- 🥕 [CNCP (汉化版胡萝卜分支)](https://github.com/jixiexiaoge/openpilot) - 稳定可靠，长期使用的理想之选
 
+## ✨ 主要特性
 
-# 分支介绍文档
+### 🌟 革新功能
+- ✅ 实验模式完全支持 - 解锁更多可能
+- 🗺️ 高德地图导航集成
+  - 智能路线规划，告别迷路烦恼
+  - 基于限速的智能车速控制
+  - AI 辅助转弯，更安全更平顺
+- 🎯 完整的中文界面 - 无需再为英文烦恼
+- 🔊 优化的提示音系统 - 更清晰的语音指引
+- 🎨 精心设计的图标 - 提升视觉体验
 
-## 概述
-本仓库包含多个分支，每个分支代表不同的功能或开发阶段。以下是每个主要分支的介绍，包括它们的用途和特点。
+### 🛠️ 深度优化
+- 📊 增强型仪表盘
+  - 实时档位显示，随时掌握车况
+  - 发动机转速监控，行车更有把握
+  - 智能档位修正，告别显示错误
+- 🚗 优秀的车型适配
+  - 马自达车型深度优化
+  - 通用（GM）车型完美支持
+  - 其他车型基础功能保障
 
-## 分支列表
+## 🔄 特色对比
 
-### 1. `mazda-frogpilot`
-- **功能描述**：该分支是 `MoreTore/openpilot` 仓库中的主要开发分支之一。它包含了为 Mazda 车型定制的功能和补丁，针对不同的硬件和软件环境进行了优化。
-- **特点**：
-  - 专门针对 Mazda 车型的 OpenPilot 配置。
-  - 定期合并来自主仓库的更新。
-  - 包括一些特定的调整和修复，以提高兼容性和性能。
+### 🐸 CNFP 版本（追求极致）
+- 持续更新，永不过时
+- 现代化界面，操作更畅快
+- 适合喜欢尝试新功能的车主
 
-### 2. `mazda-frogpilot-0.9.6`
-- **功能描述**：`mazda-frogpilot-0.9.6` 是 `mazda-frogpilot` 分支的一个稳定版本，主要用于生产环境中的长期支持（LTS）版本。此版本包含了经过充分测试的功能，适合用于需要稳定性的场景。
-- **特点**：
-  - 版本号为 0.9.6，代表该分支处于一个较为稳定的状态。
-  - 包括了与 `mazda-frogpilot` 相同的功能，但以稳定性为主，适合在长期使用中依赖。
-  - 修复了一些已知问题和漏洞，提供了对旧版硬件的更好支持。
+### 🥕 CNCP 版本（追求稳定）
+- 稳如泰山，可靠如新
+- 简约界面，干净利落
+- 适合注重稳定性的用户
 
-### 3. `FrogPilot`
-- **功能描述**：`FrogPilot` 分支是来自 `frogai` 仓库的主要开发分支，包含了一些较为实验性的新功能和对 OpenPilot 框架的扩展。此分支较为前沿，适合用于开发和测试。
-- **特点**：
-  - 包含最新的实验功能和改进，适合用于 OpenPilot 框架的扩展和新功能的测试。
-  - 比较前沿，可能包含不稳定的功能，不建议直接用于生产环境。
-  - 定期进行功能改进和修复。
+## 📱 重磅预告：手机助手 APP
+我们正在开发一款革命性的手机助手应用，将为您的 comma3 设备带来更多惊喜：
 
-### 4. `FrogPilot-Development`
-- **功能描述**：`FrogPilot-Development` 分支是 `frogai` 仓库中的开发版本，主要用于测试新特性和实验功能。它是 `FrogPilot` 分支的一个延伸，包含了更多的开发版本更新。
-- **特点**：
-  - 包含了对 `FrogPilot` 分支的进一步开发和实验功能。
-  - 该分支可能不稳定，不适合直接投入生产使用。
-  - 主要用于开发人员进行功能开发和测试。
+### 🎮 核心功能
+- 🚗 实时数据监控
+  - 一手掌握车辆核心数据
+  - 行驶状态实时同步
+- 🎮 智能远程控制
+  - comma3 设备无缝连接
+  - 便捷远程操作与设置
+- 🗺️ AR 实景导航
+  - 沉浸式导航体验
+  - 实时路况智能提醒
+- 📍 一键导航发送
+  - 手机规划最优路线
+  - 即刻同步至 comma3
+- 📊 智能驾驶报告
+  - 专业数据分析
+  - 驾驶行为优化建议
 
-### 5. `staging`
-- **功能描述**：`staging` 分支是 `opgm/openpilot` 仓库中的预发布版本。此分支包含了一些待正式发布的特性和修复，通常会在发布前经过测试。
-- **特点**：
-  - 该分支包含了所有待发布的功能和修复，适合用于正式发布之前的最后阶段验证。
-  - 包括了其他分支中的新特性，但这些特性经过了初步的测试。
-  - 是发布过程中的过渡版本。
+敬请期待，更多黑科技正在研发中...
 
-### 6. `carrot2-v6`
-- **功能描述**：`carrot2-v6` 是 `ajouatom/openpilot` 仓库中的分支，针对特定硬件版本（如 Carrot 2 系列硬件）进行了优化。该分支包含了对硬件的兼容性调整和增强功能。
-- **特点**：
-  - 专为 `Carrot 2` 系列硬件设计，解决了与特定硬件的兼容性问题。
-  - 包含了对硬件的优化和更新，适合用于特定硬件的部署。
-  - 适合硬件开发人员和特定平台的用户。
+## ⚡ 快速安装
+1. CNFP版本安装（二选一）：
+   ```bash
+   jixiexiaoge/cnfp
+   ```
+   或访问：
+   ```
+   smiskol.com/fork/jixiexiaoge/cnfp
+   ```
 
-## 分支同步与管理
-所有分支都会定期与主仓库进行同步更新，确保它们与最新的代码库保持一致。下面是一些关键的同步步骤：
+2. CNCP版本安装：
+   ```bash
+   jixiexiaoge/cncp
+   ```
 
-1. **同步 `mazda-frogpilot` 和 `mazda-frogpilot-0.9.6`**：
-   - 每天同步来自 `MoreTore/openpilot` 仓库中的这两个分支，确保它们获得最新的 bug 修复和功能更新。
-   - 删除任何可能存在的冲突分支，并推送到远程仓库。
+## 🎓 技术成长
+- 📚 加入知识星球，与专业玩家共同进步
+- 🔧 参考安装教程，轻松实现界面汉化
+- 💡 深入学习代码，打造专属定制版本
 
-2. **同步 `FrogPilot` 和 `FrogPilot-Development`**：
-   - 从 `frogai` 仓库拉取最新的 `FrogPilot` 和 `FrogPilot-Development` 分支，并确保它们与主仓库保持同步。
-   - 强制推送更新的分支，以确保没有遗漏的更改。
+## 🤝 支持项目
+如果您觉得这个项目对您有帮助：
+- ⭐ 点亮项目星标，给予最直接的支持
+- 🔄 分享给更多车友，让更多人受益
+- ☕ 赞助开发者，助力项目持续优化
 
-3. **同步 `staging` 和 `carrot2-v6`**：
-   - 从 `opgm/openpilot` 和 `ajouatom/openpilot` 仓库同步 `staging` 和 `carrot2-v6` 分支，确保它们包含所有最新的稳定功能和硬件支持。
-   - 对冲突的分支进行删除和重置，确保只有最新的版本。
+## 💝 赞助支持
+您的支持是我们持续优化的动力！赞助任意金额即可加入内测群，抢先体验最新功能！
 
-## 结论
-本仓库中的各个分支代表了不同的开发阶段和稳定性需求。通过同步这些分支，我们能够保持项目的最新进展，同时确保对不同硬件和功能的兼容性。请根据需求选择适合的分支进行开发和测试。
+![赞赏码](https://github.com/jixiexiaoge/iFreeFlow/blob/V2/buymeacoffe.png)
+
+## 📞 联系我们
+- 🌟 知识星球：[点击加入精英车主社区](https://wx.zsxq.com/group/15555844842822)
+
+---
+特别感谢每一位支持者，让我们一起打造更好的自动驾驶体验！
