@@ -1,14 +1,5 @@
 from openpilot.selfdrive.car.mazda.values import Buttons, MazdaFlags
 from openpilot.common.conversions import Conversions as CV
-import logging
-import time
-
-# 配置日志
-log = logging.getLogger("mazda.acc_control")
-log.setLevel(logging.INFO)
-import openpilot.common.logging as cl
-log.addHandler(cl.get_file_handler())
-
 
 def create_steering_control(packer, CP, frame, apply_steer, lkas):
 
@@ -152,9 +143,6 @@ def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, frogpilo
   min_speed_threshold = 15 if frogpilot_variables.is_metric else 9  # 15km/h 或 9mph
   max_speed_threshold = 30 if frogpilot_variables.is_metric else 18  # 30km/h 或 18mph
 
-  # 添加时间戳到日志
-  timestamp = time.strftime("%H:%M:%S", time.localtime())
-
   if min_speed_threshold <= current_speed < max_speed_threshold:
     low_speed_control = True
     # 在低速范围内，我们使用不同的逻辑来计算目标速度
@@ -166,21 +154,17 @@ def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, frogpilo
         reduction_factor = (current_speed - min_speed_threshold) / (max_speed_threshold - min_speed_threshold)
         max_reduction = min(3 + (2 * reduction_factor), speed_diff)  # 减速幅度从3km/h到5km/h
         slcSet = int(round(current_speed - max_reduction))
-        log.info(f"[{timestamp}] Low speed control: current={current_speed:.1f}, target={slcSet}, diff={speed_diff:.1f}, factor={reduction_factor:.2f}")
     else:
       # 实验模式使用基于加速度的计算，但更温和
       accel_factor = min(3.0, max(1.0, current_speed / max_speed_threshold * 3.0))
       slcSet = int(round((Vego + accel_factor * accel) * MS_CONVERT))
-      log.info(f"[{timestamp}] Low speed exp control: current={current_speed:.1f}, target={slcSet}, accel={accel:.2f}, factor={accel_factor:.2f}")
   else:
     # 正常速度范围的逻辑
     if not frogpilot_variables.experimentalMode:
       if slcSet + 5 < current_speed:
         slcSet = slcSet - 10  # 10 lower to increase deceleration until with 5
-        log.info(f"[{timestamp}] Normal control: current={current_speed:.1f}, target={slcSet}")
     else:
       slcSet = int(round((Vego + 5 * accel) * MS_CONVERT))
-      log.info(f"[{timestamp}] Normal exp control: current={current_speed:.1f}, target={slcSet}, accel={accel:.2f}")
 
   if frogpilot_variables.is_metric:  # Default is by 5 kph
     slcSet = int(round(slcSet/5.0)*5.0)
@@ -196,22 +180,17 @@ def create_mazda_acc_spam_command(packer, controller, CS, slcSet, Vego, frogpilo
     if speed_diff >= 3:  # 至少3km/h的差异才发送命令
       if slcSet < speedSetPoint:
         cruiseBtn = Buttons.SET_MINUS
-        log.info(f"[{timestamp}] Sending DECEL in low speed: {speedSetPoint} -> {slcSet}, diff={speed_diff}")
       elif slcSet > speedSetPoint:
         cruiseBtn = Buttons.SET_PLUS
-        log.info(f"[{timestamp}] Sending ACCEL in low speed: {speedSetPoint} -> {slcSet}, diff={speed_diff}")
   else:
     # 原有逻辑，只在速度大于阈值时发送命令
     min_cruise_speed = 30 if frogpilot_variables.is_metric else 20
     if slcSet < speedSetPoint and speedSetPoint > min_cruise_speed:
       cruiseBtn = Buttons.SET_MINUS
-      log.info(f"[{timestamp}] Normal DECEL: {speedSetPoint} -> {slcSet}")
     elif slcSet > speedSetPoint:
       cruiseBtn = Buttons.SET_PLUS
-      log.info(f"[{timestamp}] Normal ACCEL: {speedSetPoint} -> {slcSet}")
 
   if (cruiseBtn != Buttons.NONE):
-    log.info(f"[{timestamp}] Button CMD: {cruiseBtn}, current={current_speed:.1f}, setpoint={speedSetPoint}, target={slcSet}")
     return [create_button_cmd(packer, controller.CP, controller.frame // 10, cruiseBtn)]
   else:
     return []
