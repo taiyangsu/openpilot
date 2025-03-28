@@ -92,6 +92,7 @@
       <script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC"></script>
       <script type="text/javascript">
         let map, marker, infoWindow;
+        let searchService, suggestionService;
         const initialPosition = new TMap.LatLng({{ lat }}, {{ lon }});
 
         // 初始化地图
@@ -100,6 +101,16 @@
                 center: initialPosition,
                 zoom: 15,
                 showControl: true
+            });
+
+            // 初始化搜索服务
+            searchService = new TMap.service.Search({
+                key: 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC'
+            });
+
+            // 初始化关键词联想服务
+            suggestionService = new TMap.service.Suggestion({
+                key: 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC'
             });
 
             // 添加当前位置标记
@@ -171,27 +182,65 @@
 
             if (keyword) {
                 searchTimeout = setTimeout(() => {
-                    searchPlace(keyword);
-                }, 500);
+                    // 先获取联想词
+                    getSuggestions(keyword);
+                }, 300);
             } else {
                 document.getElementById('search-results').style.display = 'none';
             }
         });
 
+        // 获取联想词
+        function getSuggestions(keyword) {
+            suggestionService.getSuggestions({
+                keyword: keyword,
+                location: map.getCenter(),
+                region: '全国',
+                policy: 1,
+                success: function(res) {
+                    showSearchResults(res.data);
+                },
+                error: function() {
+                    UIkit.notification({
+                        message: '获取联想词失败，请重试',
+                        status: 'danger',
+                        pos: 'top-center',
+                        timeout: 3000
+                    });
+                }
+            });
+        }
+
         // 执行搜索
         function searchPlace(keyword) {
-            const searchService = new TMap.service.Search({
-                key: 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC'
-            });
-
             searchService.search({
                 keyword: keyword,
-                boundary: 'region(全国,0)',
+                location: map.getCenter(),
+                boundary: 'nearby(${map.getCenter().lat},${map.getCenter().lng},50000)',
                 page_size: 10,
                 page_index: 1,
                 success: function(res) {
-                    const results = res.data;
-                    showSearchResults(results);
+                    if (res.data.length > 0) {
+                        const result = res.data[0];
+                        const position = new TMap.LatLng(result.location.lat, result.location.lng);
+
+                        // 更新地图视图
+                        map.setCenter(position);
+                        map.setZoom(16);
+
+                        // 更新标记
+                        marker.updateGeometries([{
+                            id: 'current',
+                            position: position,
+                            styleId: 'marker'
+                        }]);
+
+                        // 显示信息窗口
+                        showInfoWindow(position, `
+                            <h4>${result.title}</h4>
+                            <p>${result.address}</p>
+                        `);
+                    }
                 },
                 error: function() {
                     UIkit.notification({
@@ -215,31 +264,16 @@
                     div.className = 'search-result-item';
                     div.innerHTML = `
                         <div class="uk-text-bold">${result.title}</div>
-                        <div class="uk-text-small uk-text-muted">${result.address}</div>
+                        <div class="uk-text-small uk-text-muted">${result.address || ''}</div>
                     `;
 
                     div.onclick = () => {
-                        const position = new TMap.LatLng(result.location.lat, result.location.lng);
-
-                        // 更新地图视图
-                        map.setCenter(position);
-                        map.setZoom(16);
-
-                        // 更新标记
-                        marker.updateGeometries([{
-                            id: 'current',
-                            position: position,
-                            styleId: 'marker'
-                        }]);
-
-                        // 显示信息窗口
-                        showInfoWindow(position, `
-                            <h4>${result.title}</h4>
-                            <p>${result.address}</p>
-                        `);
-
+                        // 点击联想词时执行搜索
+                        searchPlace(result.title);
                         // 隐藏搜索结果
                         container.style.display = 'none';
+                        // 更新输入框
+                        document.getElementById('keyword').value = result.title;
                     };
 
                     container.appendChild(div);
@@ -250,6 +284,24 @@
                 container.style.display = 'none';
             }
         }
+
+        // 添加回车搜索功能
+        document.getElementById('keyword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const keyword = this.value.trim();
+                if (keyword) {
+                    searchPlace(keyword);
+                    document.getElementById('search-results').style.display = 'none';
+                }
+            }
+        });
+
+        // 点击页面其他地方时隐藏搜索结果
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-box') && !e.target.closest('.search-results')) {
+                document.getElementById('search-results').style.display = 'none';
+            }
+        });
 
         // 初始化地图
         initMap();
