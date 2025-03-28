@@ -1,0 +1,219 @@
+{% extends "layout.html" %}
+
+{% block title %}
+  tmap_addr_input
+{% endblock %}
+
+{% block main %}
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+      <title>地点搜索与导航</title>
+      <!-- UIkit CSS -->
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/css/uikit.min.css" />
+      <!-- UIkit JS -->
+      <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit-icons.min.js"></script>
+      <!-- CryptoJS for signature -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+      <style type="text/css">
+          body {
+              margin: 0;
+              height: 100%;
+              width: 100%;
+              position: absolute;
+          }
+
+          #mapContainer {
+              width: 100%;
+              height: 400px;
+          }
+
+          .search-box {
+              position: absolute;
+              top: 20px;
+              left: 20px;
+              z-index: 999;
+              width: 350px;
+              background: white;
+              padding: 10px;
+              border-radius: 3px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+      </style>
+
+      <!-- 腾讯地图API -->
+      <script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC"></script>
+
+      <div class="uk-grid-match uk-grid-small uk-text-center" uk-grid>
+          <div class="uk-width-1-3@m">
+              <select id="save_type" class="uk-select">
+                  <option value="recent">最近</option>
+                  <option value="home">住家</option>
+                  <option value="work">工作</option>
+              </select>
+          </div>
+          <div class="uk-width-expand@m">
+              <input class="uk-input" type="text" id="keyword" name="keyword"
+                  placeholder="请输入关键字搜索地点" onfocus='this.value=""' />
+          </div>
+      </div>
+
+      <div id="mapContainer"></div>
+
+      <script type="text/javascript">
+        const KEY = 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC';
+        const SK = 'JHZBkEm7VA8xqbR4BF3NT2jPJ9JwSizG';
+
+        // 生成签名
+        function generateSignature(params) {
+            // 1. 对参数按key进行字典排序
+            const sortedParams = Object.keys(params).sort().reduce((acc, key) => {
+                acc[key] = params[key];
+                return acc;
+            }, {});
+
+            // 2. 拼接请求参数
+            let paramString = '';
+            for (let key in sortedParams) {
+                paramString += key + '=' + sortedParams[key] + '&';
+            }
+            paramString = paramString.slice(0, -1);  // 删除最后的&
+
+            // 3. 拼接SK
+            const signString = '/ws/place/v1/search?' + paramString + SK;
+
+            // 4. 对字符串进行MD5加密
+            return CryptoJS.MD5(signString).toString();
+        }
+
+        // 初始化地图
+        var map = new qq.maps.Map(document.getElementById("mapContainer"), {
+            center: new qq.maps.LatLng(39.916527, 116.397128),
+            zoom: 13
+        });
+
+        // 使用WebService API进行搜索
+        async function searchPlaces(keyword) {
+            const params = {
+                keyword: keyword,
+                key: KEY,
+                boundary: 'region(全国,0)',  // 全国范围搜索
+                page_size: 20,
+                page_index: 1
+            };
+
+            // 生成签名
+            const sig = generateSignature(params);
+
+            // 构建URL
+            let url = 'https://apis.map.qq.com/ws/place/v1/search?';
+            for (let key in params) {
+                url += `${key}=${encodeURIComponent(params[key])}&`;
+            }
+            url += `sig=${sig}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 0) {
+                    // 清除之前的标记
+                    map.clearOverlays();
+
+                    data.data.forEach(poi => {
+                        const position = new qq.maps.LatLng(poi.location.lat, poi.location.lng);
+                        const marker = new qq.maps.Marker({
+                            map: map,
+                            position: position
+                        });
+
+                        // 添加信息窗体
+                        qq.maps.event.addListener(marker, 'click', function() {
+                            const info = new qq.maps.InfoWindow({
+                                map: map
+                            });
+
+                            const content = `
+                                <div style="padding:10px;">
+                                    <h4>${poi.title}</h4>
+                                    <p>${poi.address}</p>
+                                    <form name="navForm" method="post">
+                                        <input type="hidden" name="lat" value="${poi.location.lat}">
+                                        <input type="hidden" name="lon" value="${poi.location.lng}">
+                                        <input type="hidden" name="save_type" value="${document.getElementById("save_type").value}">
+                                        <input type="hidden" name="name" value="${poi.title}">
+                                        <input class="uk-button uk-button-primary" type="submit" value="导航">
+                                    </form>
+                                </div>
+                            `;
+
+                            info.setContent(content);
+                            info.open();
+                            info.setPosition(position);
+                        });
+                    });
+
+                    if (data.data.length > 0) {
+                        const firstPoi = data.data[0];
+                        map.setCenter(new qq.maps.LatLng(firstPoi.location.lat, firstPoi.location.lng));
+                        map.setZoom(15);
+                    }
+                } else {
+                    console.error('搜索失败:', data.message);
+                    UIkit.notification({
+                        message: '搜索失败: ' + data.message,
+                        status: 'danger',
+                        pos: 'top-center',
+                        timeout: 3000
+                    });
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                UIkit.notification({
+                    message: '请求失败，请稍后重试',
+                    status: 'danger',
+                    pos: 'top-center',
+                    timeout: 3000
+                });
+            }
+        }
+
+        // 监听输入框变化
+        document.getElementById('keyword').addEventListener('change', function() {
+            const keyword = this.value;
+            if (keyword) {
+                searchPlaces(keyword);
+            }
+        });
+
+        // 点击地图添加标记
+        qq.maps.event.addListener(map, 'click', function(event) {
+            const marker = new qq.maps.Marker({
+                position: event.latLng,
+                map: map
+            });
+
+            const info = new qq.maps.InfoWindow({
+                map: map
+            });
+
+            const content = `
+                <div style="padding:10px;">
+                    <p>坐标: (${event.latLng.getLat().toFixed(6)}, ${event.latLng.getLng().toFixed(6)})</p>
+                    <form name="navForm" method="post">
+                        <input type="hidden" name="lat" value="${event.latLng.getLat()}">
+                        <input type="hidden" name="lon" value="${event.latLng.getLng()}">
+                        <input type="hidden" name="save_type" value="${document.getElementById("save_type").value}">
+                        <input class="uk-button uk-button-primary" type="submit" value="导航">
+                    </form>
+                </div>
+            `;
+
+            info.setContent(content);
+            info.open();
+            info.setPosition(event.latLng);
+        });
+      </script>
+{% endblock %}
