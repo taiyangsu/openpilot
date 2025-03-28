@@ -14,6 +14,8 @@
       <!-- UIkit JS -->
       <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit.min.js"></script>
       <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.2/dist/js/uikit-icons.min.js"></script>
+      <!-- 腾讯地图API -->
+      <script charset="utf-8" src="https://map.qq.com/api/js?v=2.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC"></script>
 
       <style type="text/css">
           body {
@@ -89,44 +91,20 @@
       <div id="search-results" class="search-results"></div>
       <div id="mapContainer"></div>
 
-      <script charset="utf-8" src="https://mapapi.qq.com/web/mapjs/gljs/loader/loader.js"></script>
       <script type="text/javascript">
-        // 配置腾讯地图
+        // 配置
         const KEY = 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC';
-        const SK = 'JHZBkEm7VA8xqbR4BF3NT2jPJ9JwSizG';
+        let map = null;
+        let marker = null;
+        let infoWindow = null;
+        let searchService = null;
+        let geocoder = null;
 
-        // 计算签名
-        function getSign(url) {
-            // 1. 对请求参数按key进行字典排序
-            const params = new URLSearchParams(url.split('?')[1]);
-            const sortedParams = Array.from(params.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-
-            // 2. 拼接请求参数
-            const paramString = sortedParams.map(([key, value]) => `${key}=${value}`).join('&');
-
-            // 3. 拼接SK
-            const signString = url.split('?')[0] + '?' + paramString + SK;
-
-            // 4. 计算MD5
-            return md5(signString);
-        }
-
-        // 加载MD5库
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/md5-js@0.0.3/md5.min.js';
-        document.head.appendChild(script);
-
-        window.TMAP_GLOBAL_CONFIG = {
-            serviceKey: KEY,
-            useHttps: true,
-            protocol: 'https:'
-        };
-
-        // 加载地图API
-        loader.load({
-            key: KEY,
-            libraries: ['service']
-        });
+        // 初始化坐标（南京市中心坐标）
+        const defaultLat = 32.059344;
+        const defaultLng = 118.796615;
+        const initLat = {{ lat }} || defaultLat;
+        const initLng = {{ lon }} || defaultLng;
 
         // 日志函数
         function log(type, message, data) {
@@ -140,46 +118,90 @@
             }
         }
 
-        // 添加日志容器到页面底部
+        // 添加日志容器
         const logContainer = document.createElement('div');
         logContainer.id = 'log-container';
         logContainer.style.cssText = 'position:fixed; bottom:0; left:0; right:0; max-height:200px; overflow-y:auto; background:rgba(255,255,255,0.9); z-index:1000; padding:10px;';
         document.body.appendChild(logContainer);
 
-        let map = null;
-        let marker = null;
-        let infoWindow = null;
-
         // 初始化地图
         function initMap() {
             try {
-                map = new TMap.Map('mapContainer', {
-                    center: new TMap.LatLng({{ lat }}, {{ lon }}),
-                    zoom: 15,
-                    showControl: true
+                // 等待地图API加载完成
+                if (typeof qq === 'undefined' || typeof qq.maps === 'undefined') {
+                    log('ERROR', '地图API未加载', null);
+                    setTimeout(initMap, 100);
+                    return;
+                }
+
+                const center = new qq.maps.LatLng(initLat, initLng);
+
+                // 初始化地图
+                map = new qq.maps.Map(document.getElementById('mapContainer'), {
+                    center: center,
+                    zoom: 13,
+                    mapTypeId: qq.maps.MapTypeId.ROADMAP
                 });
-                log('INFO', '地图初始化成功', { center: { lat: {{ lat }}, lon: {{ lon }} } });
+
+                // 初始化搜索服务
+                searchService = new qq.maps.SearchService({
+                    location: center.lat + ',' + center.lng,
+                    complete: function(results) {
+                        if (results.detail.pois && results.detail.pois.length > 0) {
+                            showSearchResults(results.detail.pois);
+                        } else {
+                            UIkit.notification({
+                                message: '未找到相关地点',
+                                status: 'warning',
+                                pos: 'top-center',
+                                timeout: 3000
+                            });
+                        }
+                    },
+                    error: function(error) {
+                        log('ERROR', '搜索服务错误', error);
+                        UIkit.notification({
+                            message: '搜索失败，请重试',
+                            status: 'danger',
+                            pos: 'top-center',
+                            timeout: 3000
+                        });
+                    }
+                });
+
+                // 初始化地理编码服务
+                geocoder = new qq.maps.Geocoder({
+                    complete: function(result) {
+                        if (result.detail.address) {
+                            const address = result.detail.address;
+                            const position = result.detail.location;
+                            showInfoWindow(position, `
+                                <h4>${address}</h4>
+                                <p>坐标: (${position.lat.toFixed(6)}, ${position.lng.toFixed(6)})</p>
+                            `);
+                        }
+                    }
+                });
+
+                log('INFO', '地图初始化成功', { lat: initLat, lng: initLng });
 
                 // 添加当前位置标记
-                marker = new TMap.MultiMarker({
+                marker = new qq.maps.Marker({
                     map: map,
-                    styles: {
-                        "marker": new TMap.MarkerStyle({
-                            width: 25,
-                            height: 35,
-                            anchor: { x: 12.5, y: 35 },
-                            src: 'https://mapapi.qq.com/web/lbs/javascriptGL/demo/img/marker.png'
-                        })
-                    },
-                    geometries: [{
-                        id: 'current',
-                        position: new TMap.LatLng({{ lat }}, {{ lon }}),
-                        styleId: 'marker'
-                    }]
+                    position: center
                 });
 
                 // 添加点击事件
-                map.on('click', handleMapClick);
+                qq.maps.event.addListener(map, 'click', handleMapClick);
+
+                // 添加缩放控件
+                map.setOptions({
+                    panControl: true,
+                    zoomControl: true,
+                    mapTypeControl: true,
+                    scaleControl: true
+                });
+
             } catch (error) {
                 log('ERROR', '地图初始化失败', error);
             }
@@ -192,136 +214,84 @@
                 log('INFO', '地图点击', { lat: position.lat, lng: position.lng });
 
                 // 更新标记位置
-                marker.updateGeometries([{
-                    id: 'current',
-                    position: position,
-                    styleId: 'marker'
-                }]);
+                marker.setPosition(position);
 
-                // 显示信息窗口
-                showInfoWindow(position, `坐标: (${position.lat.toFixed(6)}, ${position.lng.toFixed(6)})`);
+                // 获取地址信息
+                geocoder.getAddress(position);
             } catch (error) {
                 log('ERROR', '处理地图点击失败', error);
             }
         }
 
-        // 搜索地点
-        let searchTimeout;
-        document.getElementById('keyword').addEventListener('input', function() {
-            const keyword = this.value.trim();
-            clearTimeout(searchTimeout);
-
-            if (keyword) {
-                searchTimeout = setTimeout(() => {
-                    searchByWebService(keyword);
-                }, 300);
-            } else {
-                document.getElementById('search-results').style.display = 'none';
-            }
-        });
-
-        // 使用WebService API进行搜索
-        function searchByWebService(keyword) {
-            const center = map.getCenter();
-            const baseUrl = 'https://apis.map.qq.com/ws/place/v1/search';
-
-            // 构建请求参数
-            const params = new URLSearchParams({
-                keyword: keyword,
-                boundary: `nearby(${center.lat},${center.lng},50000)`,
-                key: KEY,
-                page_size: '10',
-                page_index: '1',
-                output: 'json'
-            });
-
-            // 添加时间戳参数
-            params.append('timestamp', Math.floor(Date.now() / 1000));
-
-            // 计算并添加签名
-            const fullUrl = `${baseUrl}?${params.toString()}`;
-            params.append('sig', getSign(fullUrl));
-
-            const finalUrl = `${baseUrl}?${params.toString()}`;
-            log('INFO', '发起搜索请求', { keyword, url: finalUrl });
-
-            fetch(finalUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Referer': window.location.href
+        // 使用搜索服务
+        function searchByService(keyword) {
+            try {
+                if (!searchService) {
+                    throw new Error('搜索服务未初始化');
                 }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(result => {
-                log('INFO', '搜索结果', result);
-                if (result.status === 0) {
-                    showSearchResults(result.data);
-                } else {
-                    throw new Error(result.message || `错误代码: ${result.status}`);
-                }
-            })
-            .catch(error => {
-                log('ERROR', '搜索失败', {
-                    message: error.message,
-                    stack: error.stack,
-                    url: finalUrl
+
+                const center = map.getCenter();
+                log('INFO', '发起搜索请求', {
+                    keyword,
+                    center: { lat: center.lat, lng: center.lng }
                 });
+
+                // 设置搜索范围为当前地图中心点50公里范围内
+                searchService.setLocation(center.lat + ',' + center.lng);
+                searchService.setPageIndex(1);
+                searchService.setPageCapacity(20);
+                searchService.searchNearBy(keyword, center, 50000);  // 50公里范围内
+
+            } catch (error) {
+                log('ERROR', '搜索失败', error);
                 UIkit.notification({
                     message: '搜索失败：' + error.message,
                     status: 'danger',
                     pos: 'top-center',
                     timeout: 3000
                 });
-            });
+            }
         }
 
         // 显示搜索结果
-        function showSearchResults(results) {
+        function showSearchResults(pois) {
             const container = document.getElementById('search-results');
             container.innerHTML = '';
 
-            if (results && results.length > 0) {
-                results.forEach(result => {
+            if (pois && pois.length > 0) {
+                pois.forEach(poi => {
                     const div = document.createElement('div');
                     div.className = 'search-result-item';
                     div.innerHTML = `
-                        <div class="uk-text-bold">${result.title}</div>
-                        <div class="uk-text-small uk-text-muted">${result.address}</div>
+                        <div class="uk-text-bold">${poi.name}</div>
+                        <div class="uk-text-small uk-text-muted">${poi.address}</div>
+                        <div class="uk-text-small uk-text-muted">距离: ${(poi.distance || 0).toFixed(1)}米</div>
                     `;
 
                     div.onclick = () => {
                         try {
-                            const position = new TMap.LatLng(result.location.lat, result.location.lng);
+                            const position = poi.latLng;
 
                             // 更新地图视图
                             map.setCenter(position);
                             map.setZoom(16);
 
                             // 更新标记
-                            marker.updateGeometries([{
-                                id: 'current',
-                                position: position,
-                                styleId: 'marker'
-                            }]);
+                            marker.setPosition(position);
 
                             // 显示信息窗口
                             showInfoWindow(position, `
-                                <h4>${result.title}</h4>
-                                <p>${result.address}</p>
+                                <h4>${poi.name}</h4>
+                                <p>${poi.address}</p>
+                                <p>距离: ${(poi.distance || 0).toFixed(1)}米</p>
                             `);
 
                             // 隐藏搜索结果
                             container.style.display = 'none';
                             // 更新输入框
-                            document.getElementById('keyword').value = result.title;
+                            document.getElementById('keyword').value = poi.name;
 
-                            log('INFO', '选择搜索结果', result);
+                            log('INFO', '选择搜索结果', poi);
                         } catch (error) {
                             log('ERROR', '处理搜索结果失败', error);
                         }
@@ -333,6 +303,12 @@
                 container.style.display = 'block';
             } else {
                 container.style.display = 'none';
+                UIkit.notification({
+                    message: '未找到相关地点',
+                    status: 'warning',
+                    pos: 'top-center',
+                    timeout: 3000
+                });
             }
         }
 
@@ -343,7 +319,7 @@
                     infoWindow.close();
                 }
 
-                infoWindow = new TMap.InfoWindow({
+                infoWindow = new qq.maps.InfoWindow({
                     map: map,
                     position: position,
                     content: `
@@ -356,20 +332,34 @@
                                 <input class="uk-button uk-button-primary" type="submit" value="导航">
                             </form>
                         </div>
-                    `,
-                    offset: { x: 0, y: -35 }
+                    `
                 });
             } catch (error) {
                 log('ERROR', '显示信息窗口失败', error);
             }
         }
 
+        // 搜索防抖
+        let searchTimeout;
+        document.getElementById('keyword').addEventListener('input', function() {
+            const keyword = this.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (keyword) {
+                searchTimeout = setTimeout(() => {
+                    searchByService(keyword);
+                }, 500);  // 增加延迟到500ms
+            } else {
+                document.getElementById('search-results').style.display = 'none';
+            }
+        });
+
         // 添加回车搜索功能
         document.getElementById('keyword').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const keyword = this.value.trim();
                 if (keyword) {
-                    searchByWebService(keyword);
+                    searchByService(keyword);
                     document.getElementById('search-results').style.display = 'none';
                 }
             }
@@ -382,7 +372,9 @@
             }
         });
 
-        // 初始化地图
-        initMap();
+        // 等待页面加载完成后初始化地图
+        window.addEventListener('load', function() {
+            setTimeout(initMap, 500);
+        });
       </script>
 {% endblock %}
