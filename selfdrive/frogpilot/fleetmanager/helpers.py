@@ -480,27 +480,13 @@ def get_gps_status():
     with open('/data/params/d/LastGPSPosition', 'r') as f:
       content = f.read().strip()
       if not content:
-        return {"active": False, "signal": "无信号", "satellites": 0}
-
-    # 读取卫星数量
-    with open('/data/params/d/GPSSatellites', 'r') as f:
-      satellites = int(f.read().strip() or "0")
-
-    # 根据卫星数量判断信号强度
-    if satellites >= 8:
-      signal = "强"
-    elif satellites >= 4:
-      signal = "中"
-    else:
-      signal = "弱"
-
-    return {
-      "active": True,
-      "signal": signal,
-      "satellites": satellites
-    }
+        return {"active": False, "signal": "无信号"}
+      return {
+        "active": True,
+        "signal": "正常"
+      }
   except:
-    return {"active": False, "signal": "未知", "satellites": 0}
+    return {"active": False, "signal": "未知"}
 
 def check_network_status():
   try:
@@ -508,18 +494,9 @@ def check_network_status():
     result = subprocess.run(['ping', '-c', '1', '-W', '1', '8.8.8.8'],
                           stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE)
-    connected = result.returncode == 0
-
-    # 获取网络类型
-    if os.path.exists('/data/params/d/NetworkType'):
-      with open('/data/params/d/NetworkType', 'r') as f:
-        network_type = f.read().strip()
-    else:
-      network_type = "未知"
-
     return {
-      "connected": connected,
-      "type": network_type
+      "connected": result.returncode == 0,
+      "type": "已连接" if result.returncode == 0 else "未连接"
     }
   except:
     return {"connected": False, "type": "未知"}

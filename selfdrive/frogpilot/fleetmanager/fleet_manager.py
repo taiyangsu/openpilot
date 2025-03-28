@@ -366,8 +366,7 @@ def get_system_status():
     },
     "gps_status": {
       "active": gps_status["active"],
-      "signal": gps_status["signal"],
-      "satellites": gps_status["satellites"]
+      "signal": gps_status["signal"]
     },
     "network_status": {
       "connected": network_status["connected"],

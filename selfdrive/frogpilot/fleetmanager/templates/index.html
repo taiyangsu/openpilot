@@ -81,7 +81,7 @@
                     <div class="uk-card uk-card-default uk-card-body uk-box-shadow-small">
                         <h4>导航状态</h4>
                         <div id="nav-status">
-                            <span class="uk-label uk-label-success">正常</span>
+                            <span class="uk-label uk-label-warning">待机</span>
                         </div>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                     <div class="uk-card uk-card-default uk-card-body uk-box-shadow-small">
                         <h4>GPS信号</h4>
                         <div id="gps-status">
-                            <span class="uk-label uk-label-success">良好</span>
+                            <span class="uk-label uk-label-warning">检测中</span>
                         </div>
                     </div>
                 </div>
@@ -97,7 +97,7 @@
                     <div class="uk-card uk-card-default uk-card-body uk-box-shadow-small">
                         <h4>网络状态</h4>
                         <div id="network-status">
-                            <span class="uk-label uk-label-success">在线</span>
+                            <span class="uk-label uk-label-warning">检测中</span>
                         </div>
                     </div>
                 </div>
@@ -108,15 +108,35 @@
     <script>
         // 定期更新系统状态
         function updateSystemStatus() {
-            fetch('/get_nav_status')
+            fetch('/get_system_status')
                 .then(response => response.json())
                 .then(data => {
+                    // 更新导航状态
                     document.getElementById('nav-status').innerHTML =
-                        `<span class="uk-label ${data.active ? 'uk-label-success' : 'uk-label-warning'}">
-                            ${data.active ? '导航中' : '待机'}
+                        `<span class="uk-label ${data.nav_status.active ? 'uk-label-success' : 'uk-label-warning'}">
+                            ${data.nav_status.state}
+                        </span>`;
+
+                    // 更新GPS状态
+                    document.getElementById('gps-status').innerHTML =
+                        `<span class="uk-label ${data.gps_status.active ? 'uk-label-success' : 'uk-label-warning'}">
+                            ${data.gps_status.signal}
+                        </span>`;
+
+                    // 更新网络状态
+                    document.getElementById('network-status').innerHTML =
+                        `<span class="uk-label ${data.network_status.connected ? 'uk-label-success' : 'uk-label-warning'}">
+                            ${data.network_status.type}
                         </span>`;
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    // 发生错误时显示错误状态
+                    ['nav-status', 'gps-status', 'network-status'].forEach(id => {
+                        document.getElementById(id).innerHTML =
+                            `<span class="uk-label uk-label-danger">错误</span>`;
+                    });
+                });
         }
 
         // 每5秒更新一次状态
