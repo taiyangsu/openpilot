@@ -89,8 +89,45 @@
       <div id="search-results" class="search-results"></div>
       <div id="mapContainer"></div>
 
-      <script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC"></script>
+      <script charset="utf-8" src="https://mapapi.qq.com/web/mapjs/gljs/loader/loader.js"></script>
       <script type="text/javascript">
+        // 配置腾讯地图
+        const KEY = 'BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC';
+        const SK = 'JHZBkEm7VA8xqbR4BF3NT2jPJ9JwSizG';
+
+        // 计算签名
+        function getSign(url) {
+            // 1. 对请求参数按key进行字典排序
+            const params = new URLSearchParams(url.split('?')[1]);
+            const sortedParams = Array.from(params.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+            // 2. 拼接请求参数
+            const paramString = sortedParams.map(([key, value]) => `${key}=${value}`).join('&');
+
+            // 3. 拼接SK
+            const signString = url.split('?')[0] + '?' + paramString + SK;
+
+            // 4. 计算MD5
+            return md5(signString);
+        }
+
+        // 加载MD5库
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/md5-js@0.0.3/md5.min.js';
+        document.head.appendChild(script);
+
+        window.TMAP_GLOBAL_CONFIG = {
+            serviceKey: KEY,
+            useHttps: true,
+            protocol: 'https:'
+        };
+
+        // 加载地图API
+        loader.load({
+            key: KEY,
+            libraries: ['service']
+        });
+
         // 日志函数
         function log(type, message, data) {
             console.log(`[${type}] ${message}`, data);
@@ -186,29 +223,62 @@
         // 使用WebService API进行搜索
         function searchByWebService(keyword) {
             const center = map.getCenter();
-            const url = `https://apis.map.qq.com/ws/place/v1/search?keyword=${encodeURIComponent(keyword)}&boundary=nearby(${center.lat},${center.lng},50000)&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC&page_size=10&page_index=1`;
+            const baseUrl = 'https://apis.map.qq.com/ws/place/v1/search';
 
-            log('INFO', '发起搜索请求', { keyword, url });
+            // 构建请求参数
+            const params = new URLSearchParams({
+                keyword: keyword,
+                boundary: `nearby(${center.lat},${center.lng},50000)`,
+                key: KEY,
+                page_size: '10',
+                page_index: '1',
+                output: 'json'
+            });
 
-            fetch(url)
-                .then(response => response.json())
-                .then(result => {
-                    log('INFO', '搜索结果', result);
-                    if (result.status === 0) {
-                        showSearchResults(result.data);
-                    } else {
-                        throw new Error(result.message);
-                    }
-                })
-                .catch(error => {
-                    log('ERROR', '搜索失败', error);
-                    UIkit.notification({
-                        message: '搜索失败：' + error.message,
-                        status: 'danger',
-                        pos: 'top-center',
-                        timeout: 3000
-                    });
+            // 添加时间戳参数
+            params.append('timestamp', Math.floor(Date.now() / 1000));
+
+            // 计算并添加签名
+            const fullUrl = `${baseUrl}?${params.toString()}`;
+            params.append('sig', getSign(fullUrl));
+
+            const finalUrl = `${baseUrl}?${params.toString()}`;
+            log('INFO', '发起搜索请求', { keyword, url: finalUrl });
+
+            fetch(finalUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Referer': window.location.href
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                log('INFO', '搜索结果', result);
+                if (result.status === 0) {
+                    showSearchResults(result.data);
+                } else {
+                    throw new Error(result.message || `错误代码: ${result.status}`);
+                }
+            })
+            .catch(error => {
+                log('ERROR', '搜索失败', {
+                    message: error.message,
+                    stack: error.stack,
+                    url: finalUrl
                 });
+                UIkit.notification({
+                    message: '搜索失败：' + error.message,
+                    status: 'danger',
+                    pos: 'top-center',
+                    timeout: 3000
+                });
+            });
         }
 
         // 显示搜索结果
