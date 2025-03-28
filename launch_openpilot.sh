@@ -3,6 +3,7 @@
 export ATHENA_HOST='wss://athena.konik.ai'
 export API_HOST='https://api.konik.ai'
 export MAPBOX_TOKEN='pk.eyJ1IjoibXJvbmVjYyIsImEiOiJjbHhqbzlkbTYxNXUwMmtzZjdoMGtrZnVvIn0.SC7GNLtMFUGDgC2bAZcKzg'
+export FINGERPRINT="TOYOTA_CAMRY"
 
 # 设置 Mapbox 公钥和密钥
 echo "pk.eyJ1IjoibWF3ZWl5dXdlaXdlaSIsImEiOiJjbGtrdjhhMHUwbWwzM3VwYzVtbXkwY2lrIn0.-u-QP8-tfrhAIpvQiNMsOw" > /data/params/d/MapboxPublicKey
