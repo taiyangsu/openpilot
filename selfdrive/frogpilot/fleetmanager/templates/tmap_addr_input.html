@@ -111,10 +111,10 @@
         var searchMarkers = [];
         var initialPosition;
 
-        // 修复标记图片URL问题 - 使用腾讯官方CDN地址而不是可能失效的URL
-        var markerIconDefault = 'https://3gimg.qq.com/lightmap/api_v2/2/4/4/marker-default.png';
-        var markerIconSelected = 'https://3gimg.qq.com/lightmap/api_v2/2/4/4/marker-select.png';
-        var markerIconSearch = 'https://3gimg.qq.com/lightmap/api_v2/2/4/4/marker-search.png';
+        // 修复标记图片URL问题 - 使用腾讯地图官方正确的图标URL
+        var markerIconDefault = 'https://mapapi.qq.com/web/lbs/javascriptGL/demo/img/marker.png';
+        var markerIconSelected = 'https://mapapi.qq.com/web/lbs/javascriptV2/javascript/img/marker_red.png';
+        var markerIconSearch = 'https://mapapi.qq.com/web/lbs/javascriptV2/javascript/img/marker_blue.png';
 
         // 初始化地图
         function initMap() {
@@ -203,15 +203,23 @@
                 styleId: 'marker'
             }]);
 
-            // 显示信息窗口
-            showInfoWindow(position, "", "(" + position.lat.toFixed(6) + ", " + position.lng.toFixed(6) + ")");
+            // 对于地图点击，设置一个默认地名 "选定位置"
+            var coordsText = "(" + position.lat.toFixed(6) + ", " + position.lng.toFixed(6) + ")";
+            showInfoWindow(position, "选定位置", coordsText);
         }
 
-        // 显示信息窗口 - 改进版
+        // 显示信息窗口 - 使用搜索框文本作为地名
         function showInfoWindow(position, name, addr) {
             if (infoWindow) {
                 infoWindow.close();
             }
+
+            // 获取搜索框的值作为地名
+            var searchText = document.getElementById('keyword').value.trim();
+            var placeName = searchText || name || "选定位置";
+
+            // 调试输出
+            console.log("显示信息窗口，搜索框文本:", searchText, "名称:", name, "地址:", addr, "使用地名:", placeName);
 
             infoWindow = new TMap.InfoWindow({
                 map: map,
@@ -226,8 +234,8 @@
                                 <input type="hidden" name="lat" value="${position.lat}">
                                 <input type="hidden" name="lon" value="${position.lng}">
                                 <input type="hidden" name="save_type" value="${document.getElementById('save_type').value}">
-                                <input type="hidden" name="name" value="${name || ""}">
-                                <input class="uk-button uk-button-primary" type="submit" value="导航">
+                                <input type="hidden" name="place_name" value="${placeName}">
+                                <input class="uk-button uk-button-primary" type="submit" value="导航" onclick="console.log('导航表单提交，地点名:', '${placeName}')">
                             </form>
                         </div>
                     </div>
@@ -455,7 +463,7 @@
             document.getElementById('search-results').style.display = 'none';
         }
 
-        // 在地图上显示多个标记点 - 修复图标URL问题
+        // 在地图上显示多个标记点 - 修复图标URL
         function showMultipleMarkers(places) {
             // 清除之前的搜索结果标记
             clearSearchMarkers();
@@ -638,8 +646,11 @@
             }
         }
 
-        // 在搜索结果选择事件中添加历史记录保存
+        // 选择搜索结果 - 确保title正确传递
         function selectSearchResult(result) {
+            // 调试输出
+            console.log("选择搜索结果:", result);
+
             const position = new TMap.LatLng(result.location.lat, result.location.lng);
 
             // 更新地图视图
@@ -653,8 +664,8 @@
                 styleId: 'selected'
             }]);
 
-            // 显示信息窗口
-            showInfoWindow(position, result.title, result.address);
+            // 确保传递完整的title和address
+            showInfoWindow(position, result.title || "", result.address || "");
 
             // 保存到历史记录
             saveSearchHistory(result);
