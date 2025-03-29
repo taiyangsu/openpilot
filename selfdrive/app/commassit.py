@@ -479,8 +479,11 @@ class CommaAssist:
         traceback.print_exc()
         time.sleep(1)
 
-def main():
-  """主函数"""
+def main(gctx=None):
+  """主函数
+  支持作为独立程序运行或由process_config启动
+  gctx参数用于与openpilot进程管理系统兼容
+  """
   comma_assist = CommaAssist()
 
   # 保持主线程运行
