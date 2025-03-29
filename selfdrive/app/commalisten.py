@@ -5,9 +5,20 @@ import sys
 import threading
 import time
 from datetime import datetime
-import curses
 import argparse
 import traceback
+
+# 处理Windows环境
+try:
+    import curses
+except ImportError:
+    try:
+        # Windows平台上尝试导入windows-curses
+        import windows_curses as curses
+    except ImportError:
+        print("无法导入curses模块。在Windows上需要安装windows-curses包。")
+        print("请运行: pip install windows-curses")
+        sys.exit(1)
 
 class CommaListener:
     def __init__(self, port=8088):
@@ -134,17 +145,17 @@ class UI:
         title = "CommaAssist 数据监视器"
         x = max(0, (self.max_width - len(title)) // 2)
         self.stdscr.attron(curses.color_pair(self.COLOR_HEADER) | curses.A_BOLD)
-        self.stdscr.addstr(0, x, title)
+        self.safe_addstr(0, x, title)
         self.stdscr.attroff(curses.color_pair(self.COLOR_HEADER) | curses.A_BOLD)
 
         # 绘制页面标签
-        self.stdscr.addstr(1, 0, " " * self.max_width, curses.color_pair(self.COLOR_HIGHLIGHT))
+        self.safe_addstr(1, 0, " " * (self.max_width - 1), curses.color_pair(self.COLOR_HIGHLIGHT))
         x = 2
         for i, page in enumerate(self.pages):
             if i == self.current_page:
-                self.stdscr.addstr(1, x, f" {page} ", curses.color_pair(self.COLOR_HIGHLIGHT) | curses.A_BOLD)
+                self.safe_addstr(1, x, f" {page} ", curses.color_pair(self.COLOR_HIGHLIGHT) | curses.A_BOLD)
             else:
-                self.stdscr.addstr(1, x, f" {page} ", curses.color_pair(self.COLOR_NORMAL))
+                self.safe_addstr(1, x, f" {page} ", curses.color_pair(self.COLOR_NORMAL))
             x += len(page) + 3
 
     def draw_status(self):
@@ -153,15 +164,15 @@ class UI:
         status_line = 2
 
         if not self.listener.data:
-            self.stdscr.addstr(status_line, 0, "等待数据...", curses.color_pair(self.COLOR_STATUS_WARNING))
+            self.safe_addstr(status_line, 0, "等待数据...", curses.color_pair(self.COLOR_STATUS_WARNING))
             return
 
         time_diff = current_time - self.listener.last_update
         if time_diff > 5:
-            self.stdscr.addstr(status_line, 0, f"数据已过期! 上次更新: {datetime.fromtimestamp(self.listener.last_update).strftime('%H:%M:%S')}",
+            self.safe_addstr(status_line, 0, f"数据已过期! 上次更新: {datetime.fromtimestamp(self.listener.last_update).strftime('%H:%M:%S')}",
                            curses.color_pair(self.COLOR_STATUS_ERROR))
         else:
-            self.stdscr.addstr(status_line, 0, f"已连接到 {self.listener.device_ip} - 最后更新: {datetime.fromtimestamp(self.listener.last_update).strftime('%H:%M:%S')}",
+            self.safe_addstr(status_line, 0, f"已连接到 {self.listener.device_ip} - 最后更新: {datetime.fromtimestamp(self.listener.last_update).strftime('%H:%M:%S')}",
                            curses.color_pair(self.COLOR_STATUS_OK))
 
     def draw_footer(self):
@@ -169,8 +180,36 @@ class UI:
         footer = "操作: [q]退出 [←/p]上一页 [→/n]下一页"
         y = self.max_height - 1
         x = max(0, (self.max_width - len(footer)) // 2)
-        self.stdscr.addstr(y, 0, " " * self.max_width, curses.color_pair(self.COLOR_HIGHLIGHT))
-        self.stdscr.addstr(y, x, footer, curses.color_pair(self.COLOR_HIGHLIGHT))
+
+        # 防止超出屏幕边界
+        try:
+            # 修复：确保不超出屏幕边界
+            if y > 0 and self.max_width > 0:
+                # 使用safe_addstr方法避免边界问题
+                self.safe_addstr(y, 0, " " * (self.max_width - 1), curses.color_pair(self.COLOR_HIGHLIGHT))
+                self.safe_addstr(y, x, footer[:self.max_width - x - 1], curses.color_pair(self.COLOR_HIGHLIGHT))
+        except curses.error:
+            # 忽略curses边界错误
+            pass
+
+    def safe_addstr(self, y, x, text, attr=0):
+        """安全地添加字符串，避免边界问题"""
+        try:
+            # 确保y和x是有效坐标
+            height, width = self.stdscr.getmaxyx()
+            if y < 0 or y >= height or x < 0:
+                return
+
+            # 计算可以显示的最大长度
+            max_len = min(len(text), width - x - 1)
+            if max_len <= 0:
+                return
+
+            # 确保不会写入最后一个字符位置
+            self.stdscr.addstr(y, x, text[:max_len], attr)
+        except curses.error:
+            # 捕获并忽略curses错误
+            pass
 
     def draw_car_info(self):
         """绘制车辆信息"""
@@ -213,7 +252,7 @@ class UI:
         elif right_blinker:
             blinker_status = "右转"
 
-        self.stdscr.addstr(11, 2, f"转向灯: {blinker_status}", curses.color_pair(self.COLOR_DATA))
+        self.safe_addstr(11, 2, f"转向灯: {blinker_status}", curses.color_pair(self.COLOR_DATA))
 
     def draw_device_info(self):
         """绘制设备信息"""
@@ -254,7 +293,7 @@ class UI:
 
         if not location.get('gps_valid', False):
             self.draw_section_title("GPS状态", 4)
-            self.stdscr.addstr(5, 2, "GPS信号无效或未获取", curses.color_pair(self.COLOR_STATUS_ERROR))
+            self.safe_addstr(5, 2, "GPS信号无效或未获取", curses.color_pair(self.COLOR_STATUS_ERROR))
             return
 
         self.draw_section_title("GPS位置", 4)
@@ -439,23 +478,23 @@ class UI:
 
             for i, line in enumerate(lines):
                 if 4 + i + 1 >= self.max_height - 1:  # 保留底部状态栏
-                    self.stdscr.addstr(4 + i, 0, "... (内容过多无法完全显示)", curses.color_pair(self.COLOR_STATUS_WARNING))
+                    self.safe_addstr(4 + i, 0, "... (内容过多无法完全显示)", curses.color_pair(self.COLOR_STATUS_WARNING))
                     break
                 if len(line) > self.max_width:
                     line = line[:self.max_width - 3] + "..."
-                self.stdscr.addstr(4 + i + 1, 0, line)
+                self.safe_addstr(4 + i + 1, 0, line)
         except Exception as e:
-            self.stdscr.addstr(5, 0, f"无法显示JSON数据: {e}", curses.color_pair(self.COLOR_STATUS_ERROR))
+            self.safe_addstr(5, 0, f"无法显示JSON数据: {e}", curses.color_pair(self.COLOR_STATUS_ERROR))
 
     def draw_no_data(self, message):
         """绘制无数据消息"""
         y = self.max_height // 2
         x = max(0, (self.max_width - len(message)) // 2)
-        self.stdscr.addstr(y, x, message, curses.color_pair(self.COLOR_STATUS_WARNING))
+        self.safe_addstr(y, x, message, curses.color_pair(self.COLOR_STATUS_WARNING))
 
     def draw_section_title(self, title, row):
         """绘制区域标题"""
-        self.stdscr.addstr(row, 0, title, curses.color_pair(self.COLOR_TITLE) | curses.A_BOLD)
+        self.safe_addstr(row, 0, title, curses.color_pair(self.COLOR_TITLE) | curses.A_BOLD)
 
     def draw_data_section(self, data_list, start_row, start_col, width):
         """绘制数据区域"""
@@ -465,8 +504,11 @@ class UI:
             if row >= self.max_height - 1:  # 避免超出屏幕底部
                 break
 
-            self.stdscr.addstr(row, start_col + 2, f"{label}: ", curses.color_pair(self.COLOR_NORMAL))
-            self.stdscr.addstr(value, curses.color_pair(self.COLOR_DATA))
+            self.safe_addstr(row, start_col + 2, f"{label}: ", curses.color_pair(self.COLOR_NORMAL))
+            try:
+                self.stdscr.addstr(value, curses.color_pair(self.COLOR_DATA))
+            except curses.error:
+                pass
 
 def main():
     """主函数"""
