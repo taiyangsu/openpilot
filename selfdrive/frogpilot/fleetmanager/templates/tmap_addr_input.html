@@ -150,32 +150,32 @@
           // 使用Number()转换确保经纬度是数字
           initialPosition = new TMap.LatLng(Number("{{lat}}"), Number("{{lon}}"));
 
-          map = new TMap.Map('mapContainer', {
-              center: initialPosition,
-              zoom: 15,
-              showControl: true
-          });
+            map = new TMap.Map('mapContainer', {
+                center: initialPosition,
+                zoom: 15,
+                showControl: true
+            });
 
           // 创建当前位置标记
-          marker = new TMap.MultiMarker({
-              map: map,
-              styles: {
+            marker = new TMap.MultiMarker({
+                map: map,
+                styles: {
                   "default": new TMap.MarkerStyle({
-                      width: 25,
-                      height: 35,
-                      anchor: { x: 12.5, y: 35 },
+                        width: 25,
+                        height: 35,
+                        anchor: { x: 12.5, y: 35 },
                       src: markerIconDefault
-                  })
-              },
-              geometries: [{
-                  id: 'current',
-                  position: initialPosition,
+                    })
+                },
+                geometries: [{
+                    id: 'current',
+                    position: initialPosition,
                   styleId: 'default'
-              }]
-          });
+                }]
+            });
 
-          // 添加点击事件
-          map.on('click', handleMapClick);
+            // 添加点击事件
+            map.on('click', handleMapClick);
 
           // 添加标记点击事件
           marker.on('click', function(evt) {
@@ -191,18 +191,158 @@
         function handleMapClick(evt) {
             var position = evt.latLng;
 
-            // 更新当前位置标记
+            // 进行坐标逆解析，获取地点信息
+            getAddressByLocation(position, function(result) {
+                // 更新当前位置标记
+                marker.updateGeometries([{
+                    id: 'current',
+                    position: position,
+                    styleId: 'default'
+                }]);
+
+                // 使用搜索框文本或逆解析结果显示信息窗口
+                var keyword = document.getElementById('keyword').value;
+                if (keyword && keyword.trim() !== '') {
+                    showInfoWindow(position, keyword, result && result.address);
+                } else if (result && result.address) {
+                    showInfoWindow(position, result.formatted_addresses?.recommend || "选定位置", result.address);
+                } else {
+                    showInfoWindow(position, "选定位置", `(${position.lat.toFixed(6)}, ${position.lng.toFixed(6)})`);
+                }
+
+                // 隐藏搜索结果
+                document.getElementById('search-results').style.display = 'none';
+            });
+        }
+
+        // 根据坐标获取地址信息
+        function getAddressByLocation(location, callback) {
+            var callbackName = 'jsonp_reverseGeo_' + Math.round(100000 * Math.random());
+
+            window[callbackName] = function(res) {
+                // 移除script标签
+                var scriptTags = document.getElementsByTagName('script');
+                for (var i = 0; i < scriptTags.length; i++) {
+                    if (scriptTags[i].src.indexOf(callbackName) > -1) {
+                        document.body.removeChild(scriptTags[i]);
+                        break;
+                    }
+                }
+
+                if (res.status === 0 && res.result) {
+                    callback(res.result);
+                } else {
+                    callback(null);
+                }
+
+                // 清理回调函数
+                delete window[callbackName];
+            };
+
+            // 构建请求URL
+            var url = "https://apis.map.qq.com/ws/geocoder/v1/?location=" +
+                location.lat + "," + location.lng +
+                "&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC&output=jsonp&callback=" + callbackName;
+
+            // 发送JSONP请求
+            var script = document.createElement('script');
+            script.src = url;
+            script.onerror = function() {
+                callback(null);
+                delete window[callbackName];
+            };
+            document.body.appendChild(script);
+        }
+
+        // 显示搜索结果
+        function displaySearchResults(places) {
+            if (!places || places.length === 0) return;
+
+            // 清除之前的搜索标记
+            clearSearchMarkers();
+
+            // 准备标记数据
+            var geometries = [];
+
+            // 创建结果标记
+            places.forEach(function(place, index) {
+                var position = new TMap.LatLng(place.location.lat, place.location.lng);
+
+                geometries.push({
+                    id: 'search_' + index,
+                    position: position,
+                    styleId: 'default',
+                    properties: {
+                        title: place.title,
+                        address: place.address
+                    }
+                });
+            });
+
+            // 创建标记图层 - 使用蓝色水滴图标
+            var resultMarker = new TMap.MultiMarker({
+                map: map,
+                styles: {
+                    "default": new TMap.MarkerStyle({
+                        width: 25,
+                        height: 35,
+                        anchor: { x: 12.5, y: 35 },
+                        src: markerIconBlue // 使用蓝色图标
+                    })
+                },
+                geometries: geometries
+            });
+
+            // 添加点击事件
+            resultMarker.on('click', function(evt) {
+                var position = evt.geometry.position;
+                var props = evt.geometry.properties;
+
+                // 使用正确的标题和地址信息
+                showInfoWindow(position, props.title, props.address);
+
+                // 更新当前标记
             marker.updateGeometries([{
                 id: 'current',
                 position: position,
-                styleId: 'default'
-            }]);
+                    styleId: 'default'
+                }]);
 
-            // 显示信息窗口 - 对于点击的位置，我们没有标题和地址信息
-            showInfoWindow(position, "选定位置", null);
+                // 隐藏搜索结果
+                document.getElementById('search-results').style.display = 'none';
+            });
 
-            // 隐藏搜索结果
-            document.getElementById('search-results').style.display = 'none';
+            // 保存到标记数组用于后续清除
+            searchMarkers.push(resultMarker);
+
+            // 调整地图视野以包含所有标记
+            if (places.length === 1) {
+                // 单个结果直接定位
+                map.setCenter(geometries[0].position);
+                map.setZoom(16);
+
+                // 自动打开信息窗口
+                showInfoWindow(
+                    geometries[0].position,
+                    places[0].title,
+                    places[0].address
+                );
+            } else {
+                // 多个结果时调整视野包含所有标记
+                var bounds = new TMap.LatLngBounds();
+                geometries.forEach(function(geo) {
+                    bounds.extend(geo.position);
+                });
+                map.fitBounds(bounds);
+
+                // 显示提示
+                UIkit.notification({
+                    message: `找到 ${places.length} 个结果，请点击标记查看详情`,
+                    status: 'success',
+                    pos: 'top-center',
+                    timeout: 3000
+                });
+            }
         }
 
         // 显示信息窗口
@@ -212,25 +352,27 @@
             }
 
             // 获取真实的地点名称和地址
-            var placeName = title || "选定位置";
+            var placeName = title || document.getElementById('keyword').value || "选定位置";
             var placeAddress = address || `(${position.lat.toFixed(6)}, ${position.lng.toFixed(6)})`;
+
+            console.log("显示信息窗口:", placeName, placeAddress);
 
             // 创建信息窗口
             infoWindow = new TMap.InfoWindow({
                 map: map,
                 position: position,
                 content: `
-                    <div class="uk-card uk-card-default uk-card-body" style="padding:10px; min-width:200px;">
-                        <h3 style="padding-top: 10px; margin-bottom: 10px;" class="uk-card-title">${placeName}</h3>
-                        <p style="margin-top: 0;">${placeAddress}</p>
-                        <div class="uk-card-footer" style="padding-top:10px;">
-                            <form name="navForm" method="post">
-                                <input type="hidden" name="lat" value="${position.lat}">
-                                <input type="hidden" name="lon" value="${position.lng}">
-                                <input type="hidden" name="save_type" value="${document.getElementById('save_type').value}">
-                                <input type="hidden" name="place_name" value="${placeName}">
-                                <input class="uk-button uk-button-primary" type="submit" value="导航">
-                            </form>
+                    <div class="uk-card uk-card-default uk-card-body" style="padding:15px; min-width:220px;">
+                        <h3 style="margin-top:0; margin-bottom:10px; font-size:16px; font-weight:bold;">${placeName}</h3>
+                        <p style="margin:0; color:#666; font-size:14px;">${placeAddress}</p>
+                        <div style="margin-top:15px; text-align:center;">
+                        <form name="navForm" method="post" onsubmit="return validateNavForm()">
+                            <input type="hidden" name="lat" value="${position.lat}">
+                            <input type="hidden" name="lon" value="${position.lng}">
+                            <input type="hidden" name="save_type" value="${document.getElementById('save_type').value}">
+                            <input type="hidden" id="place_name_field" name="place_name" value="${placeName}">
+                            <input class="uk-button uk-button-primary" type="submit" value="导航" style="width:100px;">
+                        </form>
                         </div>
                     </div>
                 `,
@@ -239,6 +381,24 @@
 
             // 打开信息窗口
             infoWindow.open();
+        }
+
+        // 验证导航表单确保地名被传递
+        function validateNavForm() {
+            var placeNameField = document.getElementById('place_name_field');
+
+            // 如果地名为空，尝试从搜索框获取
+            if (!placeNameField.value || placeNameField.value === "选定位置") {
+                var keyword = document.getElementById('keyword').value;
+                if (keyword && keyword.trim() !== '') {
+                    placeNameField.value = keyword;
+                    console.log("从搜索框获取地名:", keyword);
+                }
+            }
+
+            // 调试输出
+            console.log("提交导航表单，地名:", placeNameField.value);
+            return true;
         }
 
         // 搜索地点
@@ -319,91 +479,6 @@
                 delete window[callbackName];
             };
             document.body.appendChild(script);
-        }
-
-        // 显示搜索结果
-        function displaySearchResults(places) {
-            if (!places || places.length === 0) return;
-
-            // 准备标记数据
-            var geometries = [];
-
-            // 创建结果标记
-            places.forEach(function(place, index) {
-                var position = new TMap.LatLng(place.location.lat, place.location.lng);
-
-                geometries.push({
-                    id: 'search_' + index,
-                    position: position,
-                    styleId: 'default',
-                    properties: {
-                        title: place.title,
-                        address: place.address
-                    }
-                });
-            });
-
-            // 创建标记图层 - 使用蓝色水滴图标
-            var resultMarker = new TMap.MultiMarker({
-                map: map,
-                styles: {
-                    "default": new TMap.MarkerStyle({
-                        width: 25,
-                        height: 35,
-                        anchor: { x: 12.5, y: 35 },
-                        src: markerIconBlue // 使用蓝色图标
-                    })
-                },
-                geometries: geometries
-            });
-
-            // 添加点击事件
-            resultMarker.on('click', function(evt) {
-                var position = evt.geometry.position;
-                var props = evt.geometry.properties;
-
-                // 使用正确的标题和地址信息
-                showInfoWindow(position, props.title, props.address);
-
-                // 更新当前标记
-                marker.updateGeometries([{
-                    id: 'current',
-                    position: position,
-                    styleId: 'default'
-                }]);
-            });
-
-            // 保存到标记数组用于后续清除
-            searchMarkers.push(resultMarker);
-
-            // 调整地图视野以包含所有标记
-            if (places.length === 1) {
-                // 单个结果直接定位
-                map.setCenter(geometries[0].position);
-                map.setZoom(16);
-
-                // 自动打开信息窗口
-                showInfoWindow(
-                    geometries[0].position,
-                    places[0].title,
-                    places[0].address
-                );
-            } else {
-                // 多个结果时调整视野包含所有标记
-                var bounds = new TMap.LatLngBounds();
-                geometries.forEach(function(geo) {
-                    bounds.extend(geo.position);
-                });
-                map.fitBounds(bounds);
-
-                // 显示提示
-                UIkit.notification({
-                    message: `找到 ${places.length} 个结果，请点击标记查看详情`,
-                    status: 'success',
-                    pos: 'top-center',
-                    timeout: 3000
-                });
-            }
         }
 
         // 清除搜索标记
