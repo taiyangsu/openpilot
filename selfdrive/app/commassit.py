@@ -20,6 +20,7 @@ try:
   HAS_CAR_INTERFACES = True
 except ImportError:
   HAS_CAR_INTERFACES = False
+  interfaces = None
 
 class CommaAssist:
   def __init__(self):
@@ -51,33 +52,71 @@ class CommaAssist:
     """加载车辆基本信息"""
     try:
       # 获取车辆型号信息
-      car_name = self.params.get("CarName", encoding='utf8')
-      self.car_info["car_name"] = car_name if car_name else "Unknown"
+      try:
+        car_model = self.params.get("CarModel", encoding='utf8')
+        self.car_info["car_name"] = car_model if car_model else "Unknown"
+      except Exception as e:
+        print(f"无法获取CarModel参数: {e}")
+        try:
+          # 尝试获取其他可能的车辆参数
+          car_params = self.params.get("CarParamsCache", encoding='utf8')
+          self.car_info["car_name"] = "通过CarParamsCache获取" if car_params else "Unknown"
+        except Exception:
+          self.car_info["car_name"] = "Unknown Model"
+          car_model = None
 
-      # 尝试获取车辆规格信息
-      if HAS_CAR_INTERFACES and car_name:
-        for interface in interfaces:
+      # 检查车辆接口是否可用
+      if not HAS_CAR_INTERFACES:
+        print("车辆接口模块不可用")
+      elif not car_model:
+        print("无有效的车型信息")
+      elif not isinstance(interfaces, list):
+        print("车辆接口不是列表类型，尝试转换...")
+        # 尝试获取车辆接口的具体实现
+        if hasattr(interfaces, '__call__'):
+          # 如果interfaces是一个函数，尝试直接获取车辆指纹
           try:
-            if car_name in interface.CHECKSUM["pt"]:
-              platform = interface
-              self.car_info["car_fingerprint"] = platform.config.platform_str
-
-              # 获取车辆规格参数
-              specs = platform.config.specs
-              if specs:
-                if hasattr(specs, 'mass'):
-                  self.car_info["mass"] = specs.mass
-                if hasattr(specs, 'wheelbase'):
-                  self.car_info["wheelbase"] = specs.wheelbase
-                if hasattr(specs, 'steerRatio'):
-                  self.car_info["steerRatio"] = specs.steerRatio
-              break
+            self.car_info["car_fingerprint"] = f"直接从车型{car_model}获取"
+            print(f"直接从车型识别: {car_model}")
           except Exception as e:
-            print(f"加载车辆接口异常: {e}")
+            print(f"无法从车型直接获取指纹: {e}")
+      else:
+        # 正常遍历接口列表
+        print("尝试从车辆接口中获取指纹信息...")
+        for interface in interfaces:
+          if not hasattr(interface, 'CHECKSUM'):
+            continue
+
+          try:
+            if isinstance(interface.CHECKSUM, dict) and 'pt' in interface.CHECKSUM:
+              if car_model in interface.CHECKSUM["pt"]:
+                platform = interface
+                self.car_info["car_fingerprint"] = platform.config.platform_str
+
+                # 获取车辆规格参数
+                specs = platform.config.specs
+                if specs:
+                  if hasattr(specs, 'mass'):
+                    self.car_info["mass"] = specs.mass
+                  if hasattr(specs, 'wheelbase'):
+                    self.car_info["wheelbase"] = specs.wheelbase
+                  if hasattr(specs, 'steerRatio'):
+                    self.car_info["steerRatio"] = specs.steerRatio
+                break
+          except Exception as e:
+            print(f"处理特定车辆接口异常: {e}")
 
     except Exception as e:
       print(f"加载车辆信息失败: {e}")
       traceback.print_exc()
+
+    # 确保基本字段存在，避免后续访问出错
+    if "car_name" not in self.car_info:
+      self.car_info["car_name"] = "Unknown Model"
+    if "car_fingerprint" not in self.car_info:
+      self.car_info["car_fingerprint"] = "Unknown Fingerprint"
+
+    print(f"车辆信息加载完成: {self.car_info}")
 
   def get_broadcast_address(self):
     """获取广播地址"""
@@ -423,11 +462,7 @@ class CommaAssist:
         ip_address = self.get_local_ip()
         if ip_address != self.ip_address:
           self.ip_address = ip_address
-          try:
-            self.params.put("NetworkAddress", ip_address)
-            print(f"更新网络地址: {ip_address}")
-          except Exception as e:
-            print(f"无法保存网络地址: {e}")
+          print(f"IP地址已更新: {ip_address}")
 
         # 构建并发送消息
         msg = self.make_data_message()
