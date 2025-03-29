@@ -89,118 +89,140 @@
                   </button>
               </div>
           </div>
-          <div class="uk-margin-small-top">
-              <button class="uk-button uk-button-default uk-button-small" onclick="locateUser()">
-                  <span uk-icon="icon: location"></span> 定位
-              </button>
-              <button class="uk-button uk-button-default uk-button-small" onclick="showSearchHistory()">
-                  <span uk-icon="icon: history"></span> 历史记录
-              </button>
-          </div>
       </div>
 
       <div id="search-results" class="search-results"></div>
       <div id="mapContainer"></div>
 
-      <!-- 更改腾讯地图API引入方式，增加passive参数，可能会减少一些警告 -->
-      <script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC&libraries=geometry"></script>
+      <script charset="utf-8" src="https://map.qq.com/api/gljs?v=1.exp&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC"></script>
 
       <script type="text/javascript">
         var map, marker, infoWindow;
         var searchMarkers = [];
         var initialPosition;
 
-        // 修复标记图片URL问题 - 使用腾讯地图官方正确的图标URL
-        var markerIconDefault = 'https://mapapi.qq.com/web/lbs/javascriptGL/demo/img/marker.png';
-        var markerIconSelected = 'https://mapapi.qq.com/web/lbs/javascriptV2/javascript/img/marker_red.png';
-        var markerIconSearch = 'https://mapapi.qq.com/web/lbs/javascriptV2/javascript/img/marker_blue.png';
+        // 修改路径以确保能找到图标
+        var markerIconDefault = '../static/marker.png';
+        var markerIconBlue = '../static/marker.png';  // 使用同一个图标
+
+        // 添加Base64编码的备用图标
+        var markerIconDefaultBase64 = 'data:image/png;base64,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';
+        var markerIconBlueBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAApCAYAAADAk4LOAAAFgUlEQVR4Aa1XA5BjWRTN2oW17d3YaZtr2962HUzbDNpjszW24mRt28p47v7zq/bXZtrp/lWnXr337j3nnnvuFdcMDA8FDh69Xw8BRQnGyDdCY/X1rVpXb1xdGf2CgufMeiF4fY4QTKwvKRLJBPrDw36bQbH+8Vg54nW5XeaEsaX2XMaoktMsZB9OMWjsmaxjXzM6DtgBq+juYZX9s1gHwbtyXnqBLp7YlOLZFckN2gQsfXo76xvgUOrTCzQDlq4gw+KqmiQvbH+vQP7lJPuaCTjiPuDh/6YQY0OHUKb/mFVnvPBCf0+nbQTQE5hDlgPO6JLyY8d94K5IR1QT0qwzsSWlwP+EsdEdpGgIYleQbLKcNH7Yw+iPZu12L8oRgwYGytKmrJRrGmylMNMqLIpvn71lgM3+HAukaiWHY1Ii3ViHxzu4YkmoELpTyjVF9g0IKCnJnJDJxL8QUJjuOWWmdOYCiNyUmgSwBDeCRJ3BkW582zQy3hKXvZXU18CYGMgjBurq8vLiEgbPgwXRDCRFS2RWYFNG6YBC8oQvZQku2XgEPrRP6RgUAAxlpMZsUD82dTip3VORACNXC2LbXAdCXN/btMD8XocjQFC9n7PjwEO0Dv70l52/Px24k1Buu42t0HDmD5mi7LXwJwiU3gUXB/lKsf0XqDeOlQDTIbUFahVp6neifb2j43OjS0PT9xrZklTPQctAm0MQQUq0mcXd9lKCZefPNnUKk0f5zeD+nj2wMDY0FjnxEjU9ufWQgp4QVvRUGg42O0pj4qDoiXj3TmG5Pm0GXEfBw/HWmDeWLDHcZr7E5xVOkCTygXsUYgXKEEWdTcNR+lklL3ab8F72vKn2Fpf5fJQiJTE0XBMQmYrQDqYmzcaGgXeHH6HE+JGJ4pIrDG/u3BaHU3Z1T+6+vYy+1urNG1Dpeqxw+3GQ5xfuQLrHf/c3yY8+f3lySJgkt1e0VAFMd/5KnL3+NZbXUHfmrLFXcszVsy/Gg5dhuPLNrR11PJGMMICAwJNrwQEfVJZiwwbU4p0EX1HUQSQKUUFXdL00bZJnzAIBBfk/h1trGL+hTfdXQovzqb5m9tnh/OzlOPGx8/uTX39ovVccWq9QhwVQppEXY9Bk/cJv/R8UTxIxkiOuM7CZxo4TqwYcWDNApmyiFOdyDXaQEo0dGMDIgkT8kPz85TOx1tmM4VKWC2adWKsHER+GCSITMRUt5AS7tC1UH6jlv6Zcpj7QAFVLjMelBEUBcphQCI6wgG7fWqxMJ1QxMAXwVdOvRT7NdVesrJoFdVrU+y6UO8jaNrNKiZnKAGDiF0a0jCBHW5N9x5mDTaEejDD2q0v616PntKLd21H9fz1X1u2zHXY6qOZ6KW8D00z/3Loyh/Cx2CbZ8wgyQAAAABJRU5ErkJggg==';
+
+        // 添加图标加载检查
+        function checkImageExists(url, callback) {
+          var img = new Image();
+          img.onload = function() { callback(true); };
+          img.onerror = function() { callback(false); };
+          img.src = url;
+        }
 
         // 初始化地图
         function initMap() {
-            // 修复Jinja变量语法，避免JavaScript解析错误
-            initialPosition = new TMap.LatLng(Number("{{lat}}"), Number("{{lon}}"));
+          // 检查图标是否可用
+          checkImageExists(markerIconDefault, function(exists) {
+            if (!exists) {
+              console.error("图标加载失败，尝试其他路径");
+              // 尝试其他可能的路径
+              markerIconDefault = '/static/marker.png';
+              markerIconBlue = '/static/marker.png';
 
-            map = new TMap.Map('mapContainer', {
-                center: initialPosition,
-                zoom: 15,
-                showControl: true,
-                viewMode: '2D' // 明确指定2D模式，可能会减少一些警告
-            });
+              // 如果仍然失败，使用Base64编码的图标
+              checkImageExists(markerIconDefault, function(exists) {
+                if (!exists) {
+                  console.error("备用路径也失败，使用Base64图标");
+                  markerIconDefault = markerIconDefaultBase64;
+                  markerIconBlue = markerIconBlueBase64;
+                }
 
-            // 添加当前位置标记 - 使用正确的图标URL
-            marker = new TMap.MultiMarker({
-                map: map,
-                styles: {
-                    "marker": new TMap.MarkerStyle({
-                        width: 25,
-                        height: 35,
-                        anchor: { x: 12.5, y: 35 },
-                        src: markerIconDefault
-                    }),
-                    "selected": new TMap.MarkerStyle({
-                        width: 30,
-                        height: 42,
-                        anchor: { x: 15, y: 42 },
-                        src: markerIconSelected
-                    }),
-                    "searchResult": new TMap.MarkerStyle({
-                        width: 25,
-                        height: 35,
-                        anchor: { x: 12.5, y: 35 },
-                        src: markerIconSearch
-                    })
-                },
-                geometries: [{
-                    id: 'current',
-                    position: initialPosition,
-                    styleId: 'marker'
-                }]
-            });
+                // 现在初始化地图和标记
+                initMapWithCheckedIcons();
+              });
+            } else {
+              // 图标存在，初始化地图和标记
+              initMapWithCheckedIcons();
+            }
+          });
+        }
 
-            // 添加点击事件
-            map.on('click', handleMapClick);
+        // 使用已检查的图标初始化地图
+        function initMapWithCheckedIcons() {
+          // 使用Number()转换确保经纬度是数字
+          initialPosition = new TMap.LatLng(Number("{{lat}}"), Number("{{lon}}"));
+
+          map = new TMap.Map('mapContainer', {
+              center: initialPosition,
+              zoom: 15,
+              showControl: true
+          });
+
+          // 创建当前位置标记
+          marker = new TMap.MultiMarker({
+              map: map,
+              styles: {
+                  "default": new TMap.MarkerStyle({
+                      width: 25,
+                      height: 35,
+                      anchor: { x: 12.5, y: 35 },
+                      src: markerIconDefault
+                  })
+              },
+              geometries: [{
+                  id: 'current',
+                  position: initialPosition,
+                  styleId: 'default'
+              }]
+          });
+
+          // 添加点击事件
+          map.on('click', handleMapClick);
+
+          // 添加标记点击事件
+          marker.on('click', function(evt) {
+              showInfoWindow(
+                  evt.geometry.position,
+                  "选定位置",
+                  "(" + evt.geometry.position.lat.toFixed(6) + ", " + evt.geometry.position.lng.toFixed(6) + ")"
+              );
+          });
         }
 
         // 处理地图点击
         function handleMapClick(evt) {
             var position = evt.latLng;
 
-            // 清除搜索结果
-            document.getElementById('search-results').style.display = 'none';
-
-            // 更新标记位置
+            // 更新当前位置标记
             marker.updateGeometries([{
                 id: 'current',
                 position: position,
-                styleId: 'marker'
+                styleId: 'default'
             }]);
 
-            // 对于地图点击，设置一个默认地名 "选定位置"
-            var coordsText = "(" + position.lat.toFixed(6) + ", " + position.lng.toFixed(6) + ")";
-            showInfoWindow(position, "选定位置", coordsText);
+            // 显示信息窗口 - 对于点击的位置，我们没有标题和地址信息
+            showInfoWindow(position, "选定位置", null);
+
+            // 隐藏搜索结果
+            document.getElementById('search-results').style.display = 'none';
         }
 
-        // 显示信息窗口 - 确保表单字段完整
-        function showInfoWindow(position, name, addr) {
+        // 显示信息窗口
+        function showInfoWindow(position, title, address) {
             if (infoWindow) {
                 infoWindow.close();
             }
 
-            // 获取搜索框的值作为地名
-            var searchText = document.getElementById('keyword').value.trim();
-            var placeName = searchText || name || "选定位置";
+            // 获取真实的地点名称和地址
+            var placeName = title || "选定位置";
+            var placeAddress = address || `(${position.lat.toFixed(6)}, ${position.lng.toFixed(6)})`;
 
-            // 调试输出
-            console.log("显示信息窗口，使用地名:", placeName);
-
+            // 创建信息窗口
             infoWindow = new TMap.InfoWindow({
                 map: map,
                 position: position,
                 content: `
                     <div class="uk-card uk-card-default uk-card-body" style="padding:10px; min-width:200px;">
-                        <a class="uk-card-badge uk-label" onClick="javascript:infoWindow.close()" uk-close></a>
-                        <h3 style="padding-top: 10px;" class="uk-card-title">${name || ""}</h3>
-                        <p>${addr || ""}</p>
+                        <h3 style="padding-top: 10px; margin-bottom: 10px;" class="uk-card-title">${placeName}</h3>
+                        <p style="margin-top: 0;">${placeAddress}</p>
                         <div class="uk-card-footer" style="padding-top:10px;">
                             <form name="navForm" method="post">
                                 <input type="hidden" name="lat" value="${position.lat}">
@@ -214,9 +236,12 @@
                 `,
                 offset: { x: 0, y: -35 }
             });
+
+            // 打开信息窗口
+            infoWindow.open();
         }
 
-        // 修改搜索函数，移除联想功能，直接搜索
+        // 搜索地点
         function searchPlace(keyword) {
             if (!keyword || keyword.trim() === '') {
                 UIkit.notification({
@@ -228,7 +253,7 @@
                 return;
             }
 
-            // 显示加载提示和调试信息
+            // 显示加载提示
             console.log("开始搜索：", keyword);
             UIkit.notification({
                 message: '正在搜索...',
@@ -237,41 +262,29 @@
                 timeout: 2000
             });
 
-            // 使用唯一的回调函数名称避免冲突
-            var callbackName = 'jsonp_search_' + Math.round(100000 * Math.random());
-            var script = document.createElement('script');
+            // 清除之前的标记
+            clearSearchMarkers();
 
+            // 创建JSONP回调
+            var callbackName = 'jsonp_search_' + Math.round(100000 * Math.random());
+
+            // 定义回调函数
             window[callbackName] = function(res) {
                 console.log("搜索结果：", res);
-                if (script.parentNode) document.body.removeChild(script);
-                delete window[callbackName];
 
-                if (res.status === 0 && res.data && res.data.length > 0) {
-                    // 转换返回的数据格式
-                    var places = res.data.map(function(item) {
-                        return {
-                            id: item.id,
-                            title: item.title,
-                            address: item.address,
-                            location: {
-                                lat: item.location.lat,
-                                lng: item.location.lng
-                            }
-                        };
-                    });
-
-                    // 在地图上显示多个标记点
-                    showMultipleMarkers(places);
-
-                    // 调整地图视野以包含所有结果
-                    fitMapToBounds(places);
-
-                    // 如果只有一个结果，直接显示信息窗口
-                    if (places.length === 1) {
-                        var place = places[0];
-                        var position = new TMap.LatLng(place.location.lat, place.location.lng);
-                        showInfoWindow(position, place.title, place.address);
+                // 移除script标签
+                var scriptTags = document.getElementsByTagName('script');
+                for (var i = 0; i < scriptTags.length; i++) {
+                    if (scriptTags[i].src.indexOf(callbackName) > -1) {
+                        document.body.removeChild(scriptTags[i]);
+                        break;
                     }
+                }
+
+                // 处理搜索结果
+                if (res.status === 0 && res.data && res.data.length > 0) {
+                    // 显示搜索结果
+                    displaySearchResults(res.data);
                 } else {
                     UIkit.notification({
                         message: '未找到相关结果',
@@ -280,188 +293,125 @@
                         timeout: 3000
                     });
                 }
+
+                // 清理回调函数
+                delete window[callbackName];
             };
 
+            // 构建搜索请求URL
             var searchUrl = "https://apis.map.qq.com/ws/place/v1/search?keyword=" +
-                            encodeURIComponent(keyword) +
-                            "&boundary=region(全国,0)" +
-                            "&page_size=10" +
-                            "&page_index=1" +
-                            "&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC&output=jsonp&callback=" + callbackName;
+                encodeURIComponent(keyword) +
+                "&boundary=region(全国,0)" +
+                "&page_size=10" +
+                "&page_index=1" +
+                "&key=BDMBZ-LZQ63-GUG37-OCHES-2ESXV-Q5BVC&output=jsonp&callback=" + callbackName;
 
+            // 发送JSONP请求
+            var script = document.createElement('script');
             script.src = searchUrl;
+            script.onerror = function() {
+                UIkit.notification({
+                    message: '搜索请求失败，请检查网络连接',
+                    status: 'danger',
+                    pos: 'top-center',
+                    timeout: 3000
+                });
+                delete window[callbackName];
+            };
             document.body.appendChild(script);
-
-            // 添加超时处理
-            setTimeout(function() {
-                if (window[callbackName]) {
-                    console.error("搜索请求超时");
-                    UIkit.notification({
-                        message: '搜索超时，请重试',
-                        status: 'danger',
-                        pos: 'top-center',
-                        timeout: 3000
-                    });
-                    if (script.parentNode) document.body.removeChild(script);
-                    delete window[callbackName];
-                }
-            }, 5000);
         }
 
-        // 在地图上显示多个标记点 - 修复图标URL
-        function showMultipleMarkers(places) {
-            // 清除之前的搜索结果标记
-            clearSearchMarkers();
-            console.log("显示多个标记点：", places.length);
+        // 显示搜索结果
+        function displaySearchResults(places) {
+            if (!places || places.length === 0) return;
 
-            // 准备新的标记点数据
+            // 准备标记数据
             var geometries = [];
 
+            // 创建结果标记
             places.forEach(function(place, index) {
-                // 确保所有必要属性存在
-                if (!place.location || !place.location.lat || !place.location.lng) {
-                    console.error("地点数据不完整：", place);
-                    return;
-                }
-
                 var position = new TMap.LatLng(place.location.lat, place.location.lng);
 
                 geometries.push({
                     id: 'search_' + index,
                     position: position,
-                    styleId: 'searchResult',
+                    styleId: 'default',
                     properties: {
-                        title: place.title || "",
-                        address: place.address || ""
+                        title: place.title,
+                        address: place.address
                     }
                 });
             });
 
-            console.log("创建几何标记：", geometries.length);
-
-            // 创建新的标记点图层 - 使用正确的图标URL
-            if (geometries.length > 0) {
-                try {
-                    var searchResultMarker = new TMap.MultiMarker({
-                        map: map,
-                        styles: {
-                            "searchResult": new TMap.MarkerStyle({
-                                width: 25,
-                                height: 35,
-                                anchor: { x: 12.5, y: 35 },
-                                src: markerIconSearch
-                            })
-                        },
-                        geometries: geometries
-                    });
-
-                    // 添加点击事件
-                    searchResultMarker.on('click', function(evt) {
-                        var properties = evt.geometry.properties;
-                        var position = evt.geometry.position;
-
-                        // 显示信息窗口
-                        showInfoWindow(position, properties.title, properties.address);
-
-                        // 更新当前选中标记
-                        marker.updateGeometries([{
-                            id: 'current',
-                            position: position,
-                            styleId: 'selected'
-                        }]);
-                    });
-
-                    // 保存到搜索标记数组
-                    searchMarkers.push(searchResultMarker);
-                    console.log("标记创建成功");
-                } catch (error) {
-                    console.error("创建标记时出错：", error);
-                }
-            }
-        }
-
-        // 清除搜索结果标记
-        function clearSearchMarkers() {
-            searchMarkers.forEach(function(markerLayer) {
-                markerLayer.setMap(null);
+            // 创建标记图层 - 使用蓝色水滴图标
+            var resultMarker = new TMap.MultiMarker({
+                map: map,
+                styles: {
+                    "default": new TMap.MarkerStyle({
+                        width: 25,
+                        height: 35,
+                        anchor: { x: 12.5, y: 35 },
+                        src: markerIconBlue // 使用蓝色图标
+                    })
+                },
+                geometries: geometries
             });
-            searchMarkers = [];
-        }
 
-        // 调整地图视野以包含所有结果
-        function fitMapToBounds(places) {
-            if (!places || places.length === 0) return;
+            // 添加点击事件
+            resultMarker.on('click', function(evt) {
+                var position = evt.geometry.position;
+                var props = evt.geometry.properties;
 
-            // 如果只有一个结果，直接定位到该位置
+                // 使用正确的标题和地址信息
+                showInfoWindow(position, props.title, props.address);
+
+                // 更新当前标记
+                marker.updateGeometries([{
+                    id: 'current',
+                    position: position,
+                    styleId: 'default'
+                }]);
+            });
+
+            // 保存到标记数组用于后续清除
+            searchMarkers.push(resultMarker);
+
+            // 调整地图视野以包含所有标记
             if (places.length === 1) {
-                var position = new TMap.LatLng(places[0].location.lat, places[0].location.lng);
-                map.setCenter(position);
+                // 单个结果直接定位
+                map.setCenter(geometries[0].position);
                 map.setZoom(16);
-                return;
-            }
 
-            // 计算包含所有结果的视野范围
-            var bounds = new TMap.LatLngBounds();
-            places.forEach(function(place) {
-                bounds.extend(new TMap.LatLng(place.location.lat, place.location.lng));
-            });
-
-            // 设置地图视野
-            map.fitBounds(bounds, {
-                padding: 100  // 设置边距，避免标记点太靠近边缘
-            });
-        }
-
-        // 添加用户定位功能
-        function locateUser() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const userPosition = new TMap.LatLng(position.coords.latitude, position.coords.longitude);
-                        map.setCenter(userPosition);
-                        marker.updateGeometries([{
-                            id: 'current',
-                            position: userPosition,
-                            styleId: 'selected'
-                        }]);
-                    },
-                    (error) => {
-                        UIkit.notification({
-                            message: '无法获取您的位置，请检查位置权限',
-                            status: 'warning',
-                            pos: 'top-center',
-                            timeout: 3000
-                        });
-                    }
+                // 自动打开信息窗口
+                showInfoWindow(
+                    geometries[0].position,
+                    places[0].title,
+                    places[0].address
                 );
             } else {
+                // 多个结果时调整视野包含所有标记
+                var bounds = new TMap.LatLngBounds();
+                geometries.forEach(function(geo) {
+                    bounds.extend(geo.position);
+                });
+                map.fitBounds(bounds);
+
+                // 显示提示
                 UIkit.notification({
-                    message: '您的浏览器不支持地理定位',
-                    status: 'danger',
+                    message: `找到 ${places.length} 个结果，请点击标记查看详情`,
+                    status: 'success',
                     pos: 'top-center',
                     timeout: 3000
                 });
             }
         }
 
-        // 添加历史记录功能
-        function saveSearchHistory(item) {
-            let history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-            // 避免重复添加
-            history = history.filter(h => h.title !== item.title);
-            history.unshift(item);
-            // 最多保存10条记录
-            if (history.length > 10) history.pop();
-            localStorage.setItem('searchHistory', JSON.stringify(history));
-        }
-
-        function showSearchHistory() {
-            const history = JSON.parse(localStorage.getItem('searchHistory') || '[]');
-            if (history.length > 0) {
-                // 在地图上显示历史记录标记
-                showMultipleMarkers(history);
-                fitMapToBounds(history);
-            }
+        // 清除搜索标记
+        function clearSearchMarkers() {
+            searchMarkers.forEach(function(marker) {
+                marker.setMap(null);
+            });
+            searchMarkers = [];
         }
 
         // 初始化地图
