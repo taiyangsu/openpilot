@@ -7,6 +7,7 @@ import socket
 import struct
 import threading
 import time
+import traceback
 import zmq
 from datetime import datetime
 
@@ -14,6 +15,11 @@ import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
+try:
+  from selfdrive.car.car_helpers import interfaces
+  HAS_CAR_INTERFACES = True
+except ImportError:
+  HAS_CAR_INTERFACES = False
 
 class CommaAssist:
   def __init__(self):
@@ -34,8 +40,44 @@ class CommaAssist:
     self.ip_address = "0.0.0.0"
     self.is_running = True
 
+    # 获取车辆信息
+    self.car_info = {}
+    self.load_car_info()
+
     # 启动广播线程
     threading.Thread(target=self.broadcast_data).start()
+
+  def load_car_info(self):
+    """加载车辆基本信息"""
+    try:
+      # 获取车辆型号信息
+      car_name = self.params.get("CarName", encoding='utf8')
+      self.car_info["car_name"] = car_name if car_name else "Unknown"
+
+      # 尝试获取车辆规格信息
+      if HAS_CAR_INTERFACES and car_name:
+        for interface in interfaces:
+          try:
+            if car_name in interface.CHECKSUM["pt"]:
+              platform = interface
+              self.car_info["car_fingerprint"] = platform.config.platform_str
+
+              # 获取车辆规格参数
+              specs = platform.config.specs
+              if specs:
+                if hasattr(specs, 'mass'):
+                  self.car_info["mass"] = specs.mass
+                if hasattr(specs, 'wheelbase'):
+                  self.car_info["wheelbase"] = specs.wheelbase
+                if hasattr(specs, 'steerRatio'):
+                  self.car_info["steerRatio"] = specs.steerRatio
+              break
+          except Exception as e:
+            print(f"加载车辆接口异常: {e}")
+
+    except Exception as e:
+      print(f"加载车辆信息失败: {e}")
+      traceback.print_exc()
 
   def get_broadcast_address(self):
     """获取广播地址"""
@@ -102,6 +144,15 @@ class CommaAssist:
         "altitude": 0,
         "accuracy": 0,
         "gps_valid": False
+      },
+      "car_info": {
+        "basic": {
+          "car_model": self.car_info.get("car_name", "Unknown"),
+          "fingerprint": self.car_info.get("car_fingerprint", "Unknown"),
+          "weight": f"{self.car_info.get('mass', 0):.0f} kg" if 'mass' in self.car_info else "Unknown",
+          "wheelbase": f"{self.car_info.get('wheelbase', 0):.3f} m" if 'wheelbase' in self.car_info else "Unknown",
+          "steering_ratio": f"{self.car_info.get('steerRatio', 0):.1f}" if 'steerRatio' in self.car_info else "Unknown"
+        }
       }
     }
 
@@ -133,23 +184,162 @@ class CommaAssist:
     # 安全地获取车辆信息
     try:
       if self.sm.updated['carState'] and self.sm.valid['carState']:
-        car_state = self.sm['carState']
+        CS = self.sm['carState']
 
-        message["car"]["speed"] = getattr(car_state, 'vEgo', 0) * 3.6  # m/s转km/h
-        message["car"]["gear_shifter"] = str(getattr(car_state, 'gearShifter', "unknown"))
-        message["car"]["steering_angle"] = getattr(car_state, 'steeringAngleDeg', 0)
-        message["car"]["steering_torque"] = getattr(car_state, 'steeringTorque', 0)
-        message["car"]["brake_pressed"] = getattr(car_state, 'brakePressed', False)
-        message["car"]["gas_pressed"] = getattr(car_state, 'gasPressed', False)
-        message["car"]["door_open"] = getattr(car_state, 'doorOpen', False)
-        message["car"]["left_blinker"] = getattr(car_state, 'leftBlinker', False)
-        message["car"]["right_blinker"] = getattr(car_state, 'rightBlinker', False)
+        # 基本车辆信息
+        message["car"]["speed"] = getattr(CS, 'vEgo', 0) * 3.6  # m/s转km/h
+        message["car"]["gear_shifter"] = str(getattr(CS, 'gearShifter', "unknown"))
+        message["car"]["steering_angle"] = getattr(CS, 'steeringAngleDeg', 0)
+        message["car"]["steering_torque"] = getattr(CS, 'steeringTorque', 0)
+        message["car"]["brake_pressed"] = getattr(CS, 'brakePressed', False)
+        message["car"]["gas_pressed"] = getattr(CS, 'gasPressed', False)
+        message["car"]["door_open"] = getattr(CS, 'doorOpen', False)
+        message["car"]["left_blinker"] = getattr(CS, 'leftBlinker', False)
+        message["car"]["right_blinker"] = getattr(CS, 'rightBlinker', False)
+
+        # 扩展的车辆状态信息
+        is_car_started = getattr(CS, 'vEgo', 0) > 0.1
+        is_car_engaged = False
+
+        # 详细车辆信息
+        car_details = {}
+
+        # 车辆状态
+        status = {
+          "running_status": "Moving" if is_car_started else "Stopped",
+          "door_open": getattr(CS, 'doorOpen', False),
+          "seatbelt_unlatched": getattr(CS, 'seatbeltUnlatched', False),
+        }
+
+        # 引擎信息
+        engine_info = {}
+        if hasattr(CS, 'engineRpm') and CS.engineRpm > 0:
+          engine_info["rpm"] = f"{CS.engineRpm:.0f}"
+        car_details["engine"] = engine_info
+
+        # 巡航控制
+        cruise_info = {}
+        if hasattr(CS, 'cruiseState'):
+          is_car_engaged = getattr(CS.cruiseState, 'enabled', False)
+          cruise_info["enabled"] = getattr(CS.cruiseState, 'enabled', False)
+          cruise_info["available"] = getattr(CS.cruiseState, 'available', False)
+          cruise_info["speed"] = getattr(CS.cruiseState, 'speed', 0) * 3.6
+
+          if hasattr(CS, 'pcmCruiseGap'):
+            cruise_info["gap"] = CS.pcmCruiseGap
+
+        status["cruise_engaged"] = is_car_engaged
+        car_details["cruise"] = cruise_info
+
+        # 车轮速度
+        wheel_speeds = {}
+        if hasattr(CS, 'wheelSpeeds'):
+          ws = CS.wheelSpeeds
+          wheel_speeds["fl"] = getattr(ws, 'fl', 0) * 3.6
+          wheel_speeds["fr"] = getattr(ws, 'fr', 0) * 3.6
+          wheel_speeds["rl"] = getattr(ws, 'rl', 0) * 3.6
+          wheel_speeds["rr"] = getattr(ws, 'rr', 0) * 3.6
+        car_details["wheel_speeds"] = wheel_speeds
+
+        # 方向盘信息
+        steering = {
+          "angle": getattr(CS, 'steeringAngleDeg', 0),
+          "torque": getattr(CS, 'steeringTorque', 0),
+        }
+        if hasattr(CS, 'steeringRateDeg'):
+          steering["rate"] = CS.steeringRateDeg
+        car_details["steering"] = steering
+
+        # 踏板状态
+        pedals = {
+          "gas_pressed": getattr(CS, 'gasPressed', False),
+          "brake_pressed": getattr(CS, 'brakePressed', False),
+        }
+        if hasattr(CS, 'gas'):
+          pedals["throttle_position"] = CS.gas * 100
+        if hasattr(CS, 'brake'):
+          pedals["brake_pressure"] = CS.brake * 100
+        car_details["pedals"] = pedals
+
+        # 安全系统
+        safety_systems = {}
+        if hasattr(CS, 'espDisabled'):
+          safety_systems["esp_disabled"] = CS.espDisabled
+        if hasattr(CS, 'absActive'):
+          safety_systems["abs_active"] = CS.absActive
+        if hasattr(CS, 'tcsActive'):
+          safety_systems["tcs_active"] = CS.tcsActive
+        if hasattr(CS, 'collisionWarning'):
+          safety_systems["collision_warning"] = CS.collisionWarning
+        car_details["safety_systems"] = safety_systems
+
+        # 车门状态
+        doors = {
+          "driver": getattr(CS, 'doorOpen', False)
+        }
+        if hasattr(CS, 'passengerDoorOpen'):
+          doors["passenger"] = CS.passengerDoorOpen
+        if hasattr(CS, 'trunkOpen'):
+          doors["trunk"] = CS.trunkOpen
+        if hasattr(CS, 'hoodOpen'):
+          doors["hood"] = CS.hoodOpen
+        car_details["doors"] = doors
+
+        # 灯光状态
+        lights = {
+          "left_blinker": getattr(CS, 'leftBlinker', False),
+          "right_blinker": getattr(CS, 'rightBlinker', False),
+        }
+        if hasattr(CS, 'genericToggle'):
+          lights["high_beam"] = CS.genericToggle
+        if hasattr(CS, 'lowBeamOn'):
+          lights["low_beam"] = CS.lowBeamOn
+        car_details["lights"] = lights
+
+        # 盲点监测
+        blind_spot = {}
+        if hasattr(CS, 'leftBlindspot'):
+          blind_spot["left"] = CS.leftBlindspot
+        if hasattr(CS, 'rightBlindspot'):
+          blind_spot["right"] = CS.rightBlindspot
+        if blind_spot:
+          car_details["blind_spot"] = blind_spot
+
+        # 其他可选信息
+        other_info = {}
+        if hasattr(CS, 'outsideTemp'):
+          other_info["outside_temp"] = CS.outsideTemp
+        if hasattr(CS, 'fuelGauge'):
+          other_info["fuel_range"] = CS.fuelGauge
+        if hasattr(CS, 'odometer'):
+          other_info["odometer"] = CS.odometer
+        if hasattr(CS, 'instantFuelConsumption'):
+          other_info["fuel_consumption"] = CS.instantFuelConsumption
+        if other_info:
+          car_details["other"] = other_info
+
+        # 更新状态和详细信息
+        message["car_info"]["status"] = status
+        message["car_info"]["details"] = car_details
 
       if self.sm.updated['controlsState'] and self.sm.valid['controlsState']:
         controls_state = self.sm['controlsState']
         message["car"]["cruise_speed"] = getattr(controls_state, 'vCruise', 0)
+
+        # 额外的控制状态信息
+        controls_info = {}
+        if hasattr(controls_state, 'enabled'):
+          controls_info["enabled"] = controls_state.enabled
+        if hasattr(controls_state, 'active'):
+          controls_info["active"] = controls_state.active
+        if hasattr(controls_state, 'alertText1'):
+          controls_info["alert_text"] = controls_state.alertText1
+        if controls_info:
+          message["car_info"]["controls"] = controls_info
+
     except Exception as e:
       print(f"获取车辆信息出错: {e}")
+      traceback.print_exc()
 
     # 安全地获取GPS位置信息
     try:
@@ -186,7 +376,8 @@ class CommaAssist:
               message["location"]["bearing"] = math.degrees(orientation[2])
 
           # 设置速度信息
-          if hasattr(car_state, 'vEgo'):
+          car_state = self.sm['carState'] if self.sm.valid['carState'] else None
+          if car_state and hasattr(car_state, 'vEgo'):
             message["location"]["speed"] = car_state.vEgo * 3.6
     except Exception as e:
       print(f"获取位置信息出错: {e}")
@@ -250,6 +441,7 @@ class CommaAssist:
         rk.keep_time()
       except Exception as e:
         print(f"广播数据错误: {e}")
+        traceback.print_exc()
         time.sleep(1)
 
 def main():

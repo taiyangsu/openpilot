@@ -216,6 +216,15 @@ HTML_TEMPLATE = """
                                 </div>
                             </div>
                         </div>
+
+                        <div class="card">
+                            <div class="card-header">详细车辆信息</div>
+                            <div class="card-body">
+                                <div id="detailed-vehicle-info-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="col-md-6">
@@ -541,6 +550,165 @@ HTML_TEMPLATE = """
             document.getElementById('navigation-container').innerHTML = html;
         }
 
+        function updateDetailedVehicleInfo(carInfo) {
+            if (!carInfo || !carInfo.details) {
+                document.getElementById('detailed-vehicle-info-container').innerHTML =
+                    '<div class="alert alert-info">没有详细车辆信息</div>';
+                return;
+            }
+
+            let html = '';
+
+            // 基本信息
+            if (carInfo.basic) {
+                html += '<h5>基本信息</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('车型', carInfo.basic.car_model);
+                html += formatDataRow('车辆指纹', carInfo.basic.fingerprint);
+                html += formatDataRow('车重', carInfo.basic.weight);
+                html += formatDataRow('轴距', carInfo.basic.wheelbase);
+                html += formatDataRow('转向比', carInfo.basic.steering_ratio);
+                html += '</div>';
+            }
+
+            // 巡航信息
+            if (carInfo.details.cruise) {
+                const cruise = carInfo.details.cruise;
+                html += '<h5>巡航控制</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('巡航状态', cruise.enabled ? '开启' : '关闭', cruise.enabled ? 'bg-success' : 'bg-secondary');
+                html += formatDataRow('自适应巡航', cruise.available ? '可用' : '不可用');
+                html += formatDataRow('设定速度', `${(cruise.speed || 0).toFixed(1)} km/h`, 'bg-info');
+                if (cruise.gap !== undefined) {
+                    html += formatDataRow('跟车距离', cruise.gap);
+                }
+                html += '</div>';
+            }
+
+            // 车轮速度
+            if (carInfo.details.wheel_speeds) {
+                const ws = carInfo.details.wheel_speeds;
+                html += '<h5>车轮速度</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('左前', `${(ws.fl || 0).toFixed(1)} km/h`);
+                html += formatDataRow('右前', `${(ws.fr || 0).toFixed(1)} km/h`);
+                html += formatDataRow('左后', `${(ws.rl || 0).toFixed(1)} km/h`);
+                html += formatDataRow('右后', `${(ws.rr || 0).toFixed(1)} km/h`);
+                html += '</div>';
+            }
+
+            // 方向盘信息
+            if (carInfo.details.steering) {
+                const steering = carInfo.details.steering;
+                html += '<h5>方向盘系统</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('方向盘角度', `${(steering.angle || 0).toFixed(1)}°`);
+                html += formatDataRow('方向盘力矩', `${(steering.torque || 0).toFixed(1)} Nm`);
+                if (steering.rate !== undefined) {
+                    html += formatDataRow('转向速率', `${steering.rate.toFixed(1)}°/s`);
+                }
+                html += '</div>';
+            }
+
+            // 安全系统
+            if (carInfo.details.safety_systems && Object.keys(carInfo.details.safety_systems).length > 0) {
+                const safety = carInfo.details.safety_systems;
+                html += '<h5>安全系统</h5>';
+                html += '<div class="mb-3">';
+                if (safety.esp_disabled !== undefined) {
+                    html += formatDataRow('ESP状态', safety.esp_disabled ? '禁用' : '正常', safety.esp_disabled ? 'bg-warning' : 'bg-success');
+                }
+                if (safety.abs_active !== undefined) {
+                    html += formatDataRow('ABS状态', safety.abs_active ? '激活' : '正常', safety.abs_active ? 'bg-warning' : 'bg-success');
+                }
+                if (safety.tcs_active !== undefined) {
+                    html += formatDataRow('牵引力控制', safety.tcs_active ? '激活' : '正常', safety.tcs_active ? 'bg-warning' : 'bg-success');
+                }
+                if (safety.collision_warning !== undefined) {
+                    html += formatDataRow('碰撞警告', safety.collision_warning ? '警告' : '正常', safety.collision_warning ? 'bg-danger' : 'bg-success');
+                }
+                html += '</div>';
+            }
+
+            // 车门信息
+            if (carInfo.details.doors && Object.keys(carInfo.details.doors).length > 0) {
+                const doors = carInfo.details.doors;
+                html += '<h5>车门状态</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('驾驶员门', doors.driver ? '打开' : '关闭', doors.driver ? 'bg-danger' : 'bg-success');
+                if (doors.passenger !== undefined) {
+                    html += formatDataRow('乘客门', doors.passenger ? '打开' : '关闭', doors.passenger ? 'bg-danger' : 'bg-success');
+                }
+                if (doors.trunk !== undefined) {
+                    html += formatDataRow('行李箱', doors.trunk ? '打开' : '关闭', doors.trunk ? 'bg-danger' : 'bg-success');
+                }
+                if (doors.hood !== undefined) {
+                    html += formatDataRow('引擎盖', doors.hood ? '打开' : '关闭', doors.hood ? 'bg-danger' : 'bg-success');
+                }
+                if (carInfo.status && carInfo.status.seatbelt_unlatched !== undefined) {
+                    html += formatDataRow('安全带', carInfo.status.seatbelt_unlatched ? '未系' : '已系', carInfo.status.seatbelt_unlatched ? 'bg-danger' : 'bg-success');
+                }
+                html += '</div>';
+            }
+
+            // 灯光状态
+            if (carInfo.details.lights && Object.keys(carInfo.details.lights).length > 0) {
+                const lights = carInfo.details.lights;
+                html += '<h5>灯光状态</h5>';
+                html += '<div class="mb-3">';
+                html += formatDataRow('左转向灯', lights.left_blinker ? '开启' : '关闭', lights.left_blinker ? 'bg-warning' : 'bg-secondary');
+                html += formatDataRow('右转向灯', lights.right_blinker ? '开启' : '关闭', lights.right_blinker ? 'bg-warning' : 'bg-secondary');
+                if (lights.high_beam !== undefined) {
+                    html += formatDataRow('远光灯', lights.high_beam ? '开启' : '关闭', lights.high_beam ? 'bg-info' : 'bg-secondary');
+                }
+                if (lights.low_beam !== undefined) {
+                    html += formatDataRow('近光灯', lights.low_beam ? '开启' : '关闭', lights.low_beam ? 'bg-info' : 'bg-secondary');
+                }
+                html += '</div>';
+            }
+
+            // 盲点监测
+            if (carInfo.details.blind_spot && Object.keys(carInfo.details.blind_spot).length > 0) {
+                const bs = carInfo.details.blind_spot;
+                html += '<h5>盲点监测</h5>';
+                html += '<div class="mb-3">';
+                if (bs.left !== undefined) {
+                    html += formatDataRow('左侧', bs.left ? '检测到车辆' : '无车辆', bs.left ? 'bg-warning' : 'bg-success');
+                }
+                if (bs.right !== undefined) {
+                    html += formatDataRow('右侧', bs.right ? '检测到车辆' : '无车辆', bs.right ? 'bg-warning' : 'bg-success');
+                }
+                html += '</div>';
+            }
+
+            // 其他信息
+            if (carInfo.details.other && Object.keys(carInfo.details.other).length > 0) {
+                const other = carInfo.details.other;
+                html += '<h5>其他信息</h5>';
+                html += '<div class="mb-3">';
+                if (other.outside_temp !== undefined) {
+                    html += formatDataRow('车外温度', `${other.outside_temp.toFixed(1)}°C`);
+                }
+                if (other.fuel_range !== undefined) {
+                    html += formatDataRow('续航里程', `${other.fuel_range.toFixed(1)} km`);
+                }
+                if (other.odometer !== undefined) {
+                    html += formatDataRow('里程表', `${other.odometer.toFixed(1)} km`);
+                }
+                if (other.fuel_consumption !== undefined) {
+                    html += formatDataRow('油耗', `${other.fuel_consumption.toFixed(1)} L/100km`);
+                }
+                html += '</div>';
+            }
+
+            // 如果没有任何详细信息
+            if (html === '') {
+                html = '<div class="alert alert-info">没有获取到详细车辆信息</div>';
+            }
+
+            document.getElementById('detailed-vehicle-info-container').innerHTML = html;
+        }
+
         function fetchData() {
             fetch('/api/data')
                 .then(response => response.json())
@@ -585,6 +753,7 @@ HTML_TEMPLATE = """
                     updateSystemResources(deviceData);
                     updateGpsInfo(locationData);
                     updateNavigation(navData);
+                    updateDetailedVehicleInfo(data.data.car_info);
 
                     // 更新原始数据
                     document.getElementById('raw-data').textContent = JSON.stringify(data.data, null, 2);
