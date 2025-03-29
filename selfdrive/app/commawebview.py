@@ -3,9 +3,10 @@ import json
 import socket
 import threading
 import time
+import traceback
 from datetime import datetime
 import argparse
-from flask import Flask, render_template_string, jsonify
+from flask import Flask, render_template_string, jsonify, render_template
 
 class CommaWebListener:
     def __init__(self, port=8088):
@@ -48,6 +49,7 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CommaAssist 数据监视器</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,7 +58,7 @@ HTML_TEMPLATE = """
             color: #333;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         .header {
@@ -86,39 +88,47 @@ HTML_TEMPLATE = """
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-            padding: 15px;
         }
         .card-header {
             font-weight: bold;
             font-size: 18px;
             border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 10px;
+            padding: 15px;
+            background-color: #f8f9fa;
         }
-        .section {
-            margin-bottom: 10px;
+        .card-body {
+            padding: 15px;
         }
         .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -10px;
+            margin-bottom: 10px;
         }
-        .col {
-            flex: 1;
-            padding: 0 10px;
-            min-width: 300px;
+        .col-6 strong {
+            color: #666;
         }
-        .data-item {
-            margin-bottom: 5px;
+        .badge {
+            font-size: 100%;
         }
-        .battery-good {
-            color: #28a745;
+        .bg-primary {
+            background-color: #007bff;
         }
-        .battery-warning {
-            color: #ffc107;
+        .bg-success {
+            background-color: #28a745;
         }
-        .battery-danger {
-            color: #dc3545;
+        .bg-danger {
+            background-color: #dc3545;
+        }
+        .bg-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .bg-info {
+            background-color: #17a2b8;
+        }
+        .nav-tabs {
+            margin-bottom: 20px;
+        }
+        .tab-content {
+            padding-top: 20px;
         }
         .map-container {
             height: 300px;
@@ -127,28 +137,19 @@ HTML_TEMPLATE = """
             margin-top: 10px;
             border-radius: 5px;
         }
-        @media (max-width: 768px) {
-            .row {
-                flex-direction: column;
-            }
-        }
-        .refresh-button {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-bottom: 10px;
-            float: right;
-        }
-        .refresh-button:hover {
-            background-color: #0069d9;
+        .controls {
+            margin-bottom: 20px;
         }
         .auto-refresh {
             display: inline-block;
             margin-right: 15px;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -166,63 +167,172 @@ HTML_TEMPLATE = """
             <label class="auto-refresh">
                 <input type="checkbox" id="auto-refresh" checked> 自动刷新 (1秒)
             </label>
-            <button class="refresh-button" onclick="fetchData()">刷新数据</button>
+            <button class="btn btn-primary float-end" onclick="fetchData()">刷新数据</button>
             <div style="clear: both;"></div>
         </div>
 
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header">设备信息</div>
-                    <div class="section">
-                        <div class="data-item" id="device-ip">IP: --</div>
-                        <div class="data-item" id="device-battery">电池: --</div>
-                        <div class="data-item" id="device-system">系统: --</div>
-                    </div>
-                </div>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="car-tab" data-bs-toggle="tab" data-bs-target="#car-tab-pane" type="button" role="tab">
+                    车辆信息
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="device-tab" data-bs-toggle="tab" data-bs-target="#device-tab-pane" type="button" role="tab">
+                    设备信息
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="location-tab" data-bs-toggle="tab" data-bs-target="#location-tab-pane" type="button" role="tab">
+                    位置信息
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="json-tab" data-bs-toggle="tab" data-bs-target="#json-tab-pane" type="button" role="tab">
+                    原始数据
+                </button>
+            </li>
+        </ul>
 
-                <div class="card">
-                    <div class="card-header">车辆信息</div>
-                    <div class="section">
-                        <div class="data-item" id="car-speed">速度: -- km/h</div>
-                        <div class="data-item" id="car-steering">方向盘: --</div>
-                        <div class="data-item" id="car-status">状态: --</div>
-                        <div class="data-item" id="car-signals">信号: --</div>
+        <div class="tab-content" id="myTabContent">
+            <!-- 车辆信息标签页 -->
+            <div class="tab-pane fade show active" id="car-tab-pane" role="tabpanel" aria-labelledby="car-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">基本车辆信息</div>
+                            <div class="card-body">
+                                <div id="vehicle-status-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">方向盘与控制系统</div>
+                            <div class="card-body">
+                                <div id="steering-system-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">踏板与制动系统</div>
+                            <div class="card-body">
+                                <div id="pedal-status-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">车门与信号灯</div>
+                            <div class="card-body">
+                                <div id="door-lights-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">巡航控制</div>
+                            <div class="card-body">
+                                <div id="cruise-info-container">
+                                    <div class="alert alert-warning">等待车辆数据...</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col">
+            <!-- 设备信息标签页 -->
+            <div class="tab-pane fade" id="device-tab-pane" role="tabpanel" aria-labelledby="device-tab" tabindex="0">
                 <div class="card">
-                    <div class="card-header">GPS位置</div>
-                    <div class="section">
-                        <div class="data-item" id="location-coords">位置: --</div>
-                        <div class="data-item" id="location-details">详情: --</div>
+                    <div class="card-header">设备状态</div>
+                    <div class="card-body">
+                        <div id="device-info-container">
+                            <div class="alert alert-warning">等待设备数据...</div>
+                        </div>
                     </div>
-                    <div id="map" class="map-container"></div>
                 </div>
 
                 <div class="card">
-                    <div class="card-header">导航信息</div>
-                    <div class="section">
-                        <div class="data-item" id="nav-distance">剩余距离: --</div>
-                        <div class="data-item" id="nav-time">剩余时间: --</div>
-                        <div class="data-item" id="nav-speed">限速: -- km/h</div>
-                        <div class="data-item" id="nav-maneuver">下一个动作: --</div>
+                    <div class="card-header">系统资源</div>
+                    <div class="card-body">
+                        <div id="system-resources-container">
+                            <div class="alert alert-warning">等待设备数据...</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <div class="card-header">数据详情</div>
-            <pre id="raw-data" style="overflow-x: auto; white-space: pre-wrap;"></pre>
+            <!-- 位置信息标签页 -->
+            <div class="tab-pane fade" id="location-tab-pane" role="tabpanel" aria-labelledby="location-tab" tabindex="0">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">GPS位置</div>
+                            <div class="card-body">
+                                <div id="gps-info-container">
+                                    <div class="alert alert-warning">等待GPS数据...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">导航信息</div>
+                            <div class="card-body">
+                                <div id="navigation-container">
+                                    <div class="alert alert-warning">等待导航数据...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">地图</div>
+                            <div class="card-body">
+                                <div id="map" class="map-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 原始数据标签页 -->
+            <div class="tab-pane fade" id="json-tab-pane" role="tabpanel" aria-labelledby="json-tab" tabindex="0">
+                <div class="card">
+                    <div class="card-header">原始JSON数据</div>
+                    <div class="card-body">
+                        <pre id="raw-data">等待数据...</pre>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let map, marker;
         let lastValidLatLng = null;
+        let activeTab = 'car';  // 默认显示车辆信息标签
+
+        // 根据车辆状态自动切换标签
+        function autoSwitchTabs(isCarActive) {
+            // 如果车辆启动，切换到车辆标签；否则切换到设备标签
+            if (isCarActive && activeTab !== 'car') {
+                document.getElementById('car-tab').click();
+                activeTab = 'car';
+            } else if (!isCarActive && activeTab === 'car') {
+                document.getElementById('device-tab').click();
+                activeTab = 'device';
+            }
+        }
 
         function initMap() {
             if (typeof google !== 'undefined') {
@@ -260,13 +370,184 @@ HTML_TEMPLATE = """
             }
         }
 
+        function formatDataRow(label, value, badgeClass = null) {
+            let valueHtml = value;
+            if (badgeClass) {
+                valueHtml = `<span class="badge ${badgeClass}">${value}</span>`;
+            }
+
+            return `
+                <div class="row">
+                    <div class="col-6">
+                        <strong>${label}</strong>
+                    </div>
+                    <div class="col-6">
+                        ${valueHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateVehicleStatus(car) {
+            const speed = car.speed || 0;
+            const isCarMoving = speed > 1.0;
+
+            let html = '';
+
+            html += formatDataRow('运行状态', isCarMoving ? '行驶中' : '静止', isCarMoving ? 'bg-success' : 'bg-secondary');
+            html += formatDataRow('当前速度', `${speed.toFixed(1)} km/h`, 'bg-primary');
+            html += formatDataRow('档位', car.gear_shifter || 'Unknown');
+
+            document.getElementById('vehicle-status-container').innerHTML = html;
+
+            return isCarMoving;
+        }
+
+        function updateSteeringSystem(car) {
+            let html = '';
+
+            html += formatDataRow('方向盘角度', `${(car.steering_angle || 0).toFixed(1)}°`);
+            html += formatDataRow('转向力矩', `${(car.steering_torque || 0).toFixed(1)} Nm`);
+
+            let blinkerStatus = '';
+            if (car.left_blinker && car.right_blinker) blinkerStatus = '双闪';
+            else if (car.left_blinker) blinkerStatus = '左转';
+            else if (car.right_blinker) blinkerStatus = '右转';
+            else blinkerStatus = '关闭';
+
+            html += formatDataRow('转向灯', blinkerStatus);
+
+            document.getElementById('steering-system-container').innerHTML = html;
+        }
+
+        function updatePedalStatus(car) {
+            let html = '';
+
+            const brakeStatus = car.brake_pressed ? '已踩下' : '释放';
+            const gasStatus = car.gas_pressed ? '已踩下' : '释放';
+
+            html += formatDataRow('制动踏板', brakeStatus, car.brake_pressed ? 'bg-danger' : 'bg-secondary');
+            html += formatDataRow('油门踏板', gasStatus, car.gas_pressed ? 'bg-success' : 'bg-secondary');
+
+            document.getElementById('pedal-status-container').innerHTML = html;
+        }
+
+        function updateDoorLights(car) {
+            let html = '';
+
+            const doorStatus = car.door_open ? '打开' : '关闭';
+            html += formatDataRow('车门状态', doorStatus, car.door_open ? 'bg-danger' : 'bg-success');
+
+            html += formatDataRow('左转向灯', car.left_blinker ? '开启' : '关闭', car.left_blinker ? 'bg-warning' : 'bg-secondary');
+            html += formatDataRow('右转向灯', car.right_blinker ? '开启' : '关闭', car.right_blinker ? 'bg-warning' : 'bg-secondary');
+
+            document.getElementById('door-lights-container').innerHTML = html;
+        }
+
+        function updateCruiseInfo(car) {
+            let html = '';
+
+            html += formatDataRow('巡航速度', `${(car.cruise_speed || 0).toFixed(1)} km/h`, 'bg-info');
+
+            document.getElementById('cruise-info-container').innerHTML = html;
+        }
+
+        function updateDeviceInfo(device) {
+            let html = '';
+
+            html += formatDataRow('设备IP', device.ip || 'Unknown');
+
+            const battery = device.battery || {};
+            const batPercent = battery.percent || 0;
+            let batClass = 'bg-danger';
+            if (batPercent > 50) batClass = 'bg-success';
+            else if (batPercent > 20) batClass = 'bg-warning';
+
+            html += formatDataRow('电池电量', `${batPercent}%`, batClass);
+            html += formatDataRow('电池电压', `${(battery.voltage || 0).toFixed(2)} V`);
+            html += formatDataRow('电池电流', `${(battery.status || 0).toFixed(2)} A`);
+
+            document.getElementById('device-info-container').innerHTML = html;
+        }
+
+        function updateSystemResources(device) {
+            let html = '';
+
+            let memClass = 'bg-success';
+            if (device.mem_usage > 80) memClass = 'bg-danger';
+            else if (device.mem_usage > 60) memClass = 'bg-warning';
+
+            html += formatDataRow('内存使用', `${(device.mem_usage || 0).toFixed(1)}%`, memClass);
+            html += formatDataRow('CPU温度', `${(device.cpu_temp || 0).toFixed(1)}°C`);
+            html += formatDataRow('存储空间', `剩余 ${(device.free_space || 0).toFixed(1)}%`);
+
+            document.getElementById('system-resources-container').innerHTML = html;
+        }
+
+        function updateGpsInfo(location) {
+            if (!location.gps_valid) {
+                document.getElementById('gps-info-container').innerHTML =
+                    '<div class="alert alert-warning">GPS信号无效或未获取</div>';
+                return;
+            }
+
+            let html = '';
+
+            html += formatDataRow('纬度', location.latitude.toFixed(6));
+            html += formatDataRow('经度', location.longitude.toFixed(6));
+            html += formatDataRow('方向', `${location.bearing.toFixed(1)}°`);
+            html += formatDataRow('海拔', `${location.altitude.toFixed(1)} m`);
+            html += formatDataRow('GPS精度', `${location.accuracy.toFixed(1)} m`);
+            html += formatDataRow('GPS速度', `${location.speed.toFixed(1)} km/h`, 'bg-primary');
+
+            document.getElementById('gps-info-container').innerHTML = html;
+
+            // 更新地图
+            updateMap(location.latitude, location.longitude, location.bearing);
+        }
+
+        function updateNavigation(nav) {
+            if (!nav || Object.keys(nav).length === 0) {
+                document.getElementById('navigation-container').innerHTML =
+                    '<div class="alert alert-info">没有活动的导航</div>';
+                return;
+            }
+
+            let html = '';
+
+            // 格式化距离显示
+            const distRemaining = nav.distance_remaining || 0;
+            let distText = '';
+            if (distRemaining > 1000) {
+                distText = `${(distRemaining / 1000).toFixed(1)} km`;
+            } else {
+                distText = `${Math.round(distRemaining)} m`;
+            }
+
+            // 格式化时间显示
+            const timeRemaining = nav.time_remaining || 0;
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+
+            html += formatDataRow('剩余距离', distText, 'bg-info');
+            html += formatDataRow('剩余时间', `${minutes}分${seconds}秒`, 'bg-info');
+            html += formatDataRow('道路限速', `${(nav.speed_limit || 0).toFixed(1)} km/h`, 'bg-danger');
+
+            if (nav.maneuver_distance > 0) {
+                html += formatDataRow('下一动作', nav.maneuver_text, 'bg-warning');
+                html += formatDataRow('动作距离', `${nav.maneuver_distance} m`);
+            }
+
+            document.getElementById('navigation-container').innerHTML = html;
+        }
+
         function fetchData() {
             fetch('/api/data')
                 .then(response => response.json())
                 .then(data => {
                     const statusContainer = document.getElementById('status-container');
 
-                    if (!data || Object.keys(data).length === 0) {
+                    if (!data || !data.data || Object.keys(data.data).length === 0) {
                         statusContainer.className = 'status waiting';
                         statusContainer.textContent = '等待来自comma3的数据...';
                         return;
@@ -283,86 +564,27 @@ HTML_TEMPLATE = """
                     statusContainer.className = 'status connected';
                     statusContainer.textContent = `已连接到 ${data.device_ip || 'Comma3设备'} - 最后更新: ${new Date(data.last_update * 1000).toLocaleTimeString()}`;
 
-                    // 更新设备信息
-                    const device = data.data.device || {};
-                    document.getElementById('device-ip').textContent = `IP: ${device.ip || 'N/A'}`;
+                    // 获取数据
+                    const carData = data.data.car || {};
+                    const deviceData = data.data.device || {};
+                    const locationData = data.data.location || {};
+                    const navData = data.data.navigation || {};
 
-                    const bat = device.battery || {};
-                    const batPercent = bat.percent || 0;
-                    let batClass = 'battery-danger';
-                    if (batPercent > 50) batClass = 'battery-good';
-                    else if (batPercent > 20) batClass = 'battery-warning';
+                    // 先更新车辆状态，并获取车辆是否启动
+                    const isCarActive = updateVehicleStatus(carData);
 
-                    document.getElementById('device-battery').innerHTML =
-                        `电池: <span class="${batClass}">${batPercent}%</span> (${(bat.voltage || 0).toFixed(2)}V, ${(bat.status || 0).toFixed(2)}A)`;
+                    // 根据车辆状态自动切换标签页
+                    autoSwitchTabs(isCarActive);
 
-                    document.getElementById('device-system').textContent =
-                        `CPU温度: ${(device.cpu_temp || 0).toFixed(1)}°C | 内存使用: ${(device.mem_usage || 0).toFixed(1)}% | 剩余空间: ${(device.free_space || 0).toFixed(1)}%`;
-
-                    // 更新车辆信息
-                    const car = data.data.car || {};
-                    document.getElementById('car-speed').textContent =
-                        `当前速度: ${(car.speed || 0).toFixed(1)} km/h | 巡航速度: ${(car.cruise_speed || 0).toFixed(1)} km/h`;
-
-                    document.getElementById('car-steering').textContent =
-                        `方向盘角度: ${(car.steering_angle || 0).toFixed(1)}° | 转向力矩: ${(car.steering_torque || 0).toFixed(1)}`;
-
-                    document.getElementById('car-status').textContent =
-                        `档位: ${car.gear_shifter || 'N/A'} | 制动: ${car.brake_pressed ? '按下' : '释放'} | 油门: ${car.gas_pressed ? '按下' : '释放'}`;
-
-                    let blinkerStr = '';
-                    if (car.left_blinker) blinkerStr += '← ';
-                    if (car.right_blinker) blinkerStr += '→';
-                    document.getElementById('car-signals').textContent =
-                        blinkerStr ? `转向灯: ${blinkerStr}` : '转向灯: 无';
-
-                    // 更新位置信息
-                    const location = data.data.location || {};
-                    if (location.gps_valid) {
-                        document.getElementById('location-coords').textContent =
-                            `位置: 纬度 ${location.latitude.toFixed(6)}, 经度 ${location.longitude.toFixed(6)}`;
-
-                        document.getElementById('location-details').textContent =
-                            `方向: ${location.bearing.toFixed(1)}° | 海拔: ${location.altitude.toFixed(1)}m | 精度: ${location.accuracy.toFixed(1)}m`;
-
-                        // 更新地图
-                        updateMap(location.latitude, location.longitude, location.bearing);
-                    } else {
-                        document.getElementById('location-coords').textContent = 'GPS位置: 无效';
-                        document.getElementById('location-details').textContent = '';
-                    }
-
-                    // 更新导航信息
-                    const nav = data.data.navigation || {};
-                    if (nav && Object.keys(nav).length > 0) {
-                        const distRemaining = nav.distance_remaining || 0;
-                        let distText = '';
-                        if (distRemaining > 1000) {
-                            distText = `${(distRemaining / 1000).toFixed(1)} km`;
-                        } else {
-                            distText = `${Math.round(distRemaining)} m`;
-                        }
-                        document.getElementById('nav-distance').textContent = `剩余距离: ${distText}`;
-
-                        const timeRemaining = nav.time_remaining || 0;
-                        const minutes = Math.floor(timeRemaining / 60);
-                        const seconds = timeRemaining % 60;
-                        document.getElementById('nav-time').textContent = `剩余时间: ${minutes}分${seconds}秒`;
-
-                        document.getElementById('nav-speed').textContent = `限速: ${(nav.speed_limit || 0).toFixed(1)} km/h`;
-
-                        if (nav.maneuver_distance > 0) {
-                            document.getElementById('nav-maneuver').textContent =
-                                `下一个动作: ${nav.maneuver_text} (距离 ${nav.maneuver_distance}m)`;
-                        } else {
-                            document.getElementById('nav-maneuver').textContent = '下一个动作: 无';
-                        }
-                    } else {
-                        document.getElementById('nav-distance').textContent = '剩余距离: --';
-                        document.getElementById('nav-time').textContent = '剩余时间: --';
-                        document.getElementById('nav-speed').textContent = '限速: -- km/h';
-                        document.getElementById('nav-maneuver').textContent = '下一个动作: --';
-                    }
+                    // 更新所有数据区域
+                    updateSteeringSystem(carData);
+                    updatePedalStatus(carData);
+                    updateDoorLights(carData);
+                    updateCruiseInfo(carData);
+                    updateDeviceInfo(deviceData);
+                    updateSystemResources(deviceData);
+                    updateGpsInfo(locationData);
+                    updateNavigation(navData);
 
                     // 更新原始数据
                     document.getElementById('raw-data').textContent = JSON.stringify(data.data, null, 2);
@@ -374,8 +596,20 @@ HTML_TEMPLATE = """
                 });
         }
 
-        // 页面加载完成后执行
+        // 标签页切换处理
         document.addEventListener('DOMContentLoaded', function() {
+            const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabEls.forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    // 更新当前活动标签
+                    const id = event.target.id;
+                    if (id.includes('car')) activeTab = 'car';
+                    else if (id.includes('device')) activeTab = 'device';
+                    else if (id.includes('location')) activeTab = 'location';
+                    else activeTab = 'json';
+                });
+            });
+
             fetchData();
 
             // 设置自动刷新
