@@ -6,32 +6,19 @@
 
 QStringList getCarNames(const QString &carMake) {
   QMap<QString, QString> makeMap;
-  makeMap["acura"] = "honda";
   makeMap["audi"] = "volkswagen";
   makeMap["buick"] = "gm";
   makeMap["cadillac"] = "gm";
   makeMap["chevrolet"] = "gm";
-  makeMap["chrysler"] = "chrysler";
-  makeMap["dodge"] = "chrysler";
   makeMap["ford"] = "ford";
   makeMap["gm"] = "gm";
   makeMap["gmc"] = "gm";
-  makeMap["genesis"] = "hyundai";
   makeMap["honda"] = "honda";
   makeMap["hyundai"] = "hyundai";
-  makeMap["infiniti"] = "nissan";
-  makeMap["jeep"] = "chrysler";
-  makeMap["kia"] = "hyundai";
   makeMap["lexus"] = "toyota";
   makeMap["lincoln"] = "ford";
-  makeMap["man"] = "volkswagen";
   makeMap["mazda"] = "mazda";
-  makeMap["nissan"] = "nissan";
-  makeMap["ram"] = "chrysler";
-  makeMap["seat"] = "volkswagen";
   makeMap["škoda"] = "volkswagen";
-  makeMap["subaru"] = "subaru";
-  makeMap["tesla"] = "tesla";
   makeMap["toyota"] = "toyota";
   makeMap["volkswagen"] = "volkswagen";
 
