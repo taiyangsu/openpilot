@@ -18,13 +18,16 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
 
       # 2. Add the source repositories as remotes and fetch branches
-      - name: Add upstream repository and fetch branches
+      - name: Add upstream repositories and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
           git fetch upstream v8-wip4 v8-wip4-da --no-tags
           
           git remote add mazda_upstream https://github.com/heqichen/qcpilot.git
           git fetch mazda_upstream dev-cpp-selfdrived --no-tags
+
+          git remote add kisapilot_upstream https://github.com/kisapilot/openpilot.git
+          git fetch kisapilot_upstream KisaPilot --no-tags
 
       # 3. Push v8-wip4 branch to your repository
       - name: Push v8-wip4 branch to your repository
@@ -38,8 +41,14 @@ jobs:
           git checkout -B v8-wip4-da upstream/v8-wip4-da
           git push origin v8-wip4-da --force
 
-      # 5. Push dev-cpp-selfdrivedt branch to your repository
+      # 5. Push dev-cpp-selfdrived branch to your repository
       - name: Push dev-cpp-selfdrived branch to your repository
         run: |
           git checkout -B dev-cpp-selfdrived mazda_upstream/dev-cpp-selfdrived
           git push origin dev-cpp-selfdrived --force
+
+      # 6. Push KisaPilot branch to your repository
+      - name: Push KisaPilot branch to your repository
+        run: |
+          git checkout -B KisaPilot kisapilot_upstream/KisaPilot
+          git push origin KisaPilot --force
