@@ -21,7 +21,7 @@ jobs:
       - name: Add upstream repositories and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
-          git fetch upstream v8-wip4 v8-wip4-da --no-tags
+          git fetch upstream v8-wip5 --no-tags
           
           git remote add mazda_upstream https://github.com/heqichen/qcpilot.git
           git fetch mazda_upstream dev-cpp-selfdrived --no-tags
@@ -30,25 +30,13 @@ jobs:
           git fetch kisapilot_upstream KisaPilot --no-tags
 
       # 3. Push v8-wip4 branch to your repository
-      - name: Push v8-wip4 branch to your repository
+      - name: Push v8-wip5 branch to your repository
         run: |
-          git checkout -B v8-wip4 upstream/v8-wip4
-          git push origin v8-wip4 --force
-
-      # 4. Push v8-wip4-da branch to your repository
-      - name: Push v8-wip4-da branch to your repository
-        run: |
-          git checkout -B v8-wip4-da upstream/v8-wip4-da
-          git push origin v8-wip4-da --force
+          git checkout -B v8-wip5 upstream/v8-wip5
+          git push origin v8-wip5 --force
 
       # 5. Push dev-cpp-selfdrived branch to your repository
       - name: Push dev-cpp-selfdrived branch to your repository
         run: |
           git checkout -B dev-cpp-selfdrived mazda_upstream/dev-cpp-selfdrived
           git push origin dev-cpp-selfdrived --force
-
-      # 6. Push KisaPilot branch to your repository
-      - name: Push KisaPilot branch to your repository
-        run: |
-          git checkout -B KisaPilot kisapilot_upstream/KisaPilot
-          git push origin KisaPilot --force
