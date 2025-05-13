@@ -21,16 +21,16 @@ jobs:
       - name: Add upstream repositories and fetch branches
         run: |
           git remote add upstream https://github.com/ajouatom/openpilot.git
-          git fetch upstream carrot2-v8-da --no-tags
+          git fetch upstream carrot2-v8 --no-tags
           
           git remote add mazda_upstream https://github.com/heqichen/qcpilot.git
           git fetch mazda_upstream dev-cpp-selfdrived --no-tags
 
       # 3. Push v8-wip4 branch to your repository
-      - name: Push carrot2-v8-da branch to your repository
+      - name: Push carrot2-v8 branch to your repository
         run: |
-          git checkout -B carrot2-v8-da upstream/carrot2-v8-da
-          git push origin carrot2-v8-da --force
+          git checkout -B carrot2-v8 upstream/carrot2-v8
+          git push origin carrot2-v8 --force
 
       # 5. Push dev-cpp-selfdrived branch to your repository
       - name: Push dev-cpp-selfdrived branch to your repository
