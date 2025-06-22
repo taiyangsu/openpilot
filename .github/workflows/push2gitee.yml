@@ -2,7 +2,7 @@ name: Sync to Private Gitee
 
 on:
   schedule:
-    - cron: '0 1 * * *'  # 每天凌晨 1 点 UTC（北京时间 9 点）
+    - cron: '0 1 * * *'  # 每天 UTC 1 点（北京时间 9 点）
   workflow_dispatch:     # 支持手动触发
 
 jobs:
@@ -10,8 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout GitHub repository
+    - name: Checkout GitHub repository (full history)
       uses: actions/checkout@v3
+      with:
+        fetch-depth: 0  # ⬅️ 关键修改，避免 shallow clone 错误
 
     - name: Set Git config
       run: |
