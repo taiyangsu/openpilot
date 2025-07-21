@@ -1,0 +1,30 @@
+name: Sync BYD Branch
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # 每天 UTC 时间 10 点运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出你的仓库
+      - name: Checkout your repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
+
+      # 2. 添加远程仓库并拉取 carrot2-v8 分支
+      - name: Add upstream and fetch carrot2-v8
+        run: |
+          git remote add upstream http://op.adxr.fun:8418/yysnet/carrotpilot
+          git fetch upstream carrot2-v8 --no-tags
+
+      # 3. 检出为 byd 分支并推送到你的仓库
+      - name: Push as byd branch to your repository
+        run: |
+          git checkout -B byd upstream/carrot2-v8
+          git push origin byd --force
