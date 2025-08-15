@@ -12,7 +12,7 @@ jobs:
     steps:
       # 1. Checkout the target repository (your repo)
       - name: Checkout the target repository (your repo)
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0  # 完整克隆仓库，确保所有历史记录
           token: ${{ secrets.GH_TOKEN }}  # 访问 GitHub 需要的令牌
