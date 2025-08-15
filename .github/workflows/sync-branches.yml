@@ -28,4 +28,14 @@ jobs:
         run: |
           git checkout -B carrot2-v9 upstream/carrot2-v9
           git push origin carrot2-v9 --force
-
+          
+      - name: Add upstream repositories and fetch branches
+        run: |
+          git remote add upstream https://github.com/sunnypilot/sunnypilot.git
+          git fetch upstream dev-c3-new --no-tags 
+          
+      # 3. Push dev-c3-new branch to your repository
+      - name: Push dev-c3-new branch to your repository
+        run: |
+          git checkout -B dev-c3-new upstream/dev-c3-new
+          git push origin dev-c3-new --force
