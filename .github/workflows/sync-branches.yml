@@ -5,10 +5,10 @@ on:
   push: 
   branches: 
    - main 
-   jobs: 
+jobs: 
    sync: 
    runs-on: ubuntu-latest 
- steps: 
+steps: 
  - name: Checkout repository 
  uses: actions/checkout@v2 
  with: 
