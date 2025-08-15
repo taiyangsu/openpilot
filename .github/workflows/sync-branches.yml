@@ -1,13 +1,13 @@
 name: Sync Forks 
 on: 
- schedule: 
- - cron: '0 0 * * *' # 每天同步一次 
- push: 
- branches: 
- - main 
- jobs: 
- sync: 
- runs-on: ubuntu-latest 
+  schedule: 
+   - cron: '0 0 * * *' # 每天同步一次 
+  push: 
+  branches: 
+   - main 
+   jobs: 
+   sync: 
+   runs-on: ubuntu-latest 
  steps: 
  - name: Checkout repository 
  uses: actions/checkout@v2 
