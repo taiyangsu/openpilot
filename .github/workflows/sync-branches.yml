@@ -1,5 +1,5 @@
 name: Sync Forks 
- on: 
+on: 
  schedule: 
  - cron: '0 0 * * *' # 每天同步一次 
  push: 
