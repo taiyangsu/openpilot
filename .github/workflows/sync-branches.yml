@@ -1,83 +1,41 @@
-name: Sync Branches
-
-on:
-  schedule:
-    # 每天10点UTC（你可以根据需要调整时区）
-    - cron: '0 10 * * *'
-  workflow_dispatch:  # 允许手动启动工作流
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout the main repository
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_TOKEN }}  # 显式传递GH_TOKEN
-
-      - name: Setup Git
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
-      # Existing remotes and branches
-      - name: Add remote for MoreTore/openpilot
-        run: |
-          git remote add moretore https://github.com/MoreTore/openpilot.git
-          git fetch moretore mazda-frogpilot
-          git fetch moretore mazda-frogpilot-0.9.6  # 同步 mazda-frogpilot-0.9.6 分支
-      - name: Add remote for FrogAi/FrogPilot
-        run: |
-          git remote add frogai https://github.com/FrogAi/FrogPilot.git
-          git fetch frogai
-      - name: Delete conflicting branch mazda-frogpilot if it exists
-        run: |
-          git branch -r | grep "origin/mazda-frogpilot" && git push origin --delete mazda-frogpilot || echo "No conflict with mazda-frogpilot"
-      - name: Create and push mazda-frogpilot branch
-        run: |
-          git checkout -b mazda-frogpilot moretore/mazda-frogpilot
-          git push origin mazda-frogpilot
-      - name: Delete conflicting branch mazda-frogpilot-0.9.6 if it exists
-        run: |
-          git branch -r | grep "origin/mazda-frogpilot-0.9.6" && git push origin --delete mazda-frogpilot-0.9.6 || echo "No conflict with mazda-frogpilot-0.9.6"
-      - name: Create and push mazda-frogpilot-0.9.6 branch
-        run: |
-          git checkout -b mazda-frogpilot-0.9.6 moretore/mazda-frogpilot-0.9.6
-          git push origin mazda-frogpilot-0.9.6
-      - name: Delete conflicting branch FrogPilot if it exists
-        run: |
-          git branch -r | grep "origin/FrogPilot" && git push origin --delete FrogPilot || echo "No conflict with FrogPilot"
-      - name: Force fetch and reset FrogPilot branch from remote
-        run: |
-          git fetch --all
-          git checkout --orphan FrogPilot
-          git reset --hard frogai/FrogPilot
-          git push origin FrogPilot --force
-      - name: Delete conflicting branch FrogPilot-Development if it exists
-        run: |
-          git branch -r | grep "origin/FrogPilot-Development" && git push origin --delete FrogPilot-Development || echo "No conflict with FrogPilot-Development"
-      - name: Force fetch and reset FrogPilot-Development branch from remote
-        run: |
-          git fetch --all
-          git checkout --orphan FrogPilot-Development
-          git reset --hard frogai/FrogPilot-Development
-          git push origin FrogPilot-Development --force
-      # New remotes and branches
-      - name: Add remote for opgm/openpilot
-        run: |
-          git remote add opgm https://github.com/opgm/openpilot.git
-          git fetch opgm staging
-      - name: Sync staging branch from opgm/openpilot
-        run: |
-          git branch -r | grep "origin/staging" && git push origin --delete staging || echo "No conflict with staging"
-          git checkout -b staging opgm/staging
-          git push origin staging
-      - name: Add remote for ajouatom/openpilot
-        run: |
-          git remote add ajouatom https://github.com/ajouatom/openpilot.git
-          git fetch ajouatom v7-wip6
-      - name: Sync v7-wip6 carrot2-v6 branch from ajouatom/openpilot
-        run: |
-          git branch -r | grep "origin/v7-wip6" && git push origin --delete v7-wip6 || echo "No conflict with v7-wip5-ndv2 carrot2-v6"
-          git checkout -b v7-wip6 ajouatom/v7-wip6
-          git push origin v7-wip6
+name: Sync Forks 
+ on: 
+ schedule: 
+ - cron: '0 0 * * *' # 每天同步一次 
+ push: 
+ branches: 
+ - main 
+ jobs: 
+ sync: 
+ runs-on: ubuntu-latest 
+ steps: 
+ - name: Checkout repository 
+ uses: actions/checkout@v2 
+ with: 
+ token: ${{ secrets.ACTIONS_PAT }} 
+ - name: Set up Git 
+ run: | 
+ git config --global user.name 'github-actions[bot]' 
+ git config --global user.email '29983802+github-actions[bot]@users.noreply.github.com' 
+ - name: Add remote repositories 
+ run: | 
+ git remote add sunnypilot https://github.com/sunnypilot/sunnypilot.git 
+ git remote add openpilot https://github.com/ajouatom/openpilot.git 
+ git remote add FrogPilot https://github.com/FrogAi/FrogPilot.git 
+ git remote add dragonpilot https://github.com/dragonpilot-community/dragonpilot 
+ git remote add openpilot https://github.com/commaai/openpilot 
+ - name: Fetch and merge sunnypilot 
+ run: | 
+ git fetch sunnypilot 
+ git checkout -B dev-c3 sunnypilot/dev-c3 
+ git push origin dev-c3 --force 
+ - name: Fetch and merge sunnypilot 
+ run: | 
+ git fetch sunnypilot 
+ git checkout -B toyota sunnypilot/toyota 
+ git push origin toyota --force 
+   - name: Fetch and merge openpilot  
+ run: | 
+ git fetch openpilot 
+ git checkout -B carrot2-v6 openpilot/carrot2-v6 
+ git push origin carrot2-v6 --force 
