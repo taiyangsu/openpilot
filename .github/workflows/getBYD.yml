@@ -16,15 +16,15 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
-
-      # 2. 添加远程仓库并拉取 carrot2-v8 分支
-      - name: Add upstream and fetch carrot2-v8
+     # 2. 添加远程仓库并拉取 tn-prebuilt 分支
+      - name: Add upstream and fetch tn-prebuilt
         run: |
-          git remote add upstream http://op.adxr.fun:8418/yysnet/carrotpilot
-          git fetch upstream carrot2-v8 --no-tags
+          git remote add upstream https://github.com/sunnypilot/sunnypilot.git
+          git fetch upstream tn-prebuilt --no-tags
 
       # 3. 检出为 byd 分支并推送到你的仓库
       - name: Push as byd branch to your repository
         run: |
-          git checkout -B byd upstream/carrot2-v8
-          git push origin byd --force
+          git checkout -B tn-prebuilt upstream/tn-prebuilt
+          git push origin tn-prebuilt --force          
+     
